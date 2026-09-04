@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="split-content">
+
+  <!-- =========================================================================
+       LEFT FEED CONTENT SECTION
+       ========================================================================= -->
+  <section class="feed-section">
+
+    <!-- Hero Greeting -->
+    <div class="hero-greeting">
+      <h1 class="greeting-title">
+        {% if user.is_authenticated %}
+          สวัสดี, {{ user.profile.get_display_name }} 👋<br>
+        {% else %}
+          สวัสดี! 👋<br>
+        {% endif %}
+        วันนี้อยากไปที่ไหน?
+      </h1>
+      <p class="greeting-subtitle">
+        ค้นพบสถานที่น่าสนใจ<br>
+        ผ่านเรื่องราวและรูปภาพจากผู้คน
+      </p>
+    </div>
+
+    <!-- Filter Chips matching Reference -->
+    <div class="filter-chips-container">
+      <a href="?filter=near" class="filter-chip {% if filter_type == 'near' or not filter_type %}active{% endif %}">
+        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+        <span>ใกล้ฉัน</span>
+      </a>
+      <a href="?filter=popular" class="filter-chip {% if filter_type == 'popular' %}active{% endif %}">
+        <i data-lucide="heart" style="width:14px;height:14px;"></i>
+        <span>ยอดนิยม</span>
+      </a>
+      <a href="?filter=new" class="filter-chip {% if filter_type == 'new' %}active{% endif %}">
+        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+        <span>มาใหม่</span>
+      </a>
+      <a href="{% url 'core:explore' %}" class="filter-chip">
+        <i data-lucide="grid" style="width:14px;height:14px;"></i>
+        <span>หมวดหมู่</span>
+      </a>
+    </div>
+
+    <!-- Recommended Places (สถานที่แนะนำ) -->
+    <div class="section-header">
+      <h2 class="section-title">สถานที่แนะนำ</h2>
+      <a href="{% url 'core:explore' %}" class="section-link">ดูทั้งหมด</a>
+    </div>
+
+    <!-- Desktop Grid (>1024px) & Mobile Horizontal Carousel (<1024px) -->
+    <div class="recommended-grid mobile-carousel">
+      {% for place in recommended_places %}
+      <div class="place-card mobile-carousel-item" onclick="selectLocationById({{ place.id }})">
+        <div class="place-card-img-wrapper">
+          <img src="{{ place.get_cover_url }}" alt="{{ place.name }}" class="place-card-img" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+        </div>
+        <div class="place-card-body">
+          <div class="place-card-title">{{ place.name }}</div>
+          <div class="place-card-meta-row">
+            <span>{{ place.city }}</span>
+            <span class="distance-badge" data-lat="{{ place.latitude }}" data-lng="{{ place.longitude }}">{{ place.distance_km }} กม.</span>
+          </div>
+          <div class="place-card-stats">
+            <span class="stat-item">
+              <i data-lucide="file-text" style="width:11px;height:11px;"></i>
+              {{ place.get_post_count }} โพสต์
+            </span>
+            <span class="stat-item">
+              <i data-lucide="image" style="width:11px;height:11px;"></i>
+              {{ place.get_photo_count }} รูป
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Recent Posts (โพสต์ล่าสุด) -->
+    <div class="section-header">
+      <h2 class="section-title">โพสต์ล่าสุด</h2>
+      <a href="{% url 'core:explore' %}" class="section-link">ดูทั้งหมด</a>
+    </div>
+
+    <div class="recent-posts-list">
+      {% for post in recent_posts %}
+      <article class="post-card">
+        <div class="post-header">
+          <div class="post-user">
+            <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar">
+            <div>
+              <div class="post-user-name">{{ post.user.profile.get_display_name }}</div>
+              <div class="post-user-meta">{{ post.get_time_ago_str }} • {{ post.location.name }} • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">{{ post.location.distance_km }} กม.</span></div>
+            </div>
+          </div>
+          <button class="btn-icon-circle" style="width:34px;height:34px;" title="ตัวเลือก">
+            <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+
+        <a href="{% url 'posts:detail' post.id %}" class="post-photo-wrapper">
+          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="post-photo" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+        </a>
+
+        {% if post.caption %}
+        <p class="post-caption">{{ post.caption }}</p>
+        {% endif %}
+
+        <!-- Interactive Action Bar -->
+        <div class="post-action-bar">
+          <div class="post-action-group">
+            <button class="action-btn btn-like-action like-btn-{{ post.id }} {% if post.is_liked %}liked{% endif %}" data-post-id="{{ post.id }}" onclick="toggleLike(event, {{ post.id }})">
+              <i data-lucide="heart" style="width:16px;height:16px;{% if post.is_liked %}fill:#EF4444;stroke:#EF4444;{% endif %}"></i>
+              <span class="like-count like-count-{{ post.id }}">{{ post.get_likes_count }}</span>
+            </button>
+            <button class="action-btn btn-comment-action" onclick="openCommentModal({{ post.id }})">
+              <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+              <span class="comment-count comment-count-{{ post.id }}">{{ post.get_comments_count }}</span>
+            </button>
+          </div>
+          <div class="post-action-group">
+            <button class="action-btn btn-nav-route" onclick="navigateToLocation({{ post.location.latitude }}, {{ post.location.longitude }}, '{{ post.location.name|escapejs }}')" title="นำทาง">
+              <i data-lucide="navigation" style="width:16px;height:16px;"></i>
+              <span>นำทาง</span>
+            </button>
+            <button class="action-btn btn-save-action save-btn-{{ post.id }} {% if post.is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" onclick="toggleSave(event, {{ post.id }})">
+              <i data-lucide="bookmark" style="width:16px;height:16px;{% if post.is_saved %}fill:#159F8C;stroke:#159F8C;{% endif %}"></i>
+            </button>
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      <div style="text-align:center;padding:32px 16px;color:var(--text-muted);">
+        <i data-lucide="camera" style="width:32px;height:32px;stroke-width:1.5;margin-bottom:8px;color:var(--text-subtle);"></i>
+        <p>ยังไม่มีโพสต์ในหมวดหมู่นี้ เป็นคนแรกที่แชร์รูปภาพ!</p>
+      </div>
+      {% endfor %}
+    </div>
+
+  </section>
+
+  <!-- =========================================================================
+       RIGHT INTERACTIVE MAP SECTION
+       ========================================================================= -->
+  <section class="map-section">
+    <div id="map-container"></div>
+
+    <!-- Floating Selected Place Card -->
+    <div id="selected-map-card" class="floating-map-card">
+      {% if selected_location %}
+      <div class="map-card-image-wrap">
+        <img class="map-card-image" src="{{ selected_location.get_cover_url }}" alt="{{ selected_location.name }}">
+        <button class="btn-icon-circle" onclick="closeMapCard(event)" style="position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+      <div class="map-card-content">
+        <div class="map-card-header">
+          <div>
+            <h4 class="map-card-title">{{ selected_location.name }}</h4>
+            <span class="map-card-city">{{ selected_location.city }}</span>
+          </div>
+        </div>
+        {% if selected_location.created_by %}
+        <div class="map-card-author">
+          <img class="map-card-author-avatar" src="{{ selected_location.created_by.profile.get_avatar_url }}" alt="{{ selected_location.created_by.profile.get_display_name }}">
+          <span>โดย {{ selected_location.created_by.profile.get_display_name }}</span>
+        </div>
+        {% endif %}
+        {% if selected_location.description %}
+        <p class="map-card-caption">{{ selected_location.description }}</p>
+        {% endif %}
+        <div class="map-card-footer">
+          <span>{{ selected_location.created_at|date:"d M Y" }}</span>
+          <div class="map-card-interactions">
+            <span class="map-card-stat">
+              <i data-lucide="file-text" style="width:13px;height:13px;stroke:#159F8C;"></i>
+              {{ selected_location.get_post_count }} โพสต์
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Floating Controls on Right -->
+    <div class="map-controls">
+      <button class="map-control-btn" onclick="mapCenterDefault()" title="รีเซ็ตมุมมอง">
+        <i data-lucide="navigation" style="width:18px;height:18px;"></i>
+      </button>
+      <button class="map-control-btn" onclick="mapZoomIn()" title="ขยาย">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>
+      </button>
+      <button class="map-control-btn" onclick="mapZoomOut()" title="ย่อ">
+        <i data-lucide="minus" style="width:18px;height:18px;"></i>
+      </button>
+      <button class="map-control-btn" onclick="mapCurrentLocation()" title="ตำแหน่งปัจจุบัน">
+        <i data-lucide="crosshair" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // JSON Locations for instant rendering
+  const initialMapLocations = [
+    {% for loc in all_locations %}
+    {
+      id: {{ loc.id }},
+      name: "{{ loc.name|escapejs }}",
+      city: "{{ loc.city|escapejs }}",
+      lat: {{ loc.latitude }},
+      lng: {{ loc.longitude }},
+      cover_url: "{{ loc.get_cover_url|escapejs }}",
+      distance_km: {{ loc.distance_km }},
+      post_count: {{ loc.get_post_count }},
+      photo_count: {{ loc.get_photo_count }},
+      latest_post: {
+        author_name: "Beam",
+        author_avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&h=200&q=80",
+        caption: "บรรยากาศดีมาก กาแฟอร่อย 🌿",
+        time_ago: "2 ชั่วโมงที่แล้ว",
+        likes_count: 24,
+        comments_count: 6
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initWhatsHereMap('map-container', initialMapLocations, {% if selected_location %}{{ selected_location.id }}{% else %}null{% endif %});
+  });
+
+  function selectLocationById(id) {
+    const target = initialMapLocations.find(l => l.id === id);
+    if (target) {
+      selectLocationOnMap(target, true);
+    }
+  }
+</script>
+{% endblock %}

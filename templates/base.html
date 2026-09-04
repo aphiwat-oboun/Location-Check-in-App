@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}ที่นี่มีอะไร? - What's Here? ค้นพบสถานที่น่าสนใจผ่านรูปภาพ{% endblock %}</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom CSS & App Scripts -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Floating Desktop App Shell -->
+  <div class="app-shell">
+    
+    <!-- Left Sidebar (Desktop Fixed) -->
+    <aside class="app-sidebar">
+      <div>
+        <!-- Logo -->
+        <a href="{% url 'core:home' %}" class="brand-logo">
+          <div class="brand-icon">
+            <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+          </div>
+          <span class="brand-name">ที่นี่มีอะไร?</span>
+        </a>
+
+        <!-- Navigation Items -->
+        <ul class="nav-menu">
+          <li class="nav-item {% if active_nav == 'home' %}active{% endif %}">
+            <a href="{% url 'core:home' %}">
+              <span class="nav-icon"><i data-lucide="home"></i></span>
+              <span>หน้าหลัก</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'explore' %}active{% endif %}">
+            <a href="{% url 'core:explore' %}">
+              <span class="nav-icon"><i data-lucide="compass"></i></span>
+              <span>สำรวจ</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'map' %}active{% endif %}">
+            <a href="{% url 'core:map' %}">
+              <span class="nav-icon"><i data-lucide="map"></i></span>
+              <span>แผนที่</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'my_posts' %}active{% endif %}">
+            <a href="{% url 'posts:my_posts' %}">
+              <span class="nav-icon"><i data-lucide="image"></i></span>
+              <span>โพสต์ของฉัน</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'saved' %}active{% endif %}">
+            <a href="{% url 'core:saved' %}">
+              <span class="nav-icon"><i data-lucide="bookmark"></i></span>
+              <span>ที่บันทึกไว้</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'profile' %}active{% endif %}">
+            <a href="{% url 'accounts:profile' %}">
+              <span class="nav-icon"><i data-lucide="user"></i></span>
+              <span>โปรไฟล์</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Action Button -->
+        <div class="sidebar-action">
+          <a href="{% url 'posts:create' %}" class="btn-create-post">
+            <i data-lucide="plus" style="width:18px;height:18px;"></i>
+            <span>สร้างโพสต์</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- User Profile Mini-Card at Bottom -->
+      {% if user.is_authenticated %}
+      <a href="{% url 'accounts:profile' %}" class="sidebar-profile-card">
+        <div class="profile-info">
+          <img src="{{ user.profile.get_avatar_url }}" alt="" class="profile-avatar">
+          <div class="profile-text">
+            <div class="user-name">{{ user.profile.get_display_name }}</div>
+            <div class="view-profile">ดูโปรไฟล์</div>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--text-subtle);"></i>
+      </a>
+      {% else %}
+      <a href="{% url 'accounts:login' %}" class="sidebar-profile-card">
+        <div class="profile-info">
+          <div class="profile-avatar" style="background:#E6F5F3; color:#159F8C; display:flex; align-items:center; justify-content:center;">
+            <i data-lucide="user" style="width:20px;height:20px;"></i>
+          </div>
+          <div class="profile-text">
+            <div class="user-name">เข้าสู่ระบบ</div>
+            <div class="view-profile">เพื่อเริ่มใช้งาน</div>
+          </div>
+        </div>
+        <i data-lucide="log-in" style="width:16px;height:16px;color:var(--primary,#159F8C);"></i>
+      </a>
+      {% endif %}
+    </aside>
+
+    <!-- App Main Frame -->
+    <main class="app-main">
+      <!-- Top Header (Hidden on Auth Pages) -->
+      {% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
+      <header class="app-header">
+        <div class="search-container">
+          <form action="{% url 'core:home' %}" method="GET">
+            <div class="search-input-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="ค้นหาสถานที่, ผู้ใช้, หรือเรื่องราวต่างๆ..." class="search-input">
+            </div>
+          </form>
+        </div>
+
+        <div class="header-right">
+          {% if user.is_authenticated %}
+          <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="fetchNotifications()">
+            <i data-lucide="bell" style="width:18px;height:18px;"></i>
+          </button>
+          <a href="{% url 'accounts:profile' %}">
+            <img src="{{ user.profile.get_avatar_url }}" alt="" class="header-avatar">
+          </a>
+          {% else %}
+          <a href="{% url 'accounts:login' %}" style="padding: 8px 18px; border-radius: 9999px; background: #159F8C; color: white; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(21, 159, 140, 0.2); white-space: nowrap;">
+            <i data-lucide="log-in" style="width:16px;height:16px;"></i>
+            <span>เข้าสู่ระบบ</span>
+          </a>
+          {% endif %}
+        </div>
+      </header>
+      {% endif %}
+
+      <!-- Main Body Block -->
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  <!-- Mobile Bottom Navigation (Visible on mobile screens) -->
+  <nav class="mobile-bottom-nav">
+    <a href="{% url 'core:home' %}" class="mobile-nav-item {% if active_nav == 'home' %}active{% endif %}">
+      <i data-lucide="home" style="width:20px;height:20px;"></i>
+      <span>หน้าหลัก</span>
+    </a>
+    <a href="{% url 'core:explore' %}" class="mobile-nav-item {% if active_nav == 'explore' %}active{% endif %}">
+      <i data-lucide="compass" style="width:20px;height:20px;"></i>
+      <span>สำรวจ</span>
+    </a>
+    <a href="{% url 'posts:create' %}" class="mobile-nav-center-btn">
+      <i data-lucide="plus" style="width:24px;height:24px;stroke-width:2.5;"></i>
+    </a>
+    <a href="{% url 'core:map' %}" class="mobile-nav-item {% if active_nav == 'map' %}active{% endif %}">
+      <i data-lucide="map" style="width:20px;height:20px;"></i>
+      <span>แผนที่</span>
+    </a>
+    <a href="{% url 'accounts:profile' %}" class="mobile-nav-item {% if active_nav == 'profile' %}active{% endif %}">
+      <i data-lucide="user" style="width:20px;height:20px;"></i>
+      <span>โปรไฟล์</span>
+    </a>
+  </nav>
+
+  <!-- Mobile Bottom Sheet Backdrop & Container -->
+  <div class="mobile-bottom-sheet-backdrop" id="mobileBottomSheetBackdrop" onclick="closeMobileBottomSheet()"></div>
+  <div class="mobile-bottom-sheet" id="mobileBottomSheet">
+    <div class="bottom-sheet-handle-bar"></div>
+    <div id="mobileBottomSheetContent" style="padding: 12px 18px 24px;"></div>
+  </div>
+
+  <!-- Global Scripts -->
+  <script src="{% static 'js/map.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // Keyboard auto-scroll into view for active inputs on mobile
+      const inputs = document.querySelectorAll('input, textarea, select');
+      inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+          if (window.innerWidth <= 1024) {
+            setTimeout(() => {
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          }
+        });
+      });
+    });
+
+    function openMobileBottomSheet(htmlContent) {
+      const backdrop = document.getElementById('mobileBottomSheetBackdrop');
+      const sheet = document.getElementById('mobileBottomSheet');
+      const container = document.getElementById('mobileBottomSheetContent');
+      if (backdrop && sheet && container) {
+        container.innerHTML = htmlContent;
+        backdrop.classList.add('active');
+        sheet.classList.add('active');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeMobileBottomSheet() {
+      const backdrop = document.getElementById('mobileBottomSheetBackdrop');
+      const sheet = document.getElementById('mobileBottomSheet');
+      if (backdrop && sheet) {
+        backdrop.classList.remove('active');
+        sheet.classList.remove('active');
+      }
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

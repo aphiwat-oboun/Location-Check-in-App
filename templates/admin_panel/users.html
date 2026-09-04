@@ -1,0 +1,122 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}ผู้ใช้งาน{% endblock %}
+{% block header_title %}จัดการผู้ใช้งาน{% endblock %}
+{% block header_subtitle %}รายชื่อผู้ใช้ทั้งหมดในระบบ{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
+    <h3 class="card-title">ผู้ใช้งาน ({{ total_count }})</h3>
+    <form method="GET" style="display: flex; gap: 10px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อผู้ใช้, อีเมล..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 220px;">
+      <select name="status" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>สถานะทั้งหมด</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>ปกติ</option>
+        <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>ถูกระงับ</option>
+      </select>
+      <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
+    </form>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ผู้ใช้งาน</th>
+          <th>อีเมล</th>
+          <th>โพสต์</th>
+          <th>สถานะ</th>
+          <th>วันที่สมัคร</th>
+          <th style="text-align: center;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users_page %}
+          <tr id="user-row-{{ u.id }}">
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="{{ u.profile.get_avatar_url }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                <div>
+                  <div style="font-weight: 600; color: #1F2937;">{{ u.profile.get_display_name }}</div>
+                  <div style="font-size: 0.75rem; color: #9CA3AF;">@{{ u.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ u.email|default:"-" }}</td>
+            <td>{{ u.post_count }}</td>
+            <td>
+              {% if u.profile.is_suspended %}
+                <span class="badge-status red">ถูกระงับ</span>
+              {% else %}
+                <span class="badge-status emerald">ปกติ</span>
+              {% endif %}
+            </td>
+            <td>{{ u.date_joined|date:"d M Y" }}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="table-action-btn view" title="ดูโปรไฟล์" onclick="window.location.href='{% url "accounts:profile" u.username %}'">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+              <button class="table-action-btn edit" title="สลับสถานะระงับ" onclick="toggleUserStatus({{ u.id }}, '{{ u.username|escapejs }}')">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+              </button>
+              <button class="table-action-btn delete" title="ลบผู้ใช้งาน" onclick="deleteUser({{ u.id }}, '{{ u.username|escapejs }}')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบข้อมูลผู้ใช้งาน</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function toggleUserStatus(userId, username) {
+    showConfirmModal('สลับสถานะระงับบัญชี?', `คุณต้องการเปลี่ยนสถานะการระงับของ @${username} ใช่หรือไม่?`, function() {
+      fetch(`/admin-panel/api/user/${userId}/action/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=toggle_suspend'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          alert(data.message);
+          window.location.reload();
+        }
+      });
+    });
+  }
+
+  function deleteUser(userId, username) {
+    showConfirmModal('ยืนยันการลบผู้ใช้?', `การลบผู้ใช้ @${username} จะลบโพสต์และข้อมูลที่เกี่ยวข้องทั้งหมด!`, function() {
+      fetch(`/admin-panel/api/user/${userId}/action/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=delete'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          const row = document.getElementById(`user-row-${userId}`);
+          if(row) row.remove();
+          alert(data.message);
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}

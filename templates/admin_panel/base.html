@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}แดชบอร์ด{% endblock %} - ที่นี่มีอะไร? Admin Panel</title>
+  
+  <!-- Noto Sans Thai Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Admin Styles -->
+  <link rel="stylesheet" href="{% static 'css/admin_panel.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div>
+      <div class="admin-sidebar-brand">
+        <div class="brand-icon-wrapper">
+          <i data-lucide="map-pin" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="brand-title">ที่นี่มีอะไร?</div>
+          <div class="brand-subtitle">Admin Panel</div>
+        </div>
+      </div>
+
+      <nav class="admin-sidebar-menu">
+        <a href="{% url 'admin_panel:dashboard' %}" class="menu-item {% if active_page == 'dashboard' %}active{% endif %}">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>แดชบอร์ด</span>
+        </a>
+        <a href="{% url 'admin_panel:posts' %}" class="menu-item {% if active_page == 'posts' %}active{% endif %}">
+          <i data-lucide="image" class="w-4 h-4"></i>
+          <span>โพสต์ทั้งหมด</span>
+        </a>
+        <a href="{% url 'admin_panel:users' %}" class="menu-item {% if active_page == 'users' %}active{% endif %}">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>ผู้ใช้งาน</span>
+        </a>
+        <a href="{% url 'admin_panel:locations' %}" class="menu-item {% if active_page == 'locations' %}active{% endif %}">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          <span>สถานที่</span>
+        </a>
+        <a href="{% url 'admin_panel:categories' %}" class="menu-item {% if active_page == 'categories' %}active{% endif %}">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>หมวดหมู่</span>
+        </a>
+        <a href="{% url 'admin_panel:reports' %}" class="menu-item {% if active_page == 'reports' %}active{% endif %}">
+          <i data-lucide="flag" class="w-4 h-4"></i>
+          <span>รายงาน</span>
+          {% if admin_pending_reports %}
+          <span class="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">{{ admin_pending_reports }}</span>
+          {% endif %}
+        </a>
+        <a href="{% url 'admin_panel:comments' %}" class="menu-item {% if active_page == 'comments' %}active{% endif %}">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span>คอมเมนต์</span>
+        </a>
+        <a href="#" class="menu-item">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span>การแจ้งเตือน</span>
+        </a>
+        <a href="{% url 'admin_panel:settings' %}" class="menu-item {% if active_page == 'settings' %}active{% endif %}">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>การตั้งค่า</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="admin-sidebar-footer">
+      <a href="{% url 'accounts:logout' %}" class="logout-item">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>ออกจากระบบ</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Menu Backdrop -->
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:35;display:none;" id="adminSidebarBackdrop" onclick="toggleAdminSidebar()"></div>
+
+  <!-- Top Header -->
+  <header class="admin-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="toggleAdminSidebar()" class="mobile-only-btn" style="width:40px;height:40px;border-radius:10px;background:#F3F4F6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <i data-lucide="menu" style="width:20px;height:20px;color:#374151;"></i>
+      </button>
+      <div class="header-title-group">
+        <h1>{% block header_title %}แดชบอร์ด{% endblock %}</h1>
+        <p>{% block header_subtitle %}ภาพรวมของระบบ{% endblock %}</p>
+      </div>
+    </div>
+
+    <div class="header-right-group">
+      <!-- Header Search Pill -->
+      <form action="{% url 'admin_panel:posts' %}" method="GET" class="header-search-pill">
+        <input type="text" name="search" placeholder="ค้นหาโพสต์, ผู้ใช้, สถานที่...">
+        <i data-lucide="search"></i>
+      </form>
+
+      <!-- Notification Bell -->
+      <button class="icon-badge-btn" title="การแจ้งเตือน">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="badge">{{ admin_unread_notifications|default:3 }}</span>
+      </button>
+
+      <!-- Admin Profile Dropdown -->
+      <div class="admin-user-profile" id="adminUserDropdownToggle">
+        <img src="{{ request.user.profile.get_avatar_url }}" alt="Admin Avatar" class="user-avatar">
+        <div class="user-info-text">
+          <div class="name">{{ request.user.profile.get_display_name|default:"อารินทร์" }}</div>
+          <div class="role">ผู้ดูแลระบบ</div>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-main-container">
+    {% if messages %}
+      <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+          <div style="padding: 12px 16px; border-radius: 10px; background-color: {% if message.tags == 'error' %}#FEE2E2{% else %}#E6F5F3{% endif %}; color: {% if message.tags == 'error' %}#991B1B{% else %}#117A70{% endif %}; font-size: 0.9rem; font-weight: 500;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <footer style="text-align: center; margin-top: 40px; color: #9CA3AF; font-size: 0.8rem;">
+      © 2024 ที่นี่มีอะไร? Admin Panel | พัฒนาด้วย Django
+    </footer>
+  </main>
+
+  <!-- Global Confirmation Modal -->
+  <div class="admin-modal-backdrop" id="globalConfirmModal">
+    <div class="admin-modal-dialog">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0;" id="modalConfirmTitle">ยืนยันการดำเนินการ</h3>
+      <p style="font-size: 0.875rem; color: #6B7280; margin: 0 0 20px 0;" id="modalConfirmMessage">การดำเนินการนี้ไม่สามารถย้อนกลับได้ คุณแน่ใจหรือไม่?</p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #D1D5DB; background: #FFF; font-size: 0.875rem; cursor: pointer;" onclick="closeConfirmModal()">ยกเลิก</button>
+        <button type="button" id="modalConfirmSubmitBtn" style="padding: 8px 16px; border-radius: 8px; border: none; background: #EF4444; color: #FFF; font-size: 0.875rem; font-weight: 600; cursor: pointer;">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    function showConfirmModal(title, message, onConfirm) {
+      document.getElementById('modalConfirmTitle').innerText = title;
+      document.getElementById('modalConfirmMessage').innerText = message;
+      const submitBtn = document.getElementById('modalConfirmSubmitBtn');
+      submitBtn.onclick = function() {
+        onConfirm();
+        closeConfirmModal();
+      };
+      document.getElementById('globalConfirmModal').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('globalConfirmModal').classList.remove('active');
+    }
+
+    function toggleAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const backdrop = document.getElementById('adminSidebarBackdrop');
+      if (sidebar) sidebar.classList.toggle('mobile-open');
+      if (backdrop) {
+        if (sidebar && sidebar.classList.contains('mobile-open')) {
+          backdrop.style.display = 'block';
+        } else {
+          backdrop.style.display = 'none';
+        }
+      }
+    }
+
+    // CSRF helper
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

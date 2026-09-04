@@ -1,0 +1,94 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}โพสต์ทั้งหมด{% endblock %}
+{% block header_title %}จัดการโพสต์{% endblock %}
+{% block header_subtitle %}รายการโพสต์และเนื้อหาทั้งหมด{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
+    <h3 class="card-title">โพสต์ทั้งหมด</h3>
+    <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาข้อความ, สถานที่, ชื่อผู้ใช้..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 240px;">
+      <select name="category" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
+        <option value="">ทุกหมวดหมู่</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if selected_category == cat.id|slugify %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
+    </form>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>โพสต์</th>
+          <th>หมวดหมู่</th>
+          <th>ผู้ใช้งาน</th>
+          <th>สถานที่</th>
+          <th>ยอดไลค์</th>
+          <th>เวลา</th>
+          <th style="text-align: center;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in posts_page %}
+          <tr id="post-row-{{ p.id }}">
+            <td>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="{{ p.get_cover_url }}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+                <div>
+                  <div style="font-weight: 600; color: #1F2937; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ p.caption|default:p.title|default:"โพสต์" }}</div>
+                  <div style="font-size: 0.725rem; color: #9CA3AF;">ID: #{{ p.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge-status emerald">{{ p.category.name|default:"ทั่วไป" }}</span>
+            </td>
+            <td>
+              <div style="font-weight: 600; font-size: 0.825rem;">{{ p.user.profile.get_display_name }}</div>
+              <div style="font-size: 0.725rem; color: #9CA3AF;">@{{ p.user.username }}</div>
+            </td>
+            <td>{{ p.location.name }}</td>
+            <td>❤️ {{ p.get_likes_count }}</td>
+            <td>{{ p.get_time_ago_str }}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="table-action-btn delete" title="ลบโพสต์" onclick="deletePost({{ p.id }}, '{{ p.caption|escapejs }}')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบรายการโพสต์</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function deletePost(postId, caption) {
+    showConfirmModal('ยืนยันการลบโพสต์?', `คุณแน่ใจหรือไม่ที่จะลบโพสต์ "${caption}"?`, function() {
+      fetch(`/admin-panel/api/post/${postId}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          const row = document.getElementById(`post-row-${postId}`);
+          if(row) row.remove();
+          alert('ลบโพสต์เรียบร้อยแล้ว');
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}

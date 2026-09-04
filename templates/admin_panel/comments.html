@@ -1,0 +1,74 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}คอมเมนต์{% endblock %}
+{% block header_title %}จัดการคอมเมนต์{% endblock %}
+{% block header_subtitle %}ตรวจสอบและจัดการความคิดเห็น{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="card-header-flex">
+    <h3 class="card-title">ความคิดเห็นทั้งหมด</h3>
+    <form method="GET" style="display: flex; gap: 10px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาข้อความคอมเมนต์..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 240px;">
+      <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
+    </form>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ข้อความ</th>
+          <th>ผู้เขียน</th>
+          <th>โพสต์</th>
+          <th>วันที่</th>
+          <th style="text-align: center;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in comments_page %}
+          <tr id="comment-row-{{ c.id }}">
+            <td style="font-weight: 500; color: #1F2937;">{{ c.content }}</td>
+            <td>
+              <div style="font-weight: 600; font-size: 0.825rem;">{{ c.user.profile.get_display_name }}</div>
+              <div style="font-size: 0.725rem; color: #9CA3AF;">@{{ c.user.username }}</div>
+            </td>
+            <td>{{ c.post.location.name }}</td>
+            <td>{{ c.created_at|date:"d M Y H:i" }}</td>
+            <td style="text-align: center;">
+              <button class="table-action-btn delete" title="ลบคอมเมนต์" onclick="deleteComment({{ c.id }})">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบความคิดเห็น</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function deleteComment(commentId) {
+    showConfirmModal('ยืนยันการลบคอมเมนต์?', 'คุณแน่ใจหรือไม่ที่จะลบความคิดเห็นนี้?', function() {
+      fetch(`/admin-panel/api/comment/${commentId}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          const row = document.getElementById(`comment-row-${commentId}`);
+          if(row) row.remove();
+          alert('ลบคอมเมนต์เรียบร้อยแล้ว');
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}

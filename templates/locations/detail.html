@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="flex:1;overflow-y:auto;padding:24px;max-width:900px;margin:0 auto;width:100%;">
+
+  <!-- Header Banner -->
+  <div style="position:relative;width:100%;height:280px;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;box-shadow:var(--shadow-md);">
+    <img src="{{ location.get_cover_url }}" alt="{{ location.name }}" style="width:100%;height:100%;object-fit:cover;">
+    <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%);display:flex;flex-direction:column;justify-content:flex-end;padding:24px;color:#FFFFFF;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(21,159,140,0.85);backdrop-filter:blur(4px);padding:4px 12px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;margin-bottom:8px;width:fit-content;">
+        <i data-lucide="tag" style="width:12px;height:12px;"></i>
+        <span>{{ location.category.name|default:'สถานที่ท่องเที่ยว' }}</span>
+      </div>
+      <h1 style="font-size:26px;font-weight:700;line-height:1.2;margin-bottom:4px;">{{ location.name }}</h1>
+      <div style="font-size:13.5px;opacity:0.9;display:flex;align-items:center;gap:12px;">
+        <span><i data-lucide="map-pin" style="width:13px;height:13px;display:inline;"></i> {{ location.city }}, {{ location.province }}</span>
+        <span>•</span>
+        <span>{{ location.distance_km }} กม. จากตำแหน่งคุณ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-bottom:24px;">
+    <div style="background:#FFFFFF;padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:20px;font-weight:700;color:var(--primary);">{{ post_count }}</div>
+      <div style="font-size:12px;color:var(--text-muted);">โพสต์เรื่องราว</div>
+    </div>
+    <div style="background:#FFFFFF;padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:20px;font-weight:700;color:var(--primary);">{{ photo_count }}</div>
+      <div style="font-size:12px;color:var(--text-muted);">รูปภาพจากผู้คน</div>
+    </div>
+    <div style="background:#FFFFFF;padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:20px;font-weight:700;color:var(--primary);">4.9 ⭐</div>
+      <div style="font-size:12px;color:var(--text-muted);">คะแนนบรรยากาศ</div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  {% if location.description %}
+  <div style="background:#FFFFFF;padding:18px 20px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-bottom:24px;box-shadow:var(--shadow-sm);">
+    <h3 style="font-size:14.5px;font-weight:700;margin-bottom:6px;color:var(--text-main);">เกี่ยวกับสถานที่</h3>
+    <p style="font-size:13.5px;color:var(--text-muted);line-height:1.6;">{{ location.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Photo Feed from this location -->
+  <div class="section-header">
+    <h2 class="section-title">รูปภาพและเรื่องราวจากผู้คน</h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:16px;margin-bottom:32px;">
+    {% for post in posts %}
+    <a href="{% url 'posts:detail' post.id %}" style="background:#FFFFFF;border-radius:var(--radius-md);border:1px solid var(--border-subtle);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+      <div style="width:100%;aspect-ratio:4/3;overflow:hidden;background:#f0f0f0;">
+        <img src="{{ post.get_cover_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div style="padding:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <img src="{{ post.user.profile.get_avatar_url }}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;">
+          <span style="font-size:12px;font-weight:600;color:var(--text-main);">{{ post.user.profile.get_display_name }}</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ post.caption }}</p>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-muted);">
+      <p>ยังไม่มีโพสต์ในสถานที่นี้ เป็นคนแรกที่ถ่ายรูปแชร์!</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

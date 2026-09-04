@@ -1,0 +1,94 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}รายงาน{% endblock %}
+{% block header_title %}ศูนย์การตรวจสอบรายงาน (Moderation Center){% endblock %}
+{% block header_subtitle %}ตรวจสอบและดำเนินการกับรายงานเนื้อหาที่ไม่เหมาะสม{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
+    <h3 class="card-title">รายงานทั้งหมด</h3>
+    <form method="GET" style="display: flex; gap: 10px;">
+      <select name="status" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;" onchange="this.form.submit()">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>สถานะทั้งหมด</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>รอตรวจสอบ</option>
+        <option value="reviewing" {% if status_filter == 'reviewing' %}selected{% endif %}>กำลังตรวจสอบ</option>
+        <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>ดำเนินการแล้ว</option>
+        <option value="dismissed" {% if status_filter == 'dismissed' %}selected{% endif %}>ยกเลิก</option>
+      </select>
+    </form>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ประเภท</th>
+          <th>เหตุผล</th>
+          <th>ผู้รายงาน</th>
+          <th>สถานะ</th>
+          <th>วันที่</th>
+          <th style="text-align: center;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports_page %}
+          <tr id="report-row-{{ r.id }}">
+            <td>#{{ r.id }}</td>
+            <td style="font-weight: 600;">รายงาน{{ r.get_report_type_display }}</td>
+            <td>
+              <span class="badge-status {% if r.reason == 'inappropriate' %}red{% elif r.reason == 'incorrect_info' %}amber{% else %}yellow{% endif %}">
+                {{ r.get_reason_display_thai }}
+              </span>
+            </td>
+            <td>@{{ r.reporter.username }}</td>
+            <td>
+              <span class="badge-status {{ r.get_status_badge_class }}">
+                {{ r.get_status_display_thai }}
+              </span>
+            </td>
+            <td>{{ r.created_at|date:"d M Y H:i" }}</td>
+            <td style="text-align: center;">
+              <button class="table-action-btn edit" title="อนุมัติเป็นดำเนินการแล้ว" onclick="updateReportStatus({{ r.id }}, 'resolved')">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+              </button>
+              <button class="table-action-btn delete" title="ยกเลิายรายงาน" onclick="updateReportStatus({{ r.id }}, 'dismissed')">
+                <i data-lucide="x-circle" class="w-4 h-4 text-gray-400"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบรายการรายงาน</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateReportStatus(reportId, newStatus) {
+    showConfirmModal('อัปเดตสถานะรายงาน?', `คุณแน่ใจหรือไม่ที่จะเปลี่ยนสถานะรายงานเป็น "${newStatus}"?`, function() {
+      fetch(`/admin-panel/api/report/${reportId}/action/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `status=${newStatus}`
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          alert('อัปเดตรายงานเรียบร้อยแล้ว');
+          window.location.reload();
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}

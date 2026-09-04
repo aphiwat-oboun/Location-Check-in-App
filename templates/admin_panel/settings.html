@@ -1,0 +1,73 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}การตั้งค่า{% endblock %}
+{% block header_title %}การตั้งค่าระบบ{% endblock %}
+{% block header_subtitle %}จัดการการตั้งค่าและบันทึกประวัติ Admin Audit Log{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- General Site Settings Card -->
+  <div class="admin-card">
+    <h3 class="card-title" style="margin-bottom: 16px;">การตั้งค่าทั่วไป</h3>
+    <form style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ชื่อระบบ</label>
+        <input type="text" value="ที่นี่มีอะไร?" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.85rem;">
+      </div>
+      <div>
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">จังหวัดเริ่มต้น</label>
+        <input type="text" value="เชียงใหม่" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.85rem;">
+      </div>
+      <div>
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">การอนุญาตให้ลงทะเบียนผู้ใช้ใหม่</label>
+        <select style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
+          <option selected>เปิดใช้งาน (Enabled)</option>
+          <option>ปิดใช้งาน (Disabled)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">โหมดการตรวจทานโพสต์</label>
+        <select style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
+          <option selected>เผยแพร่ทันที (Instant Publish)</option>
+          <option>ต้องผ่านการอนุมัติก่อน (Require Admin Moderation)</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Admin Audit Log Card -->
+  <div class="admin-card">
+    <h3 class="card-title" style="margin-bottom: 16px;">ประวัติการดำเนินการ (Admin Audit Log)</h3>
+    <div style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>เวลา</th>
+            <th>ผู้ดูแลระบบ</th>
+            <th>การดำเนินการ</th>
+            <th>เป้าหมาย</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+            <tr>
+              <td>{{ log.timestamp|date:"d M Y H:i:s" }}</td>
+              <td style="font-weight: 600;">@{{ log.admin_user.username }}</td>
+              <td>{{ log.action }}</td>
+              <td><code>{{ log.target_repr|default:"-" }}</code></td>
+              <td><span style="font-size: 0.75rem; color: #9CA3AF;">{{ log.ip_address|default:"127.0.0.1" }}</span></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 24px;">ยังไม่มีประวัติการดำเนินการ</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

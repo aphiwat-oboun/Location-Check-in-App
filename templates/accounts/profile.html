@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="flex:1;overflow-y:auto;padding:24px;max-width:800px;margin:0 auto;width:100%;">
+
+  <!-- Profile Card Header -->
+  <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:24px;">
+    <div style="display:flex;align-items:flex-start;gap:20px;">
+      <img src="{{ profile.get_avatar_url }}" alt="{{ profile.get_display_name }}" style="width:76px;height:76px;border-radius:50%;object-fit:cover;border:3px solid #FFFFFF;box-shadow:var(--shadow-sm);">
+      
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <h1 style="font-size:20px;font-weight:700;color:var(--text-main);">{{ profile.get_display_name }}</h1>
+          {% if is_own_profile %}
+          <a href="{% url 'accounts:logout' %}" style="font-size:12.5px;color:#EF4444;font-weight:600;">
+            ออกจากระบบ
+          </a>
+          {% endif %}
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">@{{ profile_user.username }} • {{ profile.city }}</div>
+        <p style="font-size:13.5px;color:var(--text-main);line-height:1.5;">{{ profile.bio|default:'ยังไม่ได้ระบุคำแนะนำตัว' }}</p>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div style="display:flex;align-items:center;justify-content:space-around;padding-top:18px;margin-top:18px;border-top:1px solid var(--border-subtle);text-align:center;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text-main);">{{ total_posts }}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);">โพสต์</div>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border-subtle);"></div>
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text-main);">{{ total_photos }}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);">รูปภาพ</div>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border-subtle);"></div>
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text-main);">{{ total_places }}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);">สถานที่</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Tabs -->
+  <div style="display:flex;gap:12px;margin-bottom:18px;border-bottom:1px solid var(--border-subtle);padding-bottom:8px;">
+    <a href="?tab=posts" class="filter-chip {% if active_tab == 'posts' %}active{% endif %}" style="box-shadow:none;">
+      <i data-lucide="grid" style="width:14px;height:14px;"></i>
+      <span>โพสต์</span>
+    </a>
+    <a href="?tab=saved" class="filter-chip {% if active_tab == 'saved' %}active{% endif %}" style="box-shadow:none;">
+      <i data-lucide="bookmark" style="width:14px;height:14px;"></i>
+      <span>บันทึกไว้</span>
+    </a>
+  </div>
+
+  <!-- Content Grid -->
+  {% if active_tab == 'saved' %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px;">
+    {% for item in saved_posts %}
+    <a href="{% url 'posts:detail' item.post.id %}" style="background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid var(--border-subtle);box-shadow:var(--shadow-sm);display:block;">
+      <img src="{{ item.post.get_cover_url }}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">
+      <div style="padding:8px 10px;">
+        <div style="font-size:12.5px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.post.location.name }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-muted);">ยังไม่มีรายการที่บันทึกไว้</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px;">
+    {% for post in posts %}
+    <a href="{% url 'posts:detail' post.id %}" style="background:#FFFFFF;border-radius:14px;overflow:hidden;border:1px solid var(--border-subtle);box-shadow:var(--shadow-sm);display:block;">
+      <img src="{{ post.get_cover_url }}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">
+      <div style="padding:8px 10px;">
+        <div style="font-size:12.5px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ post.location.name }}</div>
+        <div style="font-size:11px;color:var(--text-muted);">{{ post.get_time_ago_str }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-muted);">ยังไม่มีโพสต์</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

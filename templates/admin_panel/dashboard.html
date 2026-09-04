@@ -1,0 +1,547 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}แดชบอร์ด{% endblock %}
+{% block header_title %}แดชบอร์ด{% endblock %}
+{% block header_subtitle %}ภาพรวมของระบบ{% endblock %}
+
+{% block content %}
+
+<!-- 1. 6 KPI Cards Grid -->
+<div class="kpi-grid">
+  <!-- Card 1: ผู้ใช้งานทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle users">
+        <i data-lucide="users" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">ผู้ใช้งานทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.users }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.users }}</span>
+    </div>
+  </div>
+
+  <!-- Card 2: โพสต์ทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle posts">
+        <i data-lucide="image" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">โพสต์ทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.posts }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.posts }}</span>
+    </div>
+  </div>
+
+  <!-- Card 3: สถานที่ทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle locations">
+        <i data-lucide="map-pin" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">สถานที่ทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.locations }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.locations }}</span>
+    </div>
+  </div>
+
+  <!-- Card 4: ยอดไลค์ทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle likes">
+        <i data-lucide="heart" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">ยอดไลค์ทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.likes }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.likes }}</span>
+    </div>
+  </div>
+
+  <!-- Card 5: คอมเมนต์ทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle comments">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">คอมเมนต์ทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.comments }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.comments }}</span>
+    </div>
+  </div>
+
+  <!-- Card 6: การบันทึกทั้งหมด -->
+  <div class="kpi-card">
+    <div class="kpi-card-top">
+      <div class="kpi-icon-circle saved">
+        <i data-lucide="bookmark" class="w-5 h-5"></i>
+      </div>
+    </div>
+    <div class="kpi-label">การบันทึกทั้งหมด</div>
+    <div class="kpi-value">{{ kpi.saved }}</div>
+    <div class="kpi-trend">
+      <span>{{ trends.saved }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Middle Analytics Section (Line Chart, Donut Chart, Leaflet Map) -->
+<div class="analytics-grid">
+  
+  <!-- Line Chart Card: ภาพรวมการใช้งาน -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">ภาพรวมการใช้งาน</h3>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <select id="chartDaysSelect" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.8rem; background: #F9FAFB; cursor: pointer;">
+          <option value="7" selected>7 วันล่าสุด</option>
+          <option value="30">30 วันล่าสุด</option>
+          <option value="90">90 วันล่าสุด</option>
+        </select>
+        <a href="{% url 'admin_panel:export_csv' %}" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.8rem; background: #FFF; text-decoration: none; color: #374151; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+          ส่งออก <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+    </div>
+    <div style="height: 250px; position: relative;">
+      <canvas id="analyticsLineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Donut Chart Card: สัดส่วนหมวดหมู่ -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">สัดส่วนหมวดหมู่</h3>
+      <a href="{% url 'admin_panel:categories' %}" class="card-action-link">ดูทั้งหมด</a>
+    </div>
+    <div style="height: 150px; position: relative; display: flex; align-items: center; justify-content: center;">
+      <canvas id="categoryDonutChart"></canvas>
+      <div style="position: absolute; text-align: center; pointer-events: none;">
+        <div style="font-size: 1.15rem; font-weight: 800; color: #1F2937;">35,642</div>
+        <div style="font-size: 0.7rem; color: #9CA3AF;">โพสต์ทั้งหมด</div>
+      </div>
+    </div>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
+      {% for cat in cat_list %}
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.775rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ cat.color }};"></span>
+            <span style="color: #4B5563; font-weight: 500;">{{ cat.name }}</span>
+          </div>
+          <div style="color: #6B7280;">{{ cat.count }} <span style="font-size: 0.7rem; color: #9CA3AF;">{{ cat.percent }}</span></div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Popular Places Map Card: สถานที่ยอดนิยม -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">สถานที่ยอดนิยม</h3>
+      <a href="{% url 'admin_panel:locations' %}" class="card-action-link">ดูทั้งหมด</a>
+    </div>
+    <div id="popularPlacesMap"></div>
+  </div>
+
+</div>
+
+<!-- 3. Bottom Grid (Recent Posts, Recent Users, Recent Reports) -->
+<div class="recent-tables-grid">
+  
+  <!-- Recent Posts Table Card -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">โพสต์ล่าสุด</h3>
+      <a href="{% url 'admin_panel:posts' %}" class="card-action-link">ดูทั้งหมด</a>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>โพสต์</th>
+            <th>ผู้ใช้งาน</th>
+            <th>สถานที่</th>
+            <th>เวลา</th>
+            <th style="text-align: center;">การจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in recent_posts %}
+            <tr id="post-row-{{ post.id }}">
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <img src="{{ post.get_cover_url }}" alt="Post Thumb" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                  <div style="font-weight: 600; color: #1F2937; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ post.caption|default:post.title|default:"โพสต์ใหม่" }}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <img src="{{ post.user.profile.get_avatar_url }}" alt="User Avatar" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover;">
+                  <div>
+                    <div style="font-weight: 600; font-size: 0.8rem; line-height: 1.1;">{{ post.user.profile.get_display_name }}</div>
+                    <div style="font-size: 0.7rem; color: #9CA3AF;">@{{ post.user.username }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size: 0.8rem; font-weight: 500;">{{ post.location.name }}</div>
+                <div style="font-size: 0.7rem; color: #9CA3AF;">{{ post.location.city }}</div>
+              </td>
+              <td style="font-size: 0.75rem; color: #6B7280; white-space: nowrap;">
+                {{ post.get_time_ago_str }}
+              </td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button class="table-action-btn view" title="ดูรายละเอียด" onclick="alert('แสดงรายละเอียดโพสต์ #{{ post.id }}')">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+                <button class="table-action-btn edit" title="แก้ไข" onclick="alert('แก้ไขโพสต์ #{{ post.id }}')">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button class="table-action-btn delete" title="ลบโพสต์" onclick="confirmDeletePost({{ post.id }}, '{{ post.caption|escapejs }}')">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <!-- Demo Row matching reference if DB is empty -->
+            <tr>
+              <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=100" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                  <div style="font-weight: 600; color: #1F2937;">คาเฟ่วิวทุ่งนา บรรยากาศดีมาก 🌱</div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100" style="width: 26px; height: 26px; border-radius: 50%;">
+                  <div>
+                    <div style="font-weight: 600; font-size: 0.8rem;">Beam</div>
+                    <div style="font-size: 0.7rem; color: #9CA3AF;">@beam.photo</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size: 0.8rem;">คาเฟ่ในสวน</div>
+                <div style="font-size: 0.7rem; color: #9CA3AF;">เชียงใหม่</div>
+              </td>
+              <td style="font-size: 0.75rem; color: #6B7280;">2 นาทีที่แล้ว</td>
+              <td style="text-align: center;">
+                <button class="table-action-btn view"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                <button class="table-action-btn edit"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                <button class="table-action-btn delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent New Users Card -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">ผู้ใช้งานใหม่ล่าสุด</h3>
+      <a href="{% url 'admin_panel:users' %}" class="card-action-link">ดูทั้งหมด</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {% for user in recent_users %}
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="{{ user.profile.get_avatar_url }}" alt="User Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+            <div>
+              <div style="font-size: 0.875rem; font-weight: 600; color: #1F2937; line-height: 1.1;">
+                {{ user.profile.get_display_name }}
+              </div>
+              <div style="font-size: 0.75rem; color: #9CA3AF;">@{{ user.username }}</div>
+            </div>
+          </div>
+          <button style="background: none; border: none; color: #9CA3AF; cursor: pointer;">
+            <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+          </button>
+        </div>
+      {% empty %}
+        <!-- Demo Users matching reference -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" style="width: 36px; height: 36px; border-radius: 50%;">
+            <div>
+              <div style="font-size: 0.875rem; font-weight: 600;">Nongmint</div>
+              <div style="font-size: 0.75rem; color: #9CA3AF;">@nongmint</div>
+            </div>
+          </div>
+          <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-400"></i>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100" style="width: 36px; height: 36px; border-radius: 50%;">
+            <div>
+              <div style="font-size: 0.875rem; font-weight: 600;">Ploy W.</div>
+              <div style="font-size: 0.75rem; color: #9CA3AF;">@ploy.w</div>
+            </div>
+          </div>
+          <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-400"></i>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Reports Card -->
+  <div class="admin-card">
+    <div class="card-header-flex">
+      <h3 class="card-title">รายงานล่าสุด</h3>
+      <a href="{% url 'admin_panel:reports' %}" class="card-action-link">ดูทั้งหมด</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {% for report in recent_reports %}
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            {% if report.post %}
+              <img src="{{ report.post.get_cover_url }}" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover;">
+            {% else %}
+              <div style="width: 38px; height: 38px; border-radius: 8px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; color: #6B7280;">
+                <i data-lucide="flag" class="w-4 h-4"></i>
+              </div>
+            {% endif %}
+            <div>
+              <div style="font-size: 0.825rem; font-weight: 600; color: #1F2937;">
+                รายงาน{{ report.get_report_type_display }}
+              </div>
+              <div style="font-size: 0.725rem; color: #6B7280;">โดย {{ report.reporter.username }}</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-status {% if report.reason == 'inappropriate' %}red{% elif report.reason == 'incorrect_info' %}amber{% else %}yellow{% endif %}">
+              {{ report.get_reason_display_thai }}
+            </span>
+            <div style="font-size: 0.7rem; color: #9CA3AF; margin-top: 4px;">เมื่อสักครู่</div>
+          </div>
+        </div>
+      {% empty %}
+        <!-- Demo Reports matching reference -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=100" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover;">
+            <div>
+              <div style="font-size: 0.825rem; font-weight: 600;">รายงานโพสต์ / คาเฟ่ในสวน</div>
+              <div style="font-size: 0.725rem; color: #6B7280;">โดย Beam</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-status red">ไม่เหมาะสม</span>
+            <div style="font-size: 0.7rem; color: #9CA3AF; margin-top: 4px;">5 นาทีที่แล้ว</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover;">
+            <div>
+              <div style="font-size: 0.825rem; font-weight: 600;">รายงานสถานที่ / ร้านอาหาร XXX</div>
+              <div style="font-size: 0.725rem; color: #6B7280;">โดย Mild</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-status amber">ข้อมูลผิดพลาด</span>
+            <div style="font-size: 0.7rem; color: #9CA3AF; margin-top: 4px;">15 นาทีที่แล้ว</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=100" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover;">
+            <div>
+              <div style="font-size: 0.825rem; font-weight: 600;">รายงานโพสต์ / รูปภาพไม่เหมาะสม</div>
+              <div style="font-size: 0.725rem; color: #6B7280;">โดย Sky</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-status red">ไม่เหมาะสม</span>
+            <div style="font-size: 0.7rem; color: #9CA3AF; margin-top: 4px;">40 นาทีที่แล้ว</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; color: #6B7280;">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div style="font-size: 0.825rem; font-weight: 600;">รายงานคอมเมนต์ / สแปม</div>
+              <div style="font-size: 0.725rem; color: #6B7280;">โดย Aom</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-status yellow">สแปม</span>
+            <div style="font-size: 0.7rem; color: #9CA3AF; margin-top: 4px;">1 ชั่วโมงที่แล้ว</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // 1. Line Chart (Chart.js)
+  const lineCtx = document.getElementById('analyticsLineChart').getContext('2d');
+  
+  const lineChart = new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [
+        {
+          label: 'ผู้ใช้งาน',
+          data: {{ users_chart_data|safe }},
+          borderColor: '#159F8C',
+          backgroundColor: 'rgba(21, 159, 140, 0.05)',
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'โพสต์',
+          data: {{ posts_chart_data|safe }},
+          borderColor: '#3B82F6',
+          backgroundColor: 'transparent',
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'ยอดไลค์',
+          data: {{ likes_chart_data|safe }},
+          borderColor: '#EC4899',
+          backgroundColor: 'transparent',
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'start',
+          labels: {
+            boxWidth: 10,
+            usePointStyle: true,
+            font: { family: 'Noto Sans Thai', size: 12 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Noto Sans Thai', size: 11 }, color: '#9CA3AF' }
+        },
+        y: {
+          grid: { color: '#F3F4F6' },
+          ticks: { font: { family: 'Noto Sans Thai', size: 11 }, color: '#9CA3AF' }
+        }
+      }
+    }
+  });
+
+  // Timeframe selector handler
+  document.getElementById('chartDaysSelect').addEventListener('change', function(e) {
+    const days = e.target.value;
+    fetch(`{% url "admin_panel:api_analytics" %}?days=${days}`)
+      .then(res => res.json())
+      .then(data => {
+        lineChart.data.labels = data.labels;
+        lineChart.data.datasets[0].data = data.users;
+        lineChart.data.datasets[1].data = data.posts;
+        lineChart.data.datasets[2].data = data.likes;
+        lineChart.update();
+      });
+  });
+
+  // 2. Donut Chart (Chart.js)
+  const donutCtx = document.getElementById('categoryDonutChart').getContext('2d');
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ cat_chart_labels|safe }},
+      datasets: [{
+        data: {{ cat_chart_counts|safe }},
+        backgroundColor: {{ cat_chart_colors|safe }},
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '76%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  // 3. Leaflet Map Initialization with Light CartoDB Tiles
+  const map = L.map('popularPlacesMap', {
+    center: [18.7883, 98.9853], // Chiang Mai default center
+    zoom: 11,
+    zoomControl: false
+  });
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; CartoDB',
+    maxZoom: 19
+  }).addTo(map);
+
+  const locs = {{ map_locations|safe }};
+  locs.forEach(loc => {
+    const customIcon = L.divIcon({
+      className: 'custom-map-icon',
+      html: `<div class="custom-map-marker" style="background-image: url('${loc.image_url}');"></div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17]
+    });
+    L.marker([loc.lat, loc.lng], { icon: customIcon })
+      .addTo(map)
+      .bindPopup(`<b>${loc.name}</b><br>${loc.city}`);
+  });
+
+  // Delete Post AJAX
+  function confirmDeletePost(postId, postCaption) {
+    showConfirmModal('ยืนยันการลบโพสต์?', `คุณต้องการลบโพสต์ "${postCaption}" ใช่หรือไม่?`, function() {
+      fetch(`/admin-panel/api/post/${postId}/delete/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          const row = document.getElementById(`post-row-${postId}`);
+          if(row) row.remove();
+          alert('ลบโพสต์เรียบร้อยแล้ว');
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}

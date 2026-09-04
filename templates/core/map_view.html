@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="map-page-wrapper" style="position:relative;flex:1;width:100%;height:100%;">
+  <!-- Map Container -->
+  <div id="fullscreen-map-container" style="width:100%;height:100%;"></div>
+
+  <!-- Floating Selected Place Card at Bottom -->
+  <div id="selected-map-card" class="floating-map-card" style="position:absolute;bottom:24px;left:20px;right:20px;width:auto;max-width:340px;">
+    {% if selected_location %}
+    <div class="map-card-image-wrap">
+      <img class="map-card-image" src="{{ selected_location.get_cover_url }}" alt="{{ selected_location.name }}">
+      <button class="btn-icon-circle" onclick="closeMapCard(event)" style="position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);">
+        <i data-lucide="x" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+    <div class="map-card-content">
+      <div class="map-card-header">
+        <div>
+          <h4 class="map-card-title">{{ selected_location.name }}</h4>
+          <span class="map-card-city">{{ selected_location.city }}</span>
+        </div>
+      </div>
+      <div class="map-card-author">
+        <img class="map-card-author-avatar" src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&h=200&q=80" alt="Beam">
+        <span>โดย Beam</span>
+      </div>
+      <p class="map-card-caption">บรรยากาศดีมาก กาแฟอร่อย 🌿</p>
+      <div class="map-card-footer">
+        <span>2 ชั่วโมงที่แล้ว</span>
+        <div class="map-card-interactions">
+          <span class="map-card-stat">
+            <i data-lucide="heart" style="width:13px;height:13px;stroke:#EF4444;fill:#EF4444;"></i>
+            24
+          </span>
+          <span class="map-card-stat">
+            <i data-lucide="message-circle" style="width:13px;height:13px;"></i>
+            6
+          </span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Floating Controls -->
+  <div class="map-controls">
+    <button class="map-control-btn" onclick="mapCenterDefault()" title="รีเซ็ต">
+      <i data-lucide="navigation" style="width:18px;height:18px;"></i>
+    </button>
+    <button class="map-control-btn" onclick="mapZoomIn()" title="ขยาย">
+      <i data-lucide="plus" style="width:18px;height:18px;"></i>
+    </button>
+    <button class="map-control-btn" onclick="mapZoomOut()" title="ย่อ">
+      <i data-lucide="minus" style="width:18px;height:18px;"></i>
+    </button>
+    <button class="map-control-btn" onclick="mapCurrentLocation()" title="ตำแหน่งปัจจุบัน">
+      <i data-lucide="crosshair" style="width:18px;height:18px;"></i>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const mapLocations = [
+    {% for loc in all_locations %}
+    {
+      id: {{ loc.id }},
+      name: "{{ loc.name|escapejs }}",
+      city: "{{ loc.city|escapejs }}",
+      lat: {{ loc.latitude }},
+      lng: {{ loc.longitude }},
+      cover_url: "{{ loc.get_cover_url|escapejs }}",
+      distance_km: {{ loc.distance_km }},
+      post_count: {{ loc.get_post_count }},
+      photo_count: {{ loc.get_photo_count }},
+      latest_post: {
+        author_name: "Beam",
+        author_avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&h=200&q=80",
+        caption: "บรรยากาศดีมาก กาแฟอร่อย 🌿",
+        time_ago: "2 ชั่วโมงที่แล้ว",
+        likes_count: 24,
+        comments_count: 6
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initWhatsHereMap('fullscreen-map-container', mapLocations, {% if selected_location %}{{ selected_location.id }}{% else %}null{% endif %});
+  });
+</script>
+{% endblock %}

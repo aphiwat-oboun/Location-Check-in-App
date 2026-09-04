@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="flex:1;overflow-y:auto;padding:24px;max-width:800px;margin:0 auto;width:100%;">
+
+  <!-- Header -->
+  <div style="margin-bottom:16px;">
+    <h1 style="font-size:22px;font-weight:700;color:var(--text-main);margin-bottom:12px;">สำรวจ</h1>
+    
+    <!-- Search Bar inside Explore Page -->
+    <form action="{% url 'core:explore' %}" method="GET" style="margin-bottom:16px;">
+      <div class="search-input-wrapper">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="ค้นหาสถานที่..." class="search-input">
+      </div>
+    </form>
+
+    <!-- Filter Chips -->
+    <div class="filter-chips-container">
+      <a href="?filter=near" class="filter-chip {% if filter_type == 'near' or not filter_type %}active{% endif %}">
+        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+        <span>ใกล้ฉัน</span>
+      </a>
+      <a href="?filter=popular" class="filter-chip {% if filter_type == 'popular' %}active{% endif %}">
+        <i data-lucide="heart" style="width:14px;height:14px;"></i>
+        <span>ยอดนิยม</span>
+      </a>
+      <a href="?filter=new" class="filter-chip {% if filter_type == 'new' %}active{% endif %}">
+        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+        <span>มาใหม่</span>
+      </a>
+      <a href="?filter=all" class="filter-chip {% if filter_type == 'all' %}active{% endif %}">
+        <i data-lucide="grid" style="width:14px;height:14px;"></i>
+        <span>หมวดหมู่</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Places List Matching Reference Screen 2 -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for loc in locations %}
+    <div style="background:#FFFFFF;border-radius:var(--radius-md);border:1px solid var(--border-subtle);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm);transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      
+      <a href="{% url 'locations:detail' loc.id %}" style="display:flex;align-items:center;gap:14px;flex:1;">
+        <!-- Thumbnail -->
+        <div style="width:72px;height:72px;border-radius:var(--radius-sm);overflow:hidden;flex-shrink:0;background:#f0f0f0;">
+          <img src="{{ loc.get_cover_url }}" alt="{{ loc.name }}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+        </div>
+
+        <!-- Info -->
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+          <h3 style="font-size:15px;font-weight:600;color:var(--text-main);">{{ loc.name }}</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-right:12px;">
+            <span style="font-size:12.5px;color:var(--text-muted);">{{ loc.city }}</span>
+            <span class="distance-badge" data-lat="{{ loc.latitude }}" data-lng="{{ loc.longitude }}" style="font-size:12.5px;color:var(--primary);font-weight:600;">{{ loc.distance_km }} กม.</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-subtle);display:flex;align-items:center;gap:4px;">
+            <i data-lucide="file-text" style="width:11px;height:11px;"></i>
+            <span>{{ loc.get_post_count }} โพสต์</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Action Group -->
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button onclick="navigateToLocation({{ loc.latitude }}, {{ loc.longitude }}, '{{ loc.name|escapejs }}')" class="btn-primary" style="padding:8px 14px;min-height:38px;font-size:12.5px;border-radius:9999px;" title="นำทางไปยังสถานที่นี้">
+          <i data-lucide="navigation" style="width:14px;height:14px;"></i>
+          <span>นำทาง</span>
+        </button>
+      </div>
+
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:48px 16px;color:var(--text-muted);">
+      <p>ไม่พบสถานที่ที่ค้นหา</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="flex:1;overflow-y:auto;padding:24px;max-width:760px;margin:0 auto;width:100%;">
+  
+  <!-- Back Button & Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <a href="javascript:history.back()" class="btn-icon-circle" style="width:36px;height:36px;">
+      <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <div style="font-size:14px;font-weight:600;color:var(--text-main);">รายละเอียดโพสต์</div>
+    <button class="btn-icon-circle" style="width:36px;height:36px;">
+      <i data-lucide="share-2" style="width:18px;height:18px;"></i>
+    </button>
+  </div>
+
+  <!-- Post Container -->
+  <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:24px;">
+    <!-- Large Photo -->
+    <div style="width:100%;aspect-ratio:16/10;overflow:hidden;background:#f0f0f0;">
+      <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" style="width:100%;height:100%;object-fit:cover;">
+    </div>
+
+    <!-- Post Body -->
+    <div style="padding:20px;">
+      <!-- Author & Location info -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="{{ post.user.profile.get_avatar_url }}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+          <div>
+            <div style="font-size:14.5px;font-weight:700;color:var(--text-main);">{{ post.user.profile.get_display_name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);font-weight:500;">{{ post.location.name }} ({{ post.location.city }})</a></div>
+          </div>
+        </div>
+
+        <button class="btn-icon-circle" style="width:32px;height:32px;">
+          <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+
+      <!-- Caption -->
+      <p style="font-size:14.5px;color:var(--text-main);line-height:1.6;margin-bottom:18px;">
+        {{ post.caption }}
+      </p>
+
+      <!-- Action Bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <button class="btn-like like-btn-{{ post.id }} {% if is_liked %}liked{% endif %}" data-post-id="{{ post.id }}" onclick="toggleLike(event, {{ post.id }})" style="display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--text-main);border:none;background:none;cursor:pointer;">
+            <i data-lucide="heart" style="width:18px;height:18px;{% if is_liked %}fill:#EF4444;stroke:#EF4444;{% endif %}"></i>
+            <span class="like-count like-count-{{ post.id }}">{{ post.get_likes_count }}</span>
+          </button>
+          <button onclick="openCommentModal({{ post.id }})" style="display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:500;color:var(--text-muted);border:none;background:none;cursor:pointer;">
+            <i data-lucide="message-circle" style="width:18px;height:18px;"></i>
+            <span class="comment-count comment-count-{{ post.id }}">{{ post.get_comments_count }}</span>
+          </button>
+        </div>
+
+        <button class="btn-save save-btn-{{ post.id }} {% if is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" onclick="toggleSave(event, {{ post.id }})" style="display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text-muted);border:none;background:none;cursor:pointer;">
+          <i data-lucide="bookmark" style="width:18px;height:18px;{% if is_saved %}fill:#159F8C;stroke:#159F8C;{% endif %}"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);padding:20px;box-shadow:var(--shadow-sm);margin-bottom:24px;">
+    <h3 style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:16px;">ความคิดเห็น ({{ post.get_comments_count }})</h3>
+    
+    <!-- Add Comment Form -->
+    <form method="POST" action="{% url 'interactions:add_comment' post.id %}" style="display:flex;gap:10px;margin-bottom:20px;">
+      {% csrf_token %}
+      <input type="text" name="content" placeholder="เขียนความคิดเห็น..." class="form-input" style="padding:10px 14px;border-radius:var(--radius-pill);" required>
+      <button type="submit" class="btn-primary" style="width:auto;padding:10px 20px;border-radius:var(--radius-pill);">
+        ส่ง
+      </button>
+    </form>
+
+    <!-- Comments List -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      {% for comment in comments %}
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <img src="{{ comment.user.profile.get_avatar_url }}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+        <div style="background:var(--bg-surface-subtle);padding:10px 14px;border-radius:var(--radius-md);flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:2px;">{{ comment.user.profile.get_display_name }}</div>
+          <div style="font-size:13px;color:var(--text-main);line-height:1.4;">{{ comment.content }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px;">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็น!</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

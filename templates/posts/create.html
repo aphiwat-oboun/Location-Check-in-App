@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="create-post-container" x-data="createPostApp()">
+
+  <!-- Top Title & Stepper Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <button @click="prevStep()" x-show="step > 1" class="btn-icon-circle" style="width:34px;height:34px;">
+      <i data-lucide="chevron-left" style="width:18px;height:18px;"></i>
+    </button>
+    <h2 style="font-size:18px;font-weight:700;color:var(--text-main);flex:1;text-align:center;">สร้างโพสต์</h2>
+    <div style="width:34px;" x-show="step > 1"></div>
+  </div>
+
+  <!-- Stepper Progress Indicator -->
+  <div class="stepper-header">
+    <div class="stepper-progress">
+      <!-- Step 1 -->
+      <div class="step-item" :class="{ 'active': step === 1, 'completed': step > 1 }" @click="goToStep(1)" style="cursor:pointer;">
+        <div class="step-circle">
+          <template x-if="step > 1"><i data-lucide="check" style="width:14px;height:14px;"></i></template>
+          <template x-if="step <= 1"><span>1</span></template>
+        </div>
+        <span class="step-label">รูปภาพ</span>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-item" :class="{ 'active': step === 2, 'completed': step > 2 }" @click="goToStep(2)" style="cursor:pointer;">
+        <div class="step-circle">
+          <template x-if="step > 2"><i data-lucide="check" style="width:14px;height:14px;"></i></template>
+          <template x-if="step <= 2"><span>2</span></template>
+        </div>
+        <span class="step-label">ตำแหน่ง</span>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-item" :class="{ 'active': step === 3, 'completed': step > 3 }" @click="goToStep(3)" style="cursor:pointer;">
+        <div class="step-circle">
+          <template x-if="step > 3"><i data-lucide="check" style="width:14px;height:14px;"></i></template>
+          <template x-if="step <= 3"><span>3</span></template>
+        </div>
+        <span class="step-label">รายละเอียด</span>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-item" :class="{ 'active': step === 4 }" @click="goToStep(4)" style="cursor:pointer;">
+        <div class="step-circle"><span>4</span></div>
+        <span class="step-label">ยืนยัน</span>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="{% url 'posts:create' %}" enctype="multipart/form-data" id="create-post-form">
+    {% csrf_token %}
+    <input type="hidden" name="lat" :value="lat">
+    <input type="hidden" name="lng" :value="lng">
+    <input type="hidden" name="image_url" :value="imageUrl">
+
+    <!-- =======================================================================
+         STEP 1: IMAGE (รูปภาพ)
+         ======================================================================= -->
+    <div x-show="step === 1">
+      <div class="image-upload-box" @click="$refs.fileInput.click()" style="margin-bottom:16px;height:280px;border-radius:18px;position:relative;background:#F9FAFB;border:2px dashed #CBD5E1;overflow:hidden;">
+        
+        <!-- Empty Upload Placeholder -->
+        <template x-if="!imageUrl">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;padding:20px;text-align:center;">
+            <div style="width:60px;height:60px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(21,159,140,0.15);">
+              <i data-lucide="image-plus" style="width:28px;height:28px;"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;">แตะเพื่อเลือกรูปภาพ หรือ ถ่ายรูป</div>
+              <div style="font-size:12.5px;color:var(--text-muted);">รองรับไฟล์ภาพ JPG, PNG, WEBP</div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Selected Image Preview -->
+        <template x-if="imageUrl">
+          <div style="width:100%;height:100%;position:relative;">
+            <img :src="imageUrl" alt="Preview" class="image-upload-preview" style="width:100%;height:100%;object-fit:cover;">
+            <button type="button" @click.stop="clearImage()" class="btn-icon-circle" style="position:absolute;top:10px;right:10px;width:34px;height:34px;background:rgba(0,0,0,0.6);color:#FFFFFF;border:none;">
+              <i data-lucide="x" style="width:16px;height:16px;"></i>
+            </button>
+          </div>
+        </template>
+
+        <input type="file" x-ref="fileInput" name="image" @change="handleImageUpload($event)" accept="image/*" style="display:none;">
+        <input type="file" x-ref="cameraInput" @change="handleImageUpload($event)" accept="image/*" capture="environment" style="display:none;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+        <button type="button" @click="$refs.fileInput.click()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
+          <i data-lucide="image" style="width:18px;height:18px;flex-shrink:0;"></i>
+          <span>เลือกรูป</span>
+        </button>
+        <button type="button" @click="$refs.cameraInput.click()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
+          <i data-lucide="camera" style="width:18px;height:18px;flex-shrink:0;"></i>
+          <span>ถ่ายรูป</span>
+        </button>
+      </div>
+
+      <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
+        ขั้นตอนถัดไป
+        <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+
+    <!-- =======================================================================
+         STEP 2: LOCATION (ตำแหน่ง)
+         ======================================================================= -->
+    <div x-show="step === 2">
+      <div class="search-input-wrapper" style="margin-bottom:12px;">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" x-model="searchLocationQuery" @keydown.enter.prevent="searchMapLocation()" placeholder="ค้นหาสถานที่ในศรีสะเกษ..." class="search-input">
+      </div>
+
+      <!-- Picker Map -->
+      <div id="picker-map" style="width:100%;height:260px;border-radius:18px;margin-bottom:14px;border:1px solid var(--border-light);overflow:hidden;"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="font-size:12.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+          <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--primary);"></i>
+          <span>พิกัด: <span x-text="lat.toFixed(4) + ', ' + lng.toFixed(4)"></span></span>
+        </div>
+        <button type="button" @click="useCurrentLocation()" style="font-size:12.5px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:4px;">
+          <i data-lucide="crosshair" style="width:14px;height:14px;"></i>
+          <span>ใช้ตำแหน่งปัจจุบัน</span>
+        </button>
+      </div>
+
+      <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
+        ใช้ตำแหน่งนี้
+      </button>
+    </div>
+
+    <!-- =======================================================================
+         STEP 3: DETAILS (รายละเอียด)
+         ======================================================================= -->
+    <div x-show="step === 3">
+      <div class="form-group">
+        <label class="form-label">ชื่อสถานที่ <span style="color:#EF4444;">*</span></label>
+        <input type="text" name="place_name" x-model="placeName" placeholder="เช่น วัดมหาพุทธาราม หรือ หอศรีลำดวน" class="form-input" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">คำอธิบายเรื่องราว</label>
+        <textarea name="description" x-model="description" rows="4" placeholder="เล่าเรื่องราวความประทับใจ บรรยากาศ หรือจุดไฮไลท์น่าสนใจ..." class="form-textarea"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">หมวดหมู่</label>
+        <select name="category" x-model="selectedCategory" class="form-select">
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
+        ขั้นตอนถัดไป
+      </button>
+    </div>
+
+    <!-- =======================================================================
+         STEP 4: CONFIRM & PREVIEW (ยืนยัน)
+         ======================================================================= -->
+    <div x-show="step === 4">
+      
+      <!-- Preview Card -->
+      <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:24px;">
+        <div style="width:100%;height:220px;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
+          <template x-if="imageUrl">
+            <img :src="imageUrl" alt="Preview" style="width:100%;height:100%;object-fit:cover;">
+          </template>
+          <template x-if="!imageUrl">
+            <div style="text-align:center;color:var(--text-muted);font-size:13.5px;">
+              <i data-lucide="image" style="width:32px;height:32px;stroke-width:1.5;margin-bottom:6px;"></i>
+              <div>ไม่ได้แนบรูปภาพ</div>
+            </div>
+          </template>
+        </div>
+        <div style="padding:16px;">
+          <h3 style="font-size:17px;font-weight:700;color:var(--text-main);" x-text="placeName || 'ระบุชื่อสถานที่'"></h3>
+          <span style="font-size:12.5px;color:var(--text-muted);display:block;margin-bottom:8px;">อ.เมืองศรีสะเกษ • ศรีสะเกษ</span>
+          <p style="font-size:13.5px;color:var(--text-main);line-height:1.5;" x-text="description || 'ไม่มีคำอธิบาย'"></p>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button type="submit" class="btn-primary" style="min-height:52px;">
+          <i data-lucide="send" style="width:18px;height:18px;"></i>
+          <span>เผยแพร่โพสต์</span>
+        </button>
+        <button type="button" @click="prevStep()" class="btn-secondary" style="font-size:14px;padding:12px;min-height:48px;">
+          ย้อนกลับไปแก้ไข
+        </button>
+      </div>
+
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let pickerMap = null;
+  let pickerMarker = null;
+  let pickerCircle = null;
+
+  function createPostApp() {
+    return {
+      step: 1,
+      imageUrl: '',
+      placeName: '',
+      description: '',
+      selectedCategory: '{% if categories %}{{ categories.first.id }}{% endif %}',
+      searchLocationQuery: '',
+      lat: 15.1120,
+      lng: 104.3180,
+
+      init() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlStep = parseInt(urlParams.get('step'));
+        if (urlStep >= 1 && urlStep <= 4) {
+          this.goToStep(urlStep);
+        }
+      },
+
+      goToStep(n) {
+        if (n === 2 && !this.imageUrl && this.step === 1) {
+          // Allow step 2 or prompt
+        }
+        this.step = n;
+        if (this.step === 2) {
+          setTimeout(() => {
+            initPickerMap(this.lat, this.lng, this);
+          }, 100);
+        }
+        this.$nextTick(() => {
+          if (window.lucide) lucide.createIcons();
+        });
+      },
+
+      nextStep() {
+        if (this.step < 4) {
+          this.goToStep(this.step + 1);
+        }
+      },
+
+      prevStep() {
+        if (this.step > 1) {
+          this.goToStep(this.step - 1);
+        }
+      },
+
+      clearImage() {
+        this.imageUrl = '';
+        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+        if (this.$refs.cameraInput) this.$refs.cameraInput.value = '';
+      },
+
+      handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.imageUrl = e.target.result;
+            this.$nextTick(() => {
+              if (window.lucide) lucide.createIcons();
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      },
+
+      searchMapLocation() {
+        if (!this.searchLocationQuery) return;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.searchLocationQuery + ' Sisaket')}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.length > 0) {
+              const item = data[0];
+              const newLat = parseFloat(item.lat);
+              const newLng = parseFloat(item.lon);
+              this.lat = newLat;
+              this.lng = newLng;
+              if (pickerMap) {
+                pickerMap.flyTo([newLat, newLng], 15);
+                if (pickerMarker) pickerMarker.setLatLng([newLat, newLng]);
+                if (pickerCircle) pickerCircle.setLatLng([newLat, newLng]);
+              }
+            }
+          })
+          .catch(err => console.error('Geocoding error:', err));
+      },
+
+      useCurrentLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(pos => {
+          this.lat = pos.coords.latitude;
+          this.lng = pos.coords.longitude;
+          if (pickerMap) {
+            pickerMap.flyTo([this.lat, this.lng], 15);
+            if (pickerMarker) pickerMarker.setLatLng([this.lat, this.lng]);
+            if (pickerCircle) pickerCircle.setLatLng([this.lat, this.lng]);
+          }
+        });
+      }
+    };
+  }
+
+  function initPickerMap(lat, lng, alpineComponent) {
+    const container = document.getElementById('picker-map');
+    if (!container) return;
+    if (pickerMap) {
+      pickerMap.invalidateSize();
+      pickerMap.setView([lat, lng], 14);
+      return;
+    }
+
+    pickerMap = L.map('picker-map', {
+      center: [lat, lng],
+      zoom: 14,
+      minZoom: 4,
+      maxZoom: 19,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(pickerMap);
+
+    setTimeout(() => {
+      if (pickerMap) {
+        pickerMap.invalidateSize();
+        pickerMap.setView([lat, lng], 14);
+      }
+    }, 150);
+
+    pickerCircle = L.circle([lat, lng], {
+      radius: 400,
+      color: '#159F8C',
+      fillColor: '#159F8C',
+      fillOpacity: 0.15,
+      weight: 1.5
+    }).addTo(pickerMap);
+
+    pickerMarker = L.circleMarker([lat, lng], {
+      radius: 10,
+      color: '#FFFFFF',
+      fillColor: '#159F8C',
+      fillOpacity: 1,
+      weight: 3
+    }).addTo(pickerMap);
+
+    pickerMap.on('click', (e) => {
+      const newLat = e.latlng.lat;
+      const newLng = e.latlng.lng;
+      alpineComponent.lat = newLat;
+      alpineComponent.lng = newLng;
+      pickerMarker.setLatLng([newLat, newLng]);
+      pickerCircle.setLatLng([newLat, newLng]);
+    });
+  }
+</script>
+{% endblock %}

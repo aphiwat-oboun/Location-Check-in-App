@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}สมัครสมาชิก - ที่นี่มีอะไร?{% endblock %}
+
+{% block content %}
+<div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px 96px 16px; background-color: #F7F7F5; min-height: calc(100vh - 64px); overflow-y: auto; -webkit-overflow-scrolling: touch;">
+  <div style="max-width: 480px; width: 100%; background: #FFFFFF; border-radius: 24px; border: 1px solid rgba(229, 231, 235, 0.9); padding: 32px 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); margin: auto;">
+    
+    <!-- Brand Logo & Header -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #159F8C 0%, #117A70 100%); color: #FFFFFF; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(21, 159, 140, 0.25);">
+        <i data-lucide="map-pin" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h1 style="font-size: 1.35rem; font-weight: 800; color: #1F2937; margin: 0 0 4px 0;">สร้างบัญชีใหม่</h1>
+      <p style="font-size: 0.825rem; color: #6B7280; margin: 0;">เริ่มต้นค้นพบและแชร์สถานที่น่าสนใจรอบตัวคุณ</p>
+    </div>
+
+    <!-- Alert / Messages Banner -->
+    {% if messages %}
+      <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+          <div style="padding: 10px 14px; border-radius: 12px; font-size: 0.825rem; font-weight: 600; display: flex; align-items: center; gap: 8px; background-color: {% if message.tags == 'error' %}#FEE2E2{% else %}#E6F5F3{% endif %}; color: {% if message.tags == 'error' %}#991B1B{% else %}#117A70{% endif %}; border: 1px solid {% if message.tags == 'error' %}#FCA5A5{% else %}#99F6E4{% endif %};">
+            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Register Form -->
+    <form method="POST" action="{% url 'accounts:register' %}" autocomplete="off">
+      {% csrf_token %}
+      
+      <!-- Dummy hidden inputs to block browser password autofill -->
+      <input type="text" style="display:none" aria-hidden="true">
+      <input type="password" style="display:none" aria-hidden="true">
+
+      <!-- Display Name -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ชื่อที่แสดง (Display Name)</label>
+        <div style="position: relative;">
+          <input type="text" name="display_name" placeholder="เช่น Film หรือ ฟิล์ม" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
+          <i data-lucide="smile" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ชื่อผู้ใช้ (Username)</label>
+        <div style="position: relative;">
+          <input type="text" name="username" id="registerUsernameInput" placeholder="เช่น film_photo" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
+          <i data-lucide="user" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">อีเมล (Email)</label>
+        <div style="position: relative;">
+          <input type="email" name="email" id="registerEmailInput" placeholder="name@gmail.com" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
+          <i data-lucide="mail" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">รหัสผ่าน</label>
+        <div style="position: relative;">
+          <input type="password" name="password" id="registerPasswordInput" placeholder="กำหนดรหัสผ่าน" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
+          <i data-lucide="lock" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div style="margin-bottom: 22px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ยืนยันรหัสผ่าน</label>
+        <div style="position: relative;">
+          <input type="password" name="confirm_password" id="registerConfirmPasswordInput" placeholder="ยืนยันรหัสผ่านอีกครั้ง" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
+          <i data-lucide="check-check" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+        </div>
+      </div>
+
+      <button type="submit" style="width: 100%; min-height: 48px; border-radius: 9999px; border: none; background: #159F8C; color: #FFFFFF; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(21, 159, 140, 0.25);" onmouseover="this.style.background='#117A70'" onmouseout="this.style.background='#159F8C'">
+        สมัครสมาชิก
+      </button>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 0.825rem; color: #6B7280;">
+        มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}" style="color: #159F8C; font-weight: 700; text-decoration: none;">เข้าสู่ระบบ</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const uInput = document.getElementById('registerUsernameInput');
+    const pInput = document.getElementById('registerPasswordInput');
+    if (uInput && !uInput.hasAttribute('data-user-typed')) uInput.value = '';
+    if (pInput && !pInput.hasAttribute('data-user-typed')) pInput.value = '';
+  });
+</script>
+{% endblock %}

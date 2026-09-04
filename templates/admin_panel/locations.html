@@ -1,0 +1,60 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}สถานที่{% endblock %}
+{% block header_title %}จัดการสถานที่{% endblock %}
+{% block header_subtitle %}รายการสถานที่ทั้งหมดบนแผนที่{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+  <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
+    <h3 class="card-title">สถานที่ทั้งหมด</h3>
+    <form method="GET" style="display: flex; gap: 10px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อสถานที่, จังหวัด..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 240px;">
+      <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
+    </form>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>สถานที่</th>
+          <th>หมวดหมู่</th>
+          <th>จังหวัด / เมือง</th>
+          <th>พิกัด Lat/Lng</th>
+          <th>จำนวนโพสต์</th>
+          <th>วันที่สร้าง</th>
+          <th style="text-align: center;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for loc in locations_page %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="{{ loc.get_cover_url }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
+                <div>
+                  <div style="font-weight: 600; color: #1F2937;">{{ loc.name }}</div>
+                  <div style="font-size: 0.725rem; color: #9CA3AF;">{{ loc.address|default:loc.city }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge-status emerald">{{ loc.category.name|default:"ทั่วไป" }}</span></td>
+            <td>{{ loc.city }}</td>
+            <td><code style="font-size: 0.75rem; background: #F3F4F6; padding: 2px 6px; border-radius: 4px;">{{ loc.latitude }}, {{ loc.longitude }}</code></td>
+            <td>{{ loc.post_count_agg }}</td>
+            <td>{{ loc.created_at|date:"d M Y" }}</td>
+            <td style="text-align: center;">
+              <button class="table-action-btn view" onclick="window.open('https://maps.google.com/?q={{ loc.latitude }},{{ loc.longitude }}', '_blank')"><i data-lucide="map" class="w-4 h-4"></i></button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบสถานที่</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
