@@ -12,6 +12,9 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <!-- CSRF Token Meta for JS AJAX requests -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -21,6 +24,38 @@
 
   <!-- Custom CSS & App Scripts -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    .leaflet-container {
+      background-color: #cbd5e1 !important; /* Soft neutral blue-grey background for zoomed-out map bounds */
+    }
+
+    /* Universal Scrollbar Elimination (Suppresses Windows Native Scrollbar Buttons, Track, & Thumb) */
+    *, *::before, *::after, html, body, div, span, main, section, article, aside, nav, select, textarea, form, input {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    ::-webkit-scrollbar,
+    *::-webkit-scrollbar,
+    ::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button,
+    ::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-track-piece,
+    *::-webkit-scrollbar-track-piece,
+    ::-webkit-scrollbar-thumb,
+    *::-webkit-scrollbar-thumb,
+    ::-webkit-scrollbar-corner,
+    *::-webkit-scrollbar-corner,
+    ::-webkit-resizer,
+    *::-webkit-resizer {
+      width: 0px !important;
+      height: 0px !important;
+      display: none !important;
+      background: transparent !important;
+      border: none !important;
+    }
+  </style>
   <script src="{% static 'js/app.js' %}"></script>
   {% block extra_css %}{% endblock %}
 </head>
@@ -48,16 +83,16 @@
               <span>หน้าหลัก</span>
             </a>
           </li>
-          <li class="nav-item {% if active_nav == 'explore' %}active{% endif %}">
-            <a href="{% url 'core:explore' %}">
-              <span class="nav-icon"><i data-lucide="compass"></i></span>
-              <span>สำรวจ</span>
-            </a>
-          </li>
           <li class="nav-item {% if active_nav == 'map' %}active{% endif %}">
             <a href="{% url 'core:map' %}">
               <span class="nav-icon"><i data-lucide="map"></i></span>
               <span>แผนที่</span>
+            </a>
+          </li>
+          <li class="nav-item {% if active_nav == 'explore' %}active{% endif %}">
+            <a href="{% url 'core:explore' %}">
+              <span class="nav-icon"><i data-lucide="compass"></i></span>
+              <span>สำรวจ</span>
             </a>
           </li>
           <li class="nav-item {% if active_nav == 'my_posts' %}active{% endif %}">
@@ -82,12 +117,32 @@
 
         <!-- Action Button -->
         <div class="sidebar-action">
+          {% if user.is_authenticated %}
           <a href="{% url 'posts:create' %}" class="btn-create-post">
             <i data-lucide="plus" style="width:18px;height:18px;"></i>
             <span>สร้างโพสต์</span>
           </a>
+          {% else %}
+          <a href="{% url 'accounts:login' %}?next={% url 'posts:create' %}" class="btn-create-post">
+            <i data-lucide="plus" style="width:18px;height:18px;"></i>
+            <span>สร้างโพสต์</span>
+          </a>
+          {% endif %}
         </div>
       </div>
+
+      <!-- Admin Panel Shortcut for Staff Users -->
+      {% if user.is_authenticated and user.is_staff %}
+      <div style="padding: 6px 14px 10px 14px;">
+        <a href="{% url 'admin_panel:dashboard' %}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; background: linear-gradient(135deg, #111827 0%, #1F2937 100%); color: #10B981; text-decoration: none; font-weight: 700; font-size: 13px; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 4px 14px rgba(0,0,0,0.18); transition: all 0.2s ease;">
+          <div style="width: 26px; height: 26px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="shield" style="width: 15px; height: 15px; color: #10B981;"></i>
+          </div>
+          <span style="color: #F9FAFB; white-space: nowrap;">แผงควบคุม</span>
+          <span style="margin-left: auto; font-size: 9.5px; background: #10B981; color: #000; padding: 2px 6px; border-radius: 9999px; font-weight: 800; letter-spacing: 0.5px;">ADMIN</span>
+        </a>
+      </div>
+      {% endif %}
 
       <!-- User Profile Mini-Card at Bottom -->
       {% if user.is_authenticated %}
@@ -131,9 +186,23 @@
           </form>
         </div>
 
-        <div class="header-right">
+        <div class="header-right" style="display:flex;align-items:center;gap:10px;">
+          <!-- GPS Location Badge -->
+          <div class="user-gps-location-text" style="font-size:12.5px;font-weight:600;color:var(--text-main);background:var(--bg-surface-subtle);padding:6px 14px;border-radius:9999px;border:1px solid var(--border-light);display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="if(typeof requestGPSPermissionPrompt === 'function') requestGPSPermissionPrompt(true);" title="คลิกเพื่อเปิด/ระบุตำแหน่ง GPS เรียลไทม์">
+            <i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i>
+            <span>กำลังระบุพิกัดของคุณ...</span>
+          </div>
+
+          {% if user.is_authenticated and user.is_staff %}
+          <!-- Admin Panel Button in Header -->
+          <a href="{% url 'admin_panel:dashboard' %}" class="header-admin-pill" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:#111827;color:#10B981;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(16, 185, 129, 0.4);transition:all 0.15s ease;" title="ไปยังแผงควบคุมระบบ">
+            <i data-lucide="shield" style="width:13px;height:13px;color:#10B981;"></i>
+            <span style="color:#F9FAFB;">แผงควบคุม</span>
+          </a>
+          {% endif %}
+
           {% if user.is_authenticated %}
-          <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="fetchNotifications()">
+          <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="openNotificationDrawer(event)">
             <i data-lucide="bell" style="width:18px;height:18px;"></i>
           </button>
           <a href="{% url 'accounts:profile' %}">
@@ -155,22 +224,61 @@
 
   </div>
 
+  <!-- ============================================================
+       Django Messages → Beautiful Toast Notifications
+       (Skipped on login/register pages which render messages inline)
+       ============================================================ -->
+  {% if messages and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
+  <div id="djangoToastContainer" style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:100001;display:flex;flex-direction:column;gap:10px;align-items:center;width:auto;max-width:calc(100vw - 32px);pointer-events:none;">
+    {% for message in messages %}
+    <div class="django-toast-item {% if message.tags == 'error' %}toast-error{% elif message.tags == 'success' %}toast-success{% elif message.tags == 'warning' %}toast-warning{% else %}toast-info{% endif %}"
+         style="display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:9999px;font-family:var(--font-family);font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,0.18);pointer-events:all;opacity:0;transform:translateY(16px);transition:opacity 0.3s ease,transform 0.3s ease;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+      {% if message.tags == 'error' %}background:#DC2626;color:#fff;{% elif message.tags == 'success' %}background:#059669;color:#fff;{% elif message.tags == 'warning' %}background:#D97706;color:#fff;{% else %}background:#1F2937;color:#fff;{% endif %}">
+      <span style="font-size:16px;flex-shrink:0;">{% if message.tags == 'error' %}❌{% elif message.tags == 'success' %}✅{% elif message.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;">{{ message }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    (function() {
+      var toasts = document.querySelectorAll('.django-toast-item');
+      toasts.forEach(function(toast, i) {
+        setTimeout(function() {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateY(0)';
+        }, i * 150 + 80);
+        setTimeout(function() {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(16px)';
+          setTimeout(function() { toast.remove(); }, 350);
+        }, i * 150 + 4000);
+      });
+    })();
+  </script>
+  {% endif %}
+
   <!-- Mobile Bottom Navigation (Visible on mobile screens) -->
   <nav class="mobile-bottom-nav">
     <a href="{% url 'core:home' %}" class="mobile-nav-item {% if active_nav == 'home' %}active{% endif %}">
       <i data-lucide="home" style="width:20px;height:20px;"></i>
       <span>หน้าหลัก</span>
     </a>
-    <a href="{% url 'core:explore' %}" class="mobile-nav-item {% if active_nav == 'explore' %}active{% endif %}">
-      <i data-lucide="compass" style="width:20px;height:20px;"></i>
-      <span>สำรวจ</span>
-    </a>
-    <a href="{% url 'posts:create' %}" class="mobile-nav-center-btn">
-      <i data-lucide="plus" style="width:24px;height:24px;stroke-width:2.5;"></i>
-    </a>
     <a href="{% url 'core:map' %}" class="mobile-nav-item {% if active_nav == 'map' %}active{% endif %}">
       <i data-lucide="map" style="width:20px;height:20px;"></i>
       <span>แผนที่</span>
+    </a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'posts:create' %}" class="mobile-nav-center-btn" title="สร้างโพสต์ใหม่">
+      <i data-lucide="plus" style="width:24px;height:24px;stroke-width:2.5;"></i>
+    </a>
+    {% else %}
+    <a href="{% url 'accounts:login' %}?next={% url 'posts:create' %}" class="mobile-nav-center-btn" title="สร้างโพสต์ใหม่">
+      <i data-lucide="plus" style="width:24px;height:24px;stroke-width:2.5;"></i>
+    </a>
+    {% endif %}
+    <a href="{% url 'core:explore' %}" class="mobile-nav-item {% if active_nav == 'explore' %}active{% endif %}">
+      <i data-lucide="compass" style="width:20px;height:20px;"></i>
+      <span>สำรวจ</span>
     </a>
     <a href="{% url 'accounts:profile' %}" class="mobile-nav-item {% if active_nav == 'profile' %}active{% endif %}">
       <i data-lucide="user" style="width:20px;height:20px;"></i>
@@ -182,7 +290,43 @@
   <div class="mobile-bottom-sheet-backdrop" id="mobileBottomSheetBackdrop" onclick="closeMobileBottomSheet()"></div>
   <div class="mobile-bottom-sheet" id="mobileBottomSheet">
     <div class="bottom-sheet-handle-bar"></div>
-    <div id="mobileBottomSheetContent" style="padding: 12px 18px 24px;"></div>
+    <div id="mobileBottomSheetContent" style="padding: 4px 12px 18px;"></div>
+  </div>
+
+  <!-- Social Notifications Drawer (Facebook/Social Style - Dark Slate matching reference image) -->
+  <div class="social-noti-backdrop" id="socialNotiBackdrop" onclick="closeNotificationDrawer()"></div>
+  <div class="social-noti-drawer" id="socialNotiDrawer">
+    <div class="social-noti-header">
+      <div class="social-noti-title-row">
+        <h3 class="social-noti-heading">การแจ้งเตือน</h3>
+        <div class="social-noti-header-actions">
+          <button class="btn-noti-action-icon" title="ทำเครื่องหมายว่าอ่านแล้วทั้งหมด" onclick="markAllNotificationsRead(event)">
+            <i data-lucide="check-check" style="width:18px;height:18px;"></i>
+          </button>
+          <button class="btn-noti-action-icon" title="ปิด" onclick="closeNotificationDrawer()">
+            <i data-lucide="x" style="width:18px;height:18px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Tabs: ทั้งหมด / ยังไม่ได้อ่าน -->
+      <div class="social-noti-filters">
+        <button class="noti-filter-pill active" id="notiFilterAll" onclick="switchNotiFilter('all')">
+          ทั้งหมด
+        </button>
+        <button class="noti-filter-pill" id="notiFilterUnread" onclick="switchNotiFilter('unread')">
+          ยังไม่ได้อ่าน
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications List Body -->
+    <div class="social-noti-body" id="socialNotiBody">
+      <div style="text-align:center;padding:36px 20px;color:#9CA3AF;">
+        <i data-lucide="loader-2" class="spin-icon" style="width:26px;height:26px;color:#3B82F6;"></i>
+        <div style="margin-top:10px;font-size:13.5px;">กำลังโหลดการแจ้งเตือน...</div>
+      </div>
+    </div>
   </div>
 
   <!-- Global Scripts -->
@@ -227,6 +371,29 @@
       }
     }
   </script>
+  <!-- Floating Cookie Consent Banner -->
+  <div id="cookieConsentBanner" class="cookie-consent-banner" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;max-width:560px;margin:0 auto;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);border:1px solid rgba(21, 159, 140, 0.3);border-radius:20px;padding:18px 20px;box-shadow:0 12px 36px rgba(0,0,0,0.15);z-index:9999;flex-direction:column;gap:12px;transition:all 0.3s ease;">
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="cookie" style="width:22px;height:22px;"></i>
+      </div>
+      <div style="flex:1;">
+        <h4 style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:3px;">🍪 นโยบายการใช้คุกกี้ และตำแหน่ง GPS</h4>
+        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.45;margin:0;">
+          เว็บไซต์นี้ใช้คุกกี้ที่จำเป็นและประมวลผลตำแหน่ง <b>GPS</b> จากอุปกรณ์ของคุณ เพื่อคำนวณระยะทางจากสถานที่จริงแบบเรียลไทม์ และมอบประสบการณ์การใช้งานที่ดีที่สุด
+        </p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:4px;">
+      <button onclick="declineCookieConsent()" style="padding:8px 16px;border-radius:9999px;border:1px solid #E5E7EB;background:#F9FAFB;color:#4B5563;font-size:13px;font-weight:600;cursor:pointer;">
+        ปฏิเสธ
+      </button>
+      <button onclick="acceptCookieConsent()" style="padding:8px 20px;border-radius:9999px;border:none;background:#159F8C;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
+        ยอมรับทั้งหมด
+      </button>
+    </div>
+  </div>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>

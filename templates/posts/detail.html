@@ -9,8 +9,7 @@
     <a href="javascript:history.back()" class="btn-icon-circle" style="width:36px;height:36px;">
       <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
     </a>
-    <div style="font-size:14px;font-weight:600;color:var(--text-main);">รายละเอียดโพสต์</div>
-    <button class="btn-icon-circle" style="width:36px;height:36px;">
+    <button class="btn-icon-circle" style="width:36px;height:36px;" title="แชร์โพสต์นี้" onclick="sharePost({{ post.id }}, '{{ post.location.name|escapejs }}')">
       <i data-lucide="share-2" style="width:18px;height:18px;"></i>
     </button>
   </div>
@@ -27,14 +26,18 @@
       <!-- Author & Location info -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <img src="{{ post.user.profile.get_avatar_url }}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+          <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-block;" title="ดูโปรไฟล์ @{{ post.user.username }}">
+            <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #E5E7EB;transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+          </a>
           <div>
-            <div style="font-size:14.5px;font-weight:700;color:var(--text-main);">{{ post.user.profile.get_display_name }}</div>
+            <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;font-size:14.5px;font-weight:700;color:var(--text-main);display:block;transition:color 0.15s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-main)'">
+              {{ post.user.profile.get_display_name }}
+            </a>
             <div style="font-size:12px;color:var(--text-muted);">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);font-weight:500;">{{ post.location.name }} ({{ post.location.city }})</a></div>
           </div>
         </div>
 
-        <button class="btn-icon-circle" style="width:32px;height:32px;">
+        <button class="btn-icon-circle" style="width:32px;height:32px;" title="ตัวเลือกโพสต์" onclick="openPostOptionsMenu({{ post.id }}, {% if user.is_authenticated and user.id == post.user.id or user.is_staff %}true{% else %}false{% endif %}, '{{ post.location.name|escapejs }}')">
           <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
         </button>
       </div>
@@ -80,10 +83,22 @@
     <!-- Comments List -->
     <div style="display:flex;flex-direction:column;gap:14px;">
       {% for comment in comments %}
-      <div style="display:flex;align-items:flex-start;gap:10px;">
-        <img src="{{ comment.user.profile.get_avatar_url }}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+      <div id="comment-item-{{ comment.id }}" style="display:flex;align-items:flex-start;gap:10px;">
+        <a href="{% url 'accounts:user_profile' comment.user.username %}" style="text-decoration:none;flex-shrink:0;">
+          <img src="{{ comment.user.profile.get_avatar_url }}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
+        </a>
         <div style="background:var(--bg-surface-subtle);padding:10px 14px;border-radius:var(--radius-md);flex:1;">
-          <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:2px;">{{ comment.user.profile.get_display_name }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+            <a href="{% url 'accounts:user_profile' comment.user.username %}" style="font-size:13px;font-weight:700;color:var(--text-main);text-decoration:none;">
+              {{ comment.user.profile.get_display_name }}
+            </a>
+            {% if user.is_authenticated and user.id == comment.user.id or user.id == post.user.id or user.is_staff %}
+            <button onclick="deleteComment({{ comment.id }}, {{ post.id }})" style="border:none;background:none;color:#EF4444;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:0;" title="ลบความคิดเห็น">
+              <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+              <span>ลบ</span>
+            </button>
+            {% endif %}
+          </div>
           <div style="font-size:13px;color:var(--text-main);line-height:1.4;">{{ comment.content }}</div>
         </div>
       </div>

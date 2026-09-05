@@ -29,7 +29,7 @@
       </thead>
       <tbody>
         {% for loc in locations_page %}
-          <tr>
+          <tr id="loc-row-{{ loc.id }}">
             <td>
               <div style="display: flex; align-items: center; gap: 12px;">
                 <img src="{{ loc.get_cover_url }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
@@ -44,8 +44,13 @@
             <td><code style="font-size: 0.75rem; background: #F3F4F6; padding: 2px 6px; border-radius: 4px;">{{ loc.latitude }}, {{ loc.longitude }}</code></td>
             <td>{{ loc.post_count_agg }}</td>
             <td>{{ loc.created_at|date:"d M Y" }}</td>
-            <td style="text-align: center;">
-              <button class="table-action-btn view" onclick="window.open('https://maps.google.com/?q={{ loc.latitude }},{{ loc.longitude }}', '_blank')"><i data-lucide="map" class="w-4 h-4"></i></button>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="table-action-btn view" title="ดูบน Google Maps" onclick="window.open('https://maps.google.com/?q={{ loc.latitude }},{{ loc.longitude }}', '_blank')">
+                <i data-lucide="map" class="w-4 h-4"></i>
+              </button>
+              <button class="table-action-btn delete" title="ลบสถานที่" onclick="deleteLocation({{ loc.id }}, '{{ loc.name|escapejs }}')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
             </td>
           </tr>
         {% empty %}
@@ -56,5 +61,42 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if locations_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+    {% if locations_page.has_previous %}
+      <a href="?page={{ locations_page.previous_page_number }}&search={{ search_query }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ locations_page.number }} / {{ locations_page.paginator.num_pages }}</span>
+    {% if locations_page.has_next %}
+      <a href="?page={{ locations_page.next_page_number }}&search={{ search_query }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function deleteLocation(locId, locName) {
+    showConfirmModal('ยืนยันการลบสถานที่?', `การลบ "${locName}" จะทำให้โพสต์ที่เชื่อมโยงกับสถานที่นี้ไม่มีสถานที่ คุณแน่ใจหรือไม่?`, function() {
+      fetch(`/admin-panel/api/location/${locId}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const row = document.getElementById(`loc-row-${locId}`);
+          if (row) row.remove();
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.message || 'ไม่สามารถลบสถานที่ได้', 'error');
+        }
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
+    });
+  }
+</script>
 {% endblock %}

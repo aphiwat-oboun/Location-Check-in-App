@@ -87,7 +87,7 @@
         </template>
 
         <input type="file" x-ref="fileInput" name="image" @change="handleImageUpload($event)" accept="image/*" style="display:none;">
-        <input type="file" x-ref="cameraInput" @change="handleImageUpload($event)" accept="image/*" capture="environment" style="display:none;">
+        <input type="file" x-ref="cameraInput" name="image" @change="handleCameraUpload($event)" accept="image/*" capture="environment" style="display:none;">
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
@@ -95,7 +95,7 @@
           <i data-lucide="image" style="width:18px;height:18px;flex-shrink:0;"></i>
           <span>เลือกรูป</span>
         </button>
-        <button type="button" @click="$refs.cameraInput.click()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
+        <button type="button" @click="openCamera()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
           <i data-lucide="camera" style="width:18px;height:18px;flex-shrink:0;"></i>
           <span>ถ่ายรูป</span>
         </button>
@@ -202,6 +202,40 @@
 
   </form>
 
+  <!-- Live WebRTC Camera Modal -->
+  <div x-show="showCameraModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);" x-cloak>
+    <div style="width:100%;max-width:540px;background:#1E293B;border-radius:24px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.5);display:flex;flex-direction:column;position:relative;">
+      
+      <!-- Modal Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(15,23,42,0.8);color:#FFFFFF;border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;">
+          <i data-lucide="camera" style="width:20px;height:20px;color:#159F8C;"></i>
+          <span>ถ่ายภาพด้วยกล้อง</span>
+        </div>
+        <button type="button" @click="closeCameraModal()" style="background:rgba(255,255,255,0.15);border:none;color:#FFF;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <!-- Live Video Stream Area -->
+      <div style="width:100%;aspect-ratio:4/3;background:#000000;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <video x-ref="videoElement" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+        <canvas x-ref="canvasElement" style="display:none;"></canvas>
+      </div>
+
+      <!-- Modal Controls & Shutter Button -->
+      <div style="padding:20px;display:flex;align-items:center;justify-content:center;gap:20px;background:#0F172A;">
+        <button type="button" @click="closeCameraModal()" style="padding:11px 20px;border-radius:9999px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;">
+          ยกเลิก
+        </button>
+        <button type="button" @click="captureWebcamPhoto()" style="width:64px;height:64px;border-radius:50%;background:#159F8C;color:#FFFFFF;border:4px solid #FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 20px rgba(21,159,140,0.5);">
+          <i data-lucide="camera" style="width:28px;height:28px;"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
@@ -222,11 +256,90 @@
       lat: 15.1120,
       lng: 104.3180,
 
+      showCameraModal: false,
+      cameraStream: null,
+
       init() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlStep = parseInt(urlParams.get('step'));
         if (urlStep >= 1 && urlStep <= 4) {
           this.goToStep(urlStep);
+        }
+      },
+
+      openCamera() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+            .then(stream => {
+              this.cameraStream = stream;
+              this.showCameraModal = true;
+              this.$nextTick(() => {
+                const video = this.$refs.videoElement;
+                if (video) {
+                  video.srcObject = stream;
+                  video.play();
+                }
+                if (window.lucide) lucide.createIcons();
+              });
+            })
+            .catch(err => {
+              console.warn('WebRTC camera error, falling back to file input:', err);
+              if (this.$refs.cameraInput) this.$refs.cameraInput.click();
+            });
+        } else {
+          if (this.$refs.cameraInput) this.$refs.cameraInput.click();
+        }
+      },
+
+      closeCameraModal() {
+        if (this.cameraStream) {
+          this.cameraStream.getTracks().forEach(track => track.stop());
+          this.cameraStream = null;
+        }
+        this.showCameraModal = false;
+      },
+
+      captureWebcamPhoto() {
+        const video = this.$refs.videoElement;
+        const canvas = this.$refs.canvasElement;
+        if (!video || !canvas) return;
+
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        this.imageUrl = dataUrl;
+
+        canvas.toBlob((blob) => {
+          if (blob && this.$refs.fileInput) {
+            const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            this.$refs.fileInput.files = dt.files;
+          }
+        }, 'image/jpeg', 0.92);
+
+        this.closeCameraModal();
+      },
+
+      handleCameraUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+          if (this.$refs.fileInput) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            this.$refs.fileInput.files = dt.files;
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.imageUrl = e.target.result;
+            this.$nextTick(() => {
+              if (window.lucide) lucide.createIcons();
+            });
+          };
+          reader.readAsDataURL(file);
         }
       },
 

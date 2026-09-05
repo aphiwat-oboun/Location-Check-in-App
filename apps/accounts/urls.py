@@ -10,7 +10,8 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile_view, name='edit_profile'),
     path('profile/<str:username>/', views.profile_view, name='user_profile'),
-    path('profile/<str:username>/', views.profile_view, name='profile'),
+    path('profile/<str:username>/follow/', views.toggle_follow_api, name='toggle_follow'),
+    path('profile/<str:username>/users-list/', views.follow_list_api, name='follow_list'),
     
     # Social OAuth Login Routes
     path('google/login/', views.google_login_view, name='google_login'),

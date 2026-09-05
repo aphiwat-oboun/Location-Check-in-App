@@ -16,16 +16,28 @@
       <p style="font-size: 0.825rem; color: #6B7280; margin: 0;">เริ่มต้นค้นพบและแชร์สถานที่น่าสนใจรอบตัวคุณ</p>
     </div>
 
-    <!-- Alert / Messages Banner -->
+
+    <!-- Inline Messages (form errors/success) -->
     {% if messages %}
-      <div style="margin-bottom: 20px;">
-        {% for message in messages %}
-          <div style="padding: 10px 14px; border-radius: 12px; font-size: 0.825rem; font-weight: 600; display: flex; align-items: center; gap: 8px; background-color: {% if message.tags == 'error' %}#FEE2E2{% else %}#E6F5F3{% endif %}; color: {% if message.tags == 'error' %}#991B1B{% else %}#117A70{% endif %}; border: 1px solid {% if message.tags == 'error' %}#FCA5A5{% else %}#99F6E4{% endif %};">
-            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
-            <span>{{ message }}</span>
-          </div>
-        {% endfor %}
+    <div style="margin-bottom:18px;display:flex;flex-direction:column;gap:8px;">
+      {% for message in messages %}
+      <div style="display:flex;align-items:flex-start;gap:11px;padding:13px 16px;border-radius:14px;font-size:0.855rem;font-weight:600;animation:slideInDown 0.3s ease;
+        {% if message.tags == 'error' %}
+          background:linear-gradient(135deg,#FEF2F2,#FEE2E2);color:#991B1B;border:1px solid #FCA5A5;
+        {% elif message.tags == 'warning' %}
+          background:linear-gradient(135deg,#FFFBEB,#FEF3C7);color:#92400E;border:1px solid #FCD34D;
+        {% else %}
+          background:linear-gradient(135deg,#ECFDF5,#D1FAE5);color:#065F46;border:1px solid #6EE7B7;
+        {% endif %}
+      ">
+        <span style="font-size:17px;flex-shrink:0;margin-top:1px;">
+          {% if message.tags == 'error' %}❌{% elif message.tags == 'warning' %}⚠️{% else %}✅{% endif %}
+        </span>
+        <span style="line-height:1.45;">{{ message }}</span>
       </div>
+      {% endfor %}
+    </div>
+    <style>@keyframes slideInDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}</style>
     {% endif %}
 
     <!-- Register Form -->
@@ -73,19 +85,27 @@
       </div>
 
       <!-- Confirm Password -->
-      <div style="margin-bottom: 22px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ยืนยันรหัสผ่าน</label>
+      <div style="margin-bottom: 18px;">
+        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ยืนยันรหัสผ่าน</label>
         <div style="position: relative;">
           <input type="password" name="confirm_password" id="registerConfirmPasswordInput" placeholder="ยืนยันรหัสผ่านอีกครั้ง" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
           <i data-lucide="check-check" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
         </div>
       </div>
 
+      <!-- Terms & Privacy Consent Checkbox -->
+      <div style="margin-top: 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;">
+        <input type="checkbox" id="termsConsentCheckbox" name="terms_consent" required style="width: 18px; height: 18px; accent-color: #159F8C; margin-top: 2px; flex-shrink: 0; cursor: pointer;">
+        <label for="termsConsentCheckbox" style="font-size: 0.825rem; color: #4B5563; line-height: 1.5; cursor: pointer;">
+          ฉันได้อ่านและยินยอมตาม <a href="javascript:void(0)" onclick="alert('ข้อตกลงการใช้งาน: ผู้ใช้ตกลงที่จะใช้บริการด้วยข้อมูลที่ถูกต้องและไม่ละเมิดสิทธิของผู้ใช้อื่น')" style="color: #159F8C; font-weight: 700; text-decoration: underline;">ข้อตกลงการใช้งาน</a> และ <a href="javascript:void(0)" onclick="alert('นโยบายความเป็นส่วนตัว: ระบบจะใช้ข้อมูล GPS เพื่อคำนวณระยะทางจากสถานที่จริง และเก็บข้อมูลบัญชีเพื่อยืนยันตัวตนอย่างปลอดภัย')" style="color: #159F8C; font-weight: 700; text-decoration: underline;">นโยบายความเป็นส่วนตัว</a>
+        </label>
+      </div>
+
       <button type="submit" style="width: 100%; min-height: 48px; border-radius: 9999px; border: none; background: #159F8C; color: #FFFFFF; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(21, 159, 140, 0.25);" onmouseover="this.style.background='#117A70'" onmouseout="this.style.background='#159F8C'">
         สมัครสมาชิก
       </button>
 
-      <div style="text-align: center; margin-top: 20px; font-size: 0.825rem; color: #6B7280;">
+      <div style="text-align: center; margin-top: 24px; font-size: 0.825rem; color: #6B7280;">
         มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}" style="color: #159F8C; font-weight: 700; text-decoration: none;">เข้าสู่ระบบ</a>
       </div>
     </form>

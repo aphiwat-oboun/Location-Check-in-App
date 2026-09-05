@@ -87,16 +87,20 @@
 
     <div class="recent-posts-list">
       {% for post in recent_posts %}
-      <article class="post-card">
+      <article class="post-card" data-post-card-id="{{ post.id }}">
         <div class="post-header">
           <div class="post-user">
-            <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar">
+            <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-block;" title="ดูโปรไฟล์ @{{ post.user.username }}">
+              <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar" style="transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+            </a>
             <div>
-              <div class="post-user-name">{{ post.user.profile.get_display_name }}</div>
-              <div class="post-user-meta">{{ post.get_time_ago_str }} • {{ post.location.name }} • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">{{ post.location.distance_km }} กม.</span></div>
+              <a href="{% url 'accounts:user_profile' post.user.username %}" class="post-user-name" style="text-decoration:none;transition:color 0.15s;">
+                {{ post.user.profile.get_display_name }}
+              </a>
+              <div class="post-user-meta">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ post.location.name }}</a> • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">{{ post.location.distance_km }} กม.</span></div>
             </div>
           </div>
-          <button class="btn-icon-circle" style="width:34px;height:34px;" title="ตัวเลือก">
+          <button class="btn-icon-circle" style="width:34px;height:34px;" title="ตัวเลือกโพสต์" onclick="openPostOptionsMenu({{ post.id }}, {% if user.is_authenticated and user.id == post.user.id or user.is_staff %}true{% else %}false{% endif %}, '{{ post.location.name|escapejs }}')">
             <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
           </button>
         </div>

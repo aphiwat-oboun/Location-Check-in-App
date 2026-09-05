@@ -24,8 +24,8 @@ class Category(models.Model):
 class Location(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=250, blank=True)
-    city = models.CharField(max_length=100, default='เชียงใหม่')
-    province = models.CharField(max_length=100, default='เชียงใหม่')
+    city = models.CharField(max_length=100, default='ศรีสะเกษ')
+    province = models.CharField(max_length=100, default='ศรีสะเกษ')
     address = models.CharField(max_length=300, blank=True)
     latitude = models.FloatField(default=18.7953)
     longitude = models.FloatField(default=98.9620)
@@ -66,12 +66,14 @@ class Location(models.Model):
         return "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80"
 
     def get_post_count(self):
-        count = self.posts.filter(is_published=True).count()
-        return count or self.cached_post_count
+        if self.cached_post_count > 0:
+            return self.cached_post_count
+        return self.posts.filter(is_published=True).count()
 
     def get_photo_count(self):
-        count = sum([p.images.count() + (1 if p.cover_image or p.cover_image_url else 0) for p in self.posts.filter(is_published=True)])
-        return count or self.cached_photo_count
+        if self.cached_photo_count > 0:
+            return self.cached_photo_count
+        return max(1, self.get_post_count())
 
     def calculate_distance_from(self, lat, lng):
         """Calculate distance using haversine formula in km"""

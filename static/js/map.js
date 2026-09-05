@@ -7,9 +7,28 @@ let appMap = null;
 let currentMarkers = [];
 let activeMarkerId = null;
 
+var DEFAULT_PLACEHOLDER_AVATAR = window.DEFAULT_PLACEHOLDER_AVATAR || "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Crect width=%22128%22 height=%22128%22 fill=%22%23E5E7EB%22 rx=%2264%22/%3E%3Ccircle cx=%2264%22 cy=%2246%22 r=%2222%22 fill=%22%239CA3AF%22/%3E%3Cpath d=%22M24 108c0-22.091 17.909-38 40-38s40 15.909 40 38%22 fill=%22%239CA3AF%22/%3E%3C/svg%3E";
+
 function initWhatsHereMap(containerId = 'map-container', initialLocations = [], selectedLocId = null) {
   const mapElement = document.getElementById(containerId);
   if (!mapElement) return;
+
+  if (typeof L === 'undefined') {
+    setTimeout(() => initWhatsHereMap(containerId, initialLocations, selectedLocId), 250);
+    return;
+  }
+
+  // If container height/width is not yet computed by DOM layout, wait briefly
+  if (mapElement.clientHeight === 0 || mapElement.clientWidth === 0) {
+    setTimeout(() => initWhatsHereMap(containerId, initialLocations, selectedLocId), 150);
+    return;
+  }
+
+  // Destroy previous map instance if re-initializing
+  if (appMap) {
+    try { appMap.remove(); } catch(e) {}
+    appMap = null;
+  }
 
   // Mueang Si Sa Ket Default Coordinates
   const defaultLat = 15.1120;
@@ -19,25 +38,25 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
   appMap = L.map(containerId, {
     center: [defaultLat, defaultLng],
     zoom: defaultZoom,
-    minZoom: 4,
+    minZoom: 6,
     maxZoom: 19,
-    zoomControl: false, // Custom controls
+    zoomControl: false,
     attributionControl: false
   });
 
-  // OpenStreetMap free tile layer (No API key required)
+  // Standard OpenStreetMap Tile Layer
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    minZoom: 6,
     attribution: '© OpenStreetMap contributors'
   }).addTo(appMap);
 
-  // Ensure map fills container dimensions properly
-  setTimeout(() => {
-    if (appMap) {
-      appMap.invalidateSize();
-      appMap.setView([defaultLat, defaultLng], defaultZoom);
-    }
-  }, 150);
+  // Ensure map fills container dimensions properly upon rendering
+  [100, 300, 600, 1000].forEach(delay => {
+    setTimeout(() => {
+      if (appMap) appMap.invalidateSize();
+    }, delay);
+  });
 
   window.addEventListener('resize', () => {
     if (appMap) appMap.invalidateSize();
@@ -133,7 +152,7 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
         <h3 style="font-size:20px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${loc.name}</h3>
         <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:8px;">${loc.city} • <span class="distance-badge" data-lat="${loc.lat}" data-lng="${loc.lng}">${calculatedDist}</span></p>
         <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:10px;">
-          <img src="${post.author_avatar || 'https://ui-avatars.com/api/?name=W&background=159F8C&color=fff'}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+          <img src="${post.author_avatar || DEFAULT_PLACEHOLDER_AVATAR}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
           <span>โดย ${post.author_name || 'ผู้ใช้'}</span>
         </div>
         <p style="font-size:14px;color:var(--text-main);line-height:1.5;margin-bottom:16px;">${post.caption || 'บรรยากาศดีมาก น่าแวะมาเที่ยว 🌿'}</p>
@@ -173,15 +192,18 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
           </div>
         </div>
         <div class="map-card-author">
-          <img class="map-card-author-avatar" src="${post.author_avatar || 'https://ui-avatars.com/api/?name=W&background=159F8C&color=fff'}" alt="">
+          <img class="map-card-author-avatar" src="${post.author_avatar || DEFAULT_PLACEHOLDER_AVATAR}" alt="">
           <span>โดย ${post.author_name || 'ผู้ใช้'}</span>
         </div>
         <p class="map-card-caption">${post.caption || 'บรรยากาศดีมาก น่าแวะมาเที่ยว 🌿'}</p>
-        <div class="map-card-footer" style="gap:10px;">
-          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="flex:1;padding:8px 12px;font-size:13px;border-radius:9999px;">
+        <div class="map-card-footer" style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="flex:1;padding:8px 12px;font-size:13px;border-radius:9999px;display:flex;align-items:center;justify-content:center;gap:4px;">
             <i data-lucide="navigation" style="width:15px;height:15px;"></i>
             <span>นำทาง</span>
           </button>
+          <a href="/locations/${loc.id}/" class="btn-secondary" style="padding:8px 14px;font-size:12.5px;border-radius:9999px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;color:var(--text-main);font-weight:600;">
+            <span>ดูรายละเอียด</span>
+          </a>
         </div>
       </div>
     `;

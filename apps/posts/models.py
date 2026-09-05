@@ -35,12 +35,10 @@ class Post(models.Model):
         return "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80"
 
     def get_likes_count(self):
-        count = self.likes.count()
-        return count if count > 0 else self.cached_likes_count
+        return self.cached_likes_count
 
     def get_comments_count(self):
-        count = self.comments.count()
-        return count if count > 0 else self.cached_comments_count
+        return self.cached_comments_count
 
     def get_time_ago_str(self):
         now = timezone.now()

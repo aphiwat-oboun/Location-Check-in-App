@@ -10,8 +10,13 @@ from django.core.cache import cache
 from django.conf import settings
 from django.urls import reverse
 
-from .models import Profile
+from django.views.decorators.http import require_POST, require_GET
+from django.http import JsonResponse
+
+from .models import Profile, Follow
 from apps.admin_panel.models import AuditLog
+from apps.interactions.models import Like, SavedPost
+from apps.posts.models import Post
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -41,6 +46,12 @@ def register_view(request):
         confirm_password = request.POST.get('confirm_password', '').strip()
         display_name = request.POST.get('display_name', username).strip()
         
+        terms_consent = request.POST.get('terms_consent')
+        
+        if not terms_consent:
+            messages.error(request, 'กรุณากดยอมรับข้อตกลงการใช้งานและนโยบายความเป็นส่วนตัวก่อนสมัครสมาชิก')
+            return render(request, 'accounts/register.html')
+
         if not username or not password or not confirm_password or not email:
             messages.error(request, 'กรุณากรอกข้อมูลให้ครบถ้วน (รวมถึงชื่อผู้ใช้, อีเมล, รหัสผ่าน และการยืนยันรหัสผ่าน)')
             return render(request, 'accounts/register.html')
@@ -75,8 +86,6 @@ def register_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        if request.user.is_staff:
-            return redirect('admin_panel:dashboard')
         return redirect('core:home')
 
     ip = get_client_ip(request)
@@ -114,8 +123,6 @@ def login_view(request):
             next_url = request.GET.get('next')
             if next_url:
                 return redirect(next_url)
-            if user.is_staff:
-                return redirect('admin_panel:dashboard')
             return redirect('core:home')
         else:
             # Increment failed attempt count in cache (15 mins timeout)
@@ -294,33 +301,148 @@ def line_callback_view(request):
     return redirect('core:home')
 
 
-@login_required
 def profile_view(request, username=None):
     if username:
         user_obj = get_object_or_404(User, username=username)
     else:
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
         user_obj = request.user
         
     profile = user_obj.profile
-    posts = user_obj.posts.filter(is_published=True).order_by('-created_at')
-    saved_posts = user_obj.saved_posts.select_related('post', 'post__location').order_by('-created_at')
+    posts = list(user_obj.posts.filter(is_published=True).select_related('location', 'category').order_by('-created_at'))
+    saved_posts = list(user_obj.saved_posts.select_related('post', 'post__location', 'post__user', 'post__user__profile').order_by('-created_at'))
     
-    total_posts = posts.count()
+    # Liked posts by this user
+    liked_posts_qs = Post.objects.filter(likes__user=user_obj, is_published=True).select_related('location', 'user', 'user__profile').order_by('-likes__created_at')[:30]
+    liked_posts = list(liked_posts_qs)
+
+    total_posts = len(posts)
     total_photos = sum([p.images.count() + (1 if p.cover_image or p.cover_image_url else 0) for p in posts])
-    total_places = posts.values('location').distinct().count()
+    total_places = len(set([p.location_id for p in posts if p.location_id]))
+
+    # TikTok Signature Stats
+    following_count = user_obj.following_set.count()
+    followers_count = user_obj.followers_set.count()
+    total_likes_received = Like.objects.filter(post__user=user_obj).count()
+
+    is_own_profile = bool(request.user.is_authenticated and request.user == user_obj)
+    is_following = False
+    if request.user.is_authenticated and not is_own_profile:
+        is_following = Follow.objects.filter(follower=request.user, following=user_obj).exists()
+
+    if request.user.is_authenticated:
+        all_post_objs = posts + [sp.post for sp in saved_posts if sp.post] + liked_posts
+        user_liked_ids = set(Like.objects.filter(user=request.user, post__in=all_post_objs).values_list('post_id', flat=True))
+        user_saved_ids = set(SavedPost.objects.filter(user=request.user, post__in=all_post_objs).values_list('post_id', flat=True))
+        for p in posts:
+            p.is_liked = p.id in user_liked_ids
+            p.is_saved = p.id in user_saved_ids
+        for sp in saved_posts:
+            if sp.post:
+                sp.post.is_liked = sp.post.id in user_liked_ids
+                sp.post.is_saved = sp.post.id in user_saved_ids
+        for lp in liked_posts:
+            lp.is_liked = lp.id in user_liked_ids
+            lp.is_saved = lp.id in user_saved_ids
 
     context = {
         'profile_user': user_obj,
         'profile': profile,
         'posts': posts,
         'saved_posts': saved_posts,
+        'liked_posts': liked_posts,
         'total_posts': total_posts,
         'total_photos': total_photos,
         'total_places': total_places,
-        'is_own_profile': request.user == user_obj,
+        'following_count': following_count,
+        'followers_count': followers_count,
+        'total_likes_received': total_likes_received,
+        'is_following': is_following,
+        'is_own_profile': is_own_profile,
         'active_tab': request.GET.get('tab', 'posts')
     }
     return render(request, 'accounts/profile.html', context)
+
+
+@require_POST
+def toggle_follow_api(request, username):
+    """
+    AJAX handler to follow or unfollow a user (TikTok style)
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'unauthenticated', 'message': 'กรุณาเข้าสู่ระบบก่อนดำเนินการ'}, status=401)
+
+    target_user = get_object_or_404(User, username=username)
+    if target_user == request.user:
+        return JsonResponse({'success': False, 'message': 'คุณไม่สามารถติดตามตัวเองได้'}, status=400)
+
+    follow_obj = Follow.objects.filter(follower=request.user, following=target_user).first()
+    if follow_obj:
+        follow_obj.delete()
+        is_following = False
+        msg = f'เลิกติดตาม @{target_user.username} แล้ว'
+    else:
+        Follow.objects.create(follower=request.user, following=target_user)
+        is_following = True
+        msg = f'ติดตาม @{target_user.username} แล้ว'
+
+        # Send notification
+        try:
+            from apps.interactions.models import Notification
+            Notification.objects.create(
+                recipient=target_user,
+                actor=request.user,
+                notification_type='follow',
+                text='ได้เริ่มติดตามคุณ'
+            )
+        except Exception as e:
+            pass
+
+    return JsonResponse({
+        'success': True,
+        'is_following': is_following,
+        'followers_count': target_user.followers_set.count(),
+        'message': msg
+    })
+
+
+@require_GET
+def follow_list_api(request, username):
+    """
+    AJAX endpoint to return followers or following list for TikTok-style popup modal
+    """
+    list_type = request.GET.get('type', 'followers') # 'followers' or 'following'
+    target_user = get_object_or_404(User, username=username)
+
+    if list_type == 'following':
+        users_qs = User.objects.filter(followers_set__follower=target_user).select_related('profile')
+        title = 'กำลังติดตาม'
+    else:
+        users_qs = User.objects.filter(following_set__following=target_user).select_related('profile')
+        title = 'ผู้ติดตาม'
+
+    current_user_following_ids = set()
+    if request.user.is_authenticated:
+        current_user_following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+
+    data = []
+    for u in users_qs[:60]:
+        data.append({
+            'username': u.username,
+            'display_name': u.profile.get_display_name() if hasattr(u, 'profile') else u.username,
+            'avatar_url': u.profile.get_avatar_url() if hasattr(u, 'profile') else '',
+            'bio': (u.profile.bio[:60] + '...') if hasattr(u, 'profile') and len(u.profile.bio) > 60 else (u.profile.bio if hasattr(u, 'profile') else ''),
+            'is_following': u.id in current_user_following_ids,
+            'is_self': request.user.is_authenticated and request.user.id == u.id
+        })
+
+    return JsonResponse({
+        'success': True,
+        'title': title,
+        'count': target_user.followers_set.count() if list_type == 'followers' else target_user.following_set.count(),
+        'users': data
+    })
 
 @login_required
 def edit_profile_view(request):
@@ -331,6 +453,8 @@ def edit_profile_view(request):
         city = request.POST.get('city')
         if 'avatar' in request.FILES:
             profile.avatar = request.FILES['avatar']
+        if 'cover_image' in request.FILES:
+            profile.cover_image = request.FILES['cover_image']
         profile.display_name = display_name
         profile.bio = bio
         profile.city = city

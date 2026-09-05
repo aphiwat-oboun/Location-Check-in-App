@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}แก้ไขโปรไฟล์ - ที่นี่มีอะไร?{% endblock %}
+
+{% block content %}
+<div style="flex:1;overflow-y:auto;padding:24px 24px 240px 24px;max-width:640px;margin:0 auto;width:100%;">
+  
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <a href="{% url 'accounts:profile' %}" class="btn-icon-circle" style="width:36px;height:36px;">
+      <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <h1 style="font-size:20px;font-weight:700;color:var(--text-main);">แก้ไขข้อมูลส่วนตัว</h1>
+  </div>
+
+  <div style="background:#FFFFFF;border-radius:var(--radius-xl);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
+    <form method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:18px;">
+      {% csrf_token %}
+
+      <!-- Avatar Upload Preview -->
+      <div style="display:flex;align-items:center;gap:20px;padding-bottom:18px;border-bottom:1px solid var(--border-subtle);">
+        <img id="avatarPreview" src="{{ profile.get_avatar_url }}" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light);box-shadow:var(--shadow-sm);">
+        <div>
+          <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">รูปโปรไฟล์</label>
+          <input type="file" name="avatar" accept="image/*" onchange="previewImage(event)" style="font-size:12.5px;color:var(--text-muted);">
+        </div>
+      </div>
+
+      <!-- Cover Image / Banner Upload Preview -->
+      <div style="padding-bottom:18px;border-bottom:1px solid var(--border-subtle);">
+        <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:8px;">ภาพพื้นหลังโปรไฟล์ (Cover / Banner)</label>
+        <div style="width:100%;height:120px;border-radius:14px;overflow:hidden;background:{% if profile.get_cover_url %}url('{{ profile.get_cover_url }}') center/cover{% else %}linear-gradient(135deg, #0F766E 0%, #14B8A6 45%, #2DD4BF 100%){% endif %};margin-bottom:10px;border:1px solid var(--border-light);position:relative;" id="coverPreviewWrap">
+          <img id="coverPreview" src="{{ profile.get_cover_url|default:'' }}" alt="Cover" style="width:100%;height:100%;object-fit:cover;{% if not profile.get_cover_url %}display:none;{% endif %}">
+        </div>
+        <input type="file" name="cover_image" accept="image/*" onchange="previewCoverImage(event)" style="font-size:12.5px;color:var(--text-muted);">
+      </div>
+
+      <!-- Display Name -->
+      <div>
+        <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">ชื่อที่แสดง (Display Name)</label>
+        <input type="text" name="display_name" value="{{ profile.get_display_name }}" required style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'">
+      </div>
+
+      <!-- City / Location -->
+      <div>
+        <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">จังหวัดที่อยู่</label>
+        <select name="city" style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;cursor:pointer;" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'" onblur="this.style.background='var(--bg-surface-subtle)';this.style.borderColor='var(--border-light)'">
+          <option value="กรุงเทพมหานคร" {% if profile.city == 'กรุงเทพมหานคร' %}selected{% endif %}>กรุงเทพมหานคร</option>
+          <option value="กระบี่" {% if profile.city == 'กระบี่' %}selected{% endif %}>กระบี่</option>
+          <option value="กาญจนบุรี" {% if profile.city == 'กาญจนบุรี' %}selected{% endif %}>กาญจนบุรี</option>
+          <option value="กาฬสินธุ์" {% if profile.city == 'กาฬสินธุ์' %}selected{% endif %}>กาฬสินธุ์</option>
+          <option value="กำแพงเพชร" {% if profile.city == 'กำแพงเพชร' %}selected{% endif %}>กำแพงเพชร</option>
+          <option value="ขอนแก่น" {% if profile.city == 'ขอนแก่น' %}selected{% endif %}>ขอนแก่น</option>
+          <option value="จันทบุรี" {% if profile.city == 'จันทบุรี' %}selected{% endif %}>จันทบุรี</option>
+          <option value="ฉะเชิงเทรา" {% if profile.city == 'ฉะเชิงเทรา' %}selected{% endif %}>ฉะเชิงเทรา</option>
+          <option value="ชลบุรี" {% if profile.city == 'ชลบุรี' %}selected{% endif %}>ชลบุรี</option>
+          <option value="ชัยนาท" {% if profile.city == 'ชัยนาท' %}selected{% endif %}>ชัยนาท</option>
+          <option value="ชัยภูมิ" {% if profile.city == 'ชัยภูมิ' %}selected{% endif %}>ชัยภูมิ</option>
+          <option value="ชุมพร" {% if profile.city == 'ชุมพร' %}selected{% endif %}>ชุมพร</option>
+          <option value="เชียงราย" {% if profile.city == 'เชียงราย' %}selected{% endif %}>เชียงราย</option>
+          <option value="เชียงใหม่" {% if profile.city == 'เชียงใหม่' %}selected{% endif %}>เชียงใหม่</option>
+          <option value="ตรัง" {% if profile.city == 'ตรัง' %}selected{% endif %}>ตรัง</option>
+          <option value="ตราด" {% if profile.city == 'ตราด' %}selected{% endif %}>ตราด</option>
+          <option value="ตาก" {% if profile.city == 'ตาก' %}selected{% endif %}>ตาก</option>
+          <option value="นครนายก" {% if profile.city == 'นครนายก' %}selected{% endif %}>นครนายก</option>
+          <option value="นครปฐม" {% if profile.city == 'นครปฐม' %}selected{% endif %}>นครปฐม</option>
+          <option value="นครพนม" {% if profile.city == 'นครพนม' %}selected{% endif %}>นครพนม</option>
+          <option value="นครราชสีมา" {% if profile.city == 'นครราชสีมา' %}selected{% endif %}>นครราชสีมา</option>
+          <option value="นครศรีธรรมราช" {% if profile.city == 'นครศรีธรรมราช' %}selected{% endif %}>นครศรีธรรมราช</option>
+          <option value="นครสวรรค์" {% if profile.city == 'นครสวรรค์' %}selected{% endif %}>นครสวรรค์</option>
+          <option value="นนทบุรี" {% if profile.city == 'นนทบุรี' %}selected{% endif %}>นนทบุรี</option>
+          <option value="นราธิวาส" {% if profile.city == 'นราธิวาส' %}selected{% endif %}>นราธิวาส</option>
+          <option value="น่าน" {% if profile.city == 'น่าน' %}selected{% endif %}>น่าน</option>
+          <option value="บึงกาฬ" {% if profile.city == 'บึงกาฬ' %}selected{% endif %}>บึงกาฬ</option>
+          <option value="บุรีรัมย์" {% if profile.city == 'บุรีรัมย์' %}selected{% endif %}>บุรีรัมย์</option>
+          <option value="ปทุมธานี" {% if profile.city == 'ปทุมธานี' %}selected{% endif %}>ปทุมธานี</option>
+          <option value="ประจวบคีรีขันธ์" {% if profile.city == 'ประจวบคีรีขันธ์' %}selected{% endif %}>ประจวบคีรีขันธ์</option>
+          <option value="ปราจีนบุรี" {% if profile.city == 'ปราจีนบุรี' %}selected{% endif %}>ปราจีนบุรี</option>
+          <option value="ปัตตานี" {% if profile.city == 'ปัตตานี' %}selected{% endif %}>ปัตตานี</option>
+          <option value="พระนครศรีอยุธยา" {% if profile.city == 'พระนครศรีอยุธยา' %}selected{% endif %}>พระนครศรีอยุธยา</option>
+          <option value="พะเยา" {% if profile.city == 'พะเยา' %}selected{% endif %}>พะเยา</option>
+          <option value="พังงา" {% if profile.city == 'พังงา' %}selected{% endif %}>พังงา</option>
+          <option value="พัทลุง" {% if profile.city == 'พัทลุง' %}selected{% endif %}>พัทลุง</option>
+          <option value="เพชรบุรี" {% if profile.city == 'เพชรบุรี' %}selected{% endif %}>เพชรบุรี</option>
+          <option value="เพชรบูรณ์" {% if profile.city == 'เพชรบูรณ์' %}selected{% endif %}>เพชรบูรณ์</option>
+          <option value="แพร่" {% if profile.city == 'แพร่' %}selected{% endif %}>แพร่</option>
+          <option value="ภูเก็ต" {% if profile.city == 'ภูเก็ต' %}selected{% endif %}>ภูเก็ต</option>
+          <option value="มหาสารคาม" {% if profile.city == 'มหาสารคาม' %}selected{% endif %}>มหาสารคาม</option>
+          <option value="มุกดาหาร" {% if profile.city == 'มุกดาหาร' %}selected{% endif %}>มุกดาหาร</option>
+          <option value="แม่ฮ่องสอน" {% if profile.city == 'แม่ฮ่องสอน' %}selected{% endif %}>แม่ฮ่องสอน</option>
+          <option value="ยโสธร" {% if profile.city == 'ยโสธร' %}selected{% endif %}>ยโสธร</option>
+          <option value="ยะลา" {% if profile.city == 'ยะลา' %}selected{% endif %}>ยะลา</option>
+          <option value="ร้อยเอ็ด" {% if profile.city == 'ร้อยเอ็ด' %}selected{% endif %}>ร้อยเอ็ด</option>
+          <option value="ระนอง" {% if profile.city == 'ระนอง' %}selected{% endif %}>ระนอง</option>
+          <option value="ระยอง" {% if profile.city == 'ระยอง' %}selected{% endif %}>ระยอง</option>
+          <option value="ราชบุรี" {% if profile.city == 'ราชบุรี' %}selected{% endif %}>ราชบุรี</option>
+          <option value="ลพบุรี" {% if profile.city == 'ลพบุรี' %}selected{% endif %}>ลพบุรี</option>
+          <option value="ลำปาง" {% if profile.city == 'ลำปาง' %}selected{% endif %}>ลำปาง</option>
+          <option value="ลำพูน" {% if profile.city == 'ลำพูน' %}selected{% endif %}>ลำพูน</option>
+          <option value="เลย" {% if profile.city == 'เลย' %}selected{% endif %}>เลย</option>
+          <option value="ศรีสะเกษ" {% if profile.city == 'ศรีสะเกษ' or not profile.city %}selected{% endif %}>ศรีสะเกษ</option>
+          <option value="สกลนคร" {% if profile.city == 'สกลนคร' %}selected{% endif %}>สกลนคร</option>
+          <option value="สงขลา" {% if profile.city == 'สงขลา' %}selected{% endif %}>สงขลา</option>
+          <option value="สตูล" {% if profile.city == 'สตูล' %}selected{% endif %}>สตูล</option>
+          <option value="สมุทรปราการ" {% if profile.city == 'สมุทรปราการ' %}selected{% endif %}>สมุทรปราการ</option>
+          <option value="สมุทรสงคราม" {% if profile.city == 'สมุทรสงคราม' %}selected{% endif %}>สมุทรสงคราม</option>
+          <option value="สมุทรสาคร" {% if profile.city == 'สมุทรสาคร' %}selected{% endif %}>สมุทรสาคร</option>
+          <option value="สระแก้ว" {% if profile.city == 'สระแก้ว' %}selected{% endif %}>สระแก้ว</option>
+          <option value="สระบุรี" {% if profile.city == 'สระบุรี' %}selected{% endif %}>สระบุรี</option>
+          <option value="สุโขทัย" {% if profile.city == 'สุโขทัย' %}selected{% endif %}>สุโขทัย</option>
+          <option value="สุพรรณบุรี" {% if profile.city == 'สุพรรณบุรี' %}selected{% endif %}>สุพรรณบุรี</option>
+          <option value="สุราษฎร์ธานี" {% if profile.city == 'สุราษฎร์ธานี' %}selected{% endif %}>สุราษฎร์ธานี</option>
+          <option value="สุรินทร์" {% if profile.city == 'สุรินทร์' %}selected{% endif %}>สุรินทร์</option>
+          <option value="หนองคาย" {% if profile.city == 'หนองคาย' %}selected{% endif %}>หนองคาย</option>
+          <option value="หนองบัวลำภู" {% if profile.city == 'หนองบัวลำภู' %}selected{% endif %}>หนองบัวลำภู</option>
+          <option value="อ่างทอง" {% if profile.city == 'อ่างทอง' %}selected{% endif %}>อ่างทอง</option>
+          <option value="อำนาจเจริญ" {% if profile.city == 'อำนาจเจริญ' %}selected{% endif %}>อำนาจเจริญ</option>
+          <option value="อุดรธานี" {% if profile.city == 'อุดรธานี' %}selected{% endif %}>อุดรธานี</option>
+          <option value="อุตรดิตถ์" {% if profile.city == 'อุตรดิตถ์' %}selected{% endif %}>อุตรดิตถ์</option>
+          <option value="อุทัยธานี" {% if profile.city == 'อุทัยธานี' %}selected{% endif %}>อุทัยธานี</option>
+          <option value="อุบลราชธานี" {% if profile.city == 'อุบลราชธานี' %}selected{% endif %}>อุบลราชธานี</option>
+        </select>
+      </div>
+
+      <!-- Bio -->
+      <div>
+        <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">คำแนะนำตัว (Bio)</label>
+        <textarea name="bio" rows="3" placeholder="เขียนสั้นๆ เกี่ยวกับตัวคุณ..." style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);resize:vertical;" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'">{{ profile.bio|default:'' }}</textarea>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:10px;">
+        <a href="{% url 'accounts:profile' %}" class="btn-edit-profile" style="text-decoration:none;">ยกเลิก</a>
+        <button type="submit" class="btn-primary-action" style="margin:0;">
+          <i data-lucide="check" style="width:16px;height:16px;"></i>
+          <span>บันทึกการเปลี่ยนแปลง</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+      const output = document.getElementById('avatarPreview');
+      output.src = reader.result;
+    };
+    if (event.target.files[0]) {
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  }
+
+  function previewCoverImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+      const output = document.getElementById('coverPreview');
+      if (output) {
+        output.src = reader.result;
+        output.style.display = 'block';
+      }
+    };
+    if (event.target.files[0]) {
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  }
+</script>
+{% endblock %}

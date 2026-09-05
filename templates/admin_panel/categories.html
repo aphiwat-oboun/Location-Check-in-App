@@ -5,13 +5,40 @@
 {% block header_subtitle %}หมวดหมู่ของสถานที่และโพสต์{% endblock %}
 
 {% block content %}
+
+<!-- Add Category Form -->
+<div class="admin-card" style="margin-bottom: 20px;">
+  <div class="card-header-flex">
+    <h3 class="card-title">เพิ่มหมวดหมู่ใหม่</h3>
+  </div>
+  <form id="addCategoryForm" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+    {% csrf_token %}
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:0.8rem;font-weight:600;color:#374151;">ชื่อหมวดหมู่ *</label>
+      <input type="text" id="catName" placeholder="เช่น วัด, คาเฟ่, ธรรมชาติ" required style="padding: 9px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 200px;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:0.8rem;font-weight:600;color:#374151;">ชื่อ Icon (Lucide)</label>
+      <input type="text" id="catIcon" placeholder="เช่น map-pin, coffee" value="tag" style="padding: 9px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 180px;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:0.8rem;font-weight:600;color:#374151;">ลำดับ</label>
+      <input type="number" id="catOrder" value="99" min="1" style="padding: 9px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 80px;">
+    </div>
+    <button type="submit" style="padding: 9px 20px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="plus" style="width:16px;height:16px;"></i> เพิ่มหมวดหมู่
+    </button>
+  </form>
+</div>
+
+<!-- Category Table -->
 <div class="admin-card">
   <div class="card-header-flex">
     <h3 class="card-title">หมวดหมู่ทั้งหมด</h3>
   </div>
 
   <div style="overflow-x: auto;">
-    <table class="admin-table">
+    <table class="admin-table" id="categoryTable">
       <thead>
         <tr>
           <th>ลำดับ</th>
@@ -19,24 +46,132 @@
           <th>ไอคอน</th>
           <th>จำนวนโพสต์</th>
           <th>จำนวนสถานที่</th>
+          <th style="text-align: center;">การจัดการ</th>
         </tr>
       </thead>
       <tbody>
         {% for cat in categories %}
-          <tr>
+          <tr id="cat-row-{{ cat.id }}">
             <td>{{ cat.order }}</td>
             <td style="font-weight: 600; color: #1F2937;">{{ cat.name }}</td>
-            <td><i data-lucide="{{ cat.icon }}" class="w-4 h-4 text-emerald-600"></i> {{ cat.icon }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <i data-lucide="{{ cat.icon }}" style="width:16px;height:16px;color:#159F8C;"></i>
+                <code style="font-size:0.75rem;background:#F3F4F6;padding:2px 6px;border-radius:4px;">{{ cat.icon }}</code>
+              </div>
+            </td>
             <td>{{ cat.post_count_agg }}</td>
             <td>{{ cat.location_count_agg }}</td>
+            <td style="text-align: center;">
+              <button class="table-action-btn delete" title="ลบหมวดหมู่" onclick="deleteCategory({{ cat.id }}, '{{ cat.name|escapejs }}')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
           </tr>
         {% empty %}
-          <tr>
-            <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบหมวดหมู่</td>
+          <tr id="empty-row">
+            <td colspan="6" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบหมวดหมู่</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('catName').value.trim();
+    const icon = document.getElementById('catIcon').value.trim() || 'tag';
+    const order = document.getElementById('catOrder').value || 99;
+
+    if (!name) { showToast('กรุณากรอกชื่อหมวดหมู่', 'error'); return; }
+
+    const btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" style="width:16px;height:16px;animation:spin 1s linear infinite;"></i> กำลังเพิ่ม...';
+    if (window.lucide) lucide.createIcons();
+
+    const body = new URLSearchParams({ name, icon, order });
+    body.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+    fetch('/admin-panel/api/category/create/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: body.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="plus" style="width:16px;height:16px;"></i> เพิ่มหมวดหมู่';
+      if (window.lucide) lucide.createIcons();
+
+      if (data.success) {
+        showToast(data.message, 'success');
+        // Remove empty row if present
+        const emptyRow = document.getElementById('empty-row');
+        if (emptyRow) emptyRow.remove();
+        // Add new row to table
+        const tbody = document.querySelector('#categoryTable tbody');
+        const row = document.createElement('tr');
+        row.id = `cat-row-${data.id}`;
+        row.innerHTML = `
+          <td>99</td>
+          <td style="font-weight:600;color:#1F2937;">${name}</td>
+          <td><div style="display:flex;align-items:center;gap:6px;"><i data-lucide="${icon}" style="width:16px;height:16px;color:#159F8C;"></i><code style="font-size:0.75rem;background:#F3F4F6;padding:2px 6px;border-radius:4px;">${icon}</code></div></td>
+          <td>0</td>
+          <td>0</td>
+          <td style="text-align:center;">
+            <button class="table-action-btn delete" title="ลบหมวดหมู่" onclick="deleteCategory(${data.id}, '${name.replace(/'/g,"\\'")}')">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+        if (window.lucide) lucide.createIcons();
+        // Reset form
+        document.getElementById('catName').value = '';
+        document.getElementById('catIcon').value = 'tag';
+        document.getElementById('catOrder').value = '99';
+      } else {
+        showToast(data.message || 'ไม่สามารถเพิ่มหมวดหมู่ได้', 'error');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="plus" style="width:16px;height:16px;"></i> เพิ่มหมวดหมู่';
+      showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+    });
+  });
+
+  function deleteCategory(catId, catName) {
+    showConfirmModal('ยืนยันการลบหมวดหมู่?', `การลบ "${catName}" จะทำให้โพสต์และสถานที่ที่ใช้หมวดหมู่นี้ไม่มีหมวดหมู่ คุณแน่ใจหรือไม่?`, function() {
+      fetch(`/admin-panel/api/category/${catId}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const row = document.getElementById(`cat-row-${catId}`);
+          if (row) row.remove();
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.message || 'ไม่สามารถลบหมวดหมู่ได้', 'error');
+        }
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
+    });
+  }
+
+  // Spin animation for loader
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(style);
+</script>
 {% endblock %}

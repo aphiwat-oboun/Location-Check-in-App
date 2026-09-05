@@ -56,6 +56,12 @@
             <td>❤️ {{ p.get_likes_count }}</td>
             <td>{{ p.get_time_ago_str }}</td>
             <td style="text-align: center; white-space: nowrap;">
+              <button class="table-action-btn view" title="ดูโพสต์" onclick="window.open('/posts/{{ p.id }}/', '_blank')">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+              <button class="table-action-btn edit" title="แก้ไขโพสต์" onclick="window.open('/posts/{{ p.id }}/edit/', '_blank')">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
               <button class="table-action-btn delete" title="ลบโพสต์" onclick="deletePost({{ p.id }}, '{{ p.caption|escapejs }}')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
@@ -69,6 +75,19 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if posts_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+    {% if posts_page.has_previous %}
+      <a href="?page={{ posts_page.previous_page_number }}&search={{ search_query }}&category={{ selected_category }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ posts_page.number }} / {{ posts_page.paginator.num_pages }}</span>
+    {% if posts_page.has_next %}
+      <a href="?page={{ posts_page.next_page_number }}&search={{ search_query }}&category={{ selected_category }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -82,12 +101,15 @@
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
+        if (data.success) {
           const row = document.getElementById(`post-row-${postId}`);
-          if(row) row.remove();
-          alert('ลบโพสต์เรียบร้อยแล้ว');
+          if (row) row.remove();
+          showToast('ลบโพสต์เรียบร้อยแล้ว', 'success');
+        } else {
+          showToast(data.message || 'ไม่สามารถลบโพสต์ได้', 'error');
         }
-      });
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
     });
   }
 </script>

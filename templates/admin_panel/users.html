@@ -38,14 +38,14 @@
               <div style="display: flex; align-items: center; gap: 10px;">
                 <img src="{{ u.profile.get_avatar_url }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                 <div>
-                  <div style="font-weight: 600; color: #1F2937;">{{ u.profile.get_display_name }}</div>
-                  <div style="font-size: 0.75rem; color: #9CA3AF;">@{{ u.username }}</div>
+                  <div style="font-weight: 600; color: #1F2937;" id="user-name-{{ u.id }}">{{ u.profile.get_display_name }}</div>
+                  <div style="font-size: 0.75rem; color: #9CA3AF;">@{{ u.username }}{% if u.is_staff %} <span style="color:#159F8C;font-weight:700;">[Staff]</span>{% endif %}</div>
                 </div>
               </div>
             </td>
-            <td>{{ u.email|default:"-" }}</td>
+            <td id="user-email-{{ u.id }}">{{ u.email|default:"-" }}</td>
             <td>{{ u.post_count }}</td>
-            <td>
+            <td id="user-status-{{ u.id }}">
               {% if u.profile.is_suspended %}
                 <span class="badge-status red">ถูกระงับ</span>
               {% else %}
@@ -54,11 +54,14 @@
             </td>
             <td>{{ u.date_joined|date:"d M Y" }}</td>
             <td style="text-align: center; white-space: nowrap;">
-              <button class="table-action-btn view" title="ดูโปรไฟล์" onclick="window.location.href='{% url "accounts:profile" u.username %}'">
+              <button class="table-action-btn view" title="ดูโปรไฟล์" onclick="window.open('{% url "accounts:user_profile" u.username %}', '_blank')">
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
-              <button class="table-action-btn edit" title="สลับสถานะระงับ" onclick="toggleUserStatus({{ u.id }}, '{{ u.username|escapejs }}')">
-                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+              <button class="table-action-btn edit" title="แก้ไขข้อมูล" onclick="openEditModal({{ u.id }}, '{{ u.profile.get_display_name|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_staff|lower }})">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
+              <button class="table-action-btn" title="{% if u.profile.is_suspended %}ปลดระงับ{% else %}ระงับบัญชี{% endif %}" style="color: {% if u.profile.is_suspended %}#059669{% else %}#D97706{% endif %};" onclick="toggleUserStatus({{ u.id }}, '{{ u.username|escapejs }}')">
+                <i data-lucide="{% if u.profile.is_suspended %}shield-check{% else %}shield-alert{% endif %}" class="w-4 h-4"></i>
               </button>
               <button class="table-action-btn delete" title="ลบผู้ใช้งาน" onclick="deleteUser({{ u.id }}, '{{ u.username|escapejs }}')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -73,6 +76,44 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if users_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+    {% if users_page.has_previous %}
+      <a href="?page={{ users_page.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ users_page.number }} / {{ users_page.paginator.num_pages }}</span>
+    {% if users_page.has_next %}
+      <a href="?page={{ users_page.next_page_number }}&search={{ search_query }}&status={{ status_filter }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+    <h3 style="font-size:1.05rem;font-weight:700;margin:0 0 6px 0;">แก้ไขข้อมูลผู้ใช้</h3>
+    <p style="font-size:0.825rem;color:#6B7280;margin:0 0 20px 0;" id="editModalSubtitle">@username</p>
+    <input type="hidden" id="editUserId">
+    <div style="margin-bottom:14px;">
+      <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">ชื่อแสดง</label>
+      <input type="text" id="editDisplayName" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #E5E7EB;font-size:0.9rem;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">อีเมล</label>
+      <input type="email" id="editEmail" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #E5E7EB;font-size:0.9rem;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="editIsStaff" style="width:18px;height:18px;cursor:pointer;">
+      <label for="editIsStaff" style="font-size:0.875rem;font-weight:600;color:#374151;cursor:pointer;">สิทธิ์ Staff (Admin)</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeEditModal()" style="padding:9px 20px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:0.875rem;cursor:pointer;">ยกเลิก</button>
+      <button onclick="submitEditUser()" style="padding:9px 20px;border-radius:8px;border:none;background:#159F8C;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">บันทึก</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -82,41 +123,87 @@
     showConfirmModal('สลับสถานะระงับบัญชี?', `คุณต้องการเปลี่ยนสถานะการระงับของ @${username} ใช่หรือไม่?`, function() {
       fetch(`/admin-panel/api/user/${userId}/action/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
         body: 'action=toggle_suspend'
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
-          alert(data.message);
+        if (data.success) {
+          showToast(data.message, 'success');
           window.location.reload();
+        } else {
+          showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
         }
-      });
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด', 'error'));
     });
   }
 
   function deleteUser(userId, username) {
-    showConfirmModal('ยืนยันการลบผู้ใช้?', `การลบผู้ใช้ @${username} จะลบโพสต์และข้อมูลที่เกี่ยวข้องทั้งหมด!`, function() {
+    showConfirmModal('ยืนยันการลบผู้ใช้?', `การลบผู้ใช้ @${username} จะลบโพสต์และข้อมูลที่เกี่ยวข้องทั้งหมด! การกระทำนี้ไม่สามารถยกเลิกได้`, function() {
       fetch(`/admin-panel/api/user/${userId}/action/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
         body: 'action=delete'
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
+        if (data.success) {
           const row = document.getElementById(`user-row-${userId}`);
-          if(row) row.remove();
-          alert(data.message);
+          if (row) row.remove();
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.message || 'ไม่สามารถลบผู้ใช้ได้', 'error');
         }
-      });
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด', 'error'));
     });
   }
+
+  function openEditModal(userId, displayName, email, isStaff) {
+    document.getElementById('editUserId').value = userId;
+    document.getElementById('editModalSubtitle').textContent = `กำลังแก้ไขผู้ใช้ #${userId}`;
+    document.getElementById('editDisplayName').value = displayName;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editIsStaff').checked = isStaff;
+    document.getElementById('editUserModal').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('editUserModal').style.display = 'none';
+  }
+
+  function submitEditUser() {
+    const userId = document.getElementById('editUserId').value;
+    const displayName = document.getElementById('editDisplayName').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+    const isStaff = document.getElementById('editIsStaff').checked;
+
+    fetch(`/admin-panel/api/user/${userId}/edit/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
+      body: `display_name=${encodeURIComponent(displayName)}&email=${encodeURIComponent(email)}&is_staff=${isStaff}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        closeEditModal();
+        showToast(data.message, 'success');
+        // Update row in-place
+        const nameEl = document.getElementById(`user-name-${userId}`);
+        const emailEl = document.getElementById(`user-email-${userId}`);
+        if (nameEl) nameEl.textContent = data.display_name;
+        if (emailEl) emailEl.textContent = data.email || '-';
+      } else {
+        showToast(data.message || 'ไม่สามารถอัปเดตข้อมูลได้', 'error');
+      }
+    })
+    .catch(() => showToast('เกิดข้อผิดพลาด', 'error'));
+  }
+
+  // Close edit modal on backdrop click
+  document.getElementById('editUserModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
 </script>
 {% endblock %}

@@ -40,6 +40,17 @@
         </div>
       </div>
 
+      <!-- Switch to Main Web App Button -->
+      <div style="padding: 0 14px 12px 14px;">
+        <a href="{% url 'core:home' %}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: #E6F5F3; color: #159F8C; border-radius: 12px; font-weight: 700; font-size: 13.5px; text-decoration: none; border: 1px solid rgba(21, 159, 140, 0.25); transition: all 0.2s ease;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="globe" style="width: 16px; height: 16px;"></i>
+            <span>ดูหน้าเว็บไซต์</span>
+          </div>
+          <i data-lucide="arrow-up-right" style="width: 14px; height: 14px;"></i>
+        </a>
+      </div>
+
       <nav class="admin-sidebar-menu">
         <a href="{% url 'admin_panel:dashboard' %}" class="menu-item {% if active_page == 'dashboard' %}active{% endif %}">
           <i data-lucide="layout-grid" class="w-4 h-4"></i>
@@ -84,7 +95,7 @@
     </div>
 
     <div class="admin-sidebar-footer">
-      <a href="{% url 'accounts:logout' %}" class="logout-item">
+      <a href="{% url 'accounts:logout' %}" class="logout-item" onclick="confirmLogout(event, '{% url 'accounts:logout' %}')">
         <i data-lucide="log-out" class="w-4 h-4"></i>
         <span>ออกจากระบบ</span>
       </a>
@@ -113,10 +124,16 @@
         <i data-lucide="search"></i>
       </form>
 
+      <!-- View Main Site Button -->
+      <a href="{% url 'core:home' %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9999px; background: #F3F4F6; color: #374151; font-size: 12.5px; font-weight: 600; text-decoration: none; border: 1px solid #E5E7EB; transition: background 0.15s;" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='#F3F4F6'" title="เปิดดูหน้าเว็บแอปพลิเคชัน">
+        <i data-lucide="globe" style="width: 14px; height: 14px; color: #159F8C;"></i>
+        <span>ดูหน้าเว็บแอป</span>
+      </a>
+
       <!-- Notification Bell -->
       <button class="icon-badge-btn" title="การแจ้งเตือน">
         <i data-lucide="bell" class="w-4 h-4"></i>
-        <span class="badge">{{ admin_unread_notifications|default:3 }}</span>
+        <span class="badge">{{ admin_unread_notifications|default:0 }}</span>
       </button>
 
       <!-- Admin Profile Dropdown -->
@@ -146,7 +163,7 @@
     {% block content %}{% endblock %}
 
     <footer style="text-align: center; margin-top: 40px; color: #9CA3AF; font-size: 0.8rem;">
-      © 2024 ที่นี่มีอะไร? Admin Panel | พัฒนาด้วย Django
+      © 2026 ที่นี่มีอะไร? Admin Panel | พัฒนาด้วย Django
     </footer>
   </main>
 
@@ -209,6 +226,51 @@
       }
       return cookieValue;
     }
+
+    // ──────────────────────────────────────────────
+    // Admin Toast Notification System
+    // ──────────────────────────────────────────────
+    function showToast(message, type = 'success', duration = 3000) {
+      let container = document.getElementById('adminToastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'adminToastContainer';
+        container.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;';
+        document.body.appendChild(container);
+      }
+
+      const colors = {
+        success: { bg: '#059669', icon: '✅' },
+        error:   { bg: '#DC2626', icon: '❌' },
+        warning: { bg: '#D97706', icon: '⚠️' },
+        info:    { bg: '#2563EB', icon: 'ℹ️' }
+      };
+      const c = colors[type] || colors.info;
+
+      const toast = document.createElement('div');
+      toast.style.cssText = `display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:9999px;background:${c.bg};color:#fff;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.2);pointer-events:all;opacity:0;transform:translateY(12px);transition:opacity 0.25s ease,transform 0.25s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;white-space:nowrap;`;
+      toast.innerHTML = `<span>${c.icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateY(0)';
+        });
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    // Intercept browser native alert() → use showToast instead
+    window.alert = function(msg) {
+      const isError = /ไม่สามารถ|error|ผิด|ล้มเหลว/i.test(String(msg));
+      showToast(String(msg), isError ? 'error' : 'success');
+    };
   </script>
   {% block extra_js %}{% endblock %}
 </body>

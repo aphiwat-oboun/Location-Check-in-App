@@ -51,7 +51,7 @@ def api_locations(request):
             latest_post_data = {
                 'id': None,
                 'author_name': 'ที่นี่มีอะไร?',
-                'author_avatar': 'https://ui-avatars.com/api/?name=W&background=159F8C&color=fff',
+                'author_avatar': "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' fill='%23E5E7EB' rx='64'/%3E%3Ccircle cx='64' cy='46' r='22' fill='%239CA3AF'/%3E%3Cpath d='M24 108c0-22.091 17.909-38 40-38s40 15.909 40 38' fill='%239CA3AF'/%3E%3C/svg%3E",
                 'caption': loc.description or 'สถานที่น่าค้นหา',
                 'time_ago': 'เมื่อสักครู่',
                 'likes_count': 12,

@@ -1,7 +1,7 @@
 {% extends "admin_panel/base.html" %}
 
 {% block title %}รายงาน{% endblock %}
-{% block header_title %}ศูนย์การตรวจสอบรายงาน (Moderation Center){% endblock %}
+{% block header_title %}ศูนย์การตรวจสอบรายงาน{% endblock %}
 {% block header_subtitle %}ตรวจสอบและดำเนินการกับรายงานเนื้อหาที่ไม่เหมาะสม{% endblock %}
 
 {% block content %}
@@ -24,7 +24,7 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>ประเภท</th>
+          <th>ประเภท / เนื้อหา</th>
           <th>เหตุผล</th>
           <th>ผู้รายงาน</th>
           <th>สถานะ</th>
@@ -35,27 +35,58 @@
       <tbody>
         {% for r in reports_page %}
           <tr id="report-row-{{ r.id }}">
-            <td>#{{ r.id }}</td>
-            <td style="font-weight: 600;">รายงาน{{ r.get_report_type_display }}</td>
+            <td style="font-weight:700;color:#6B7280;">#{{ r.id }}</td>
+            <td>
+              <div style="font-weight:600;color:#1F2937;">รายงาน{{ r.get_report_type_display }}</div>
+              <div style="font-size:0.75rem;color:#9CA3AF;">
+                {% if r.post %}โพสต์ #{{ r.post.id }}: {{ r.post.caption|truncatechars:30 }}
+                {% elif r.comment %}คอมเมนต์ #{{ r.comment.id }}: {{ r.comment.content|truncatechars:30 }}
+                {% elif r.location %}สถานที่: {{ r.location.name }}
+                {% elif r.target_user %}ผู้ใช้: @{{ r.target_user.username }}
+                {% endif %}
+              </div>
+            </td>
             <td>
               <span class="badge-status {% if r.reason == 'inappropriate' %}red{% elif r.reason == 'incorrect_info' %}amber{% else %}yellow{% endif %}">
                 {{ r.get_reason_display_thai }}
               </span>
             </td>
             <td>@{{ r.reporter.username }}</td>
-            <td>
+            <td id="report-status-{{ r.id }}">
               <span class="badge-status {{ r.get_status_badge_class }}">
                 {{ r.get_status_display_thai }}
               </span>
             </td>
             <td>{{ r.created_at|date:"d M Y H:i" }}</td>
-            <td style="text-align: center;">
-              <button class="table-action-btn edit" title="อนุมัติเป็นดำเนินการแล้ว" onclick="updateReportStatus({{ r.id }}, 'resolved')">
-                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <td style="text-align: center; white-space: nowrap;">
+              <!-- View content -->
+              {% if r.post %}
+              <button class="table-action-btn view" title="ดูโพสต์ที่ถูกรายงาน" onclick="window.open('/posts/{{ r.post.id }}/', '_blank')">
+                <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
-              <button class="table-action-btn delete" title="ยกเลิายรายงาน" onclick="updateReportStatus({{ r.id }}, 'dismissed')">
-                <i data-lucide="x-circle" class="w-4 h-4 text-gray-400"></i>
+              {% elif r.comment %}
+              <button class="table-action-btn view" title="ดูโพสต์ของคอมเมนต์" onclick="window.open('/posts/{{ r.comment.post.id }}/', '_blank')">
+                <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
+              {% elif r.target_user %}
+              <button class="table-action-btn view" title="ดูโปรไฟล์ผู้ใช้" onclick="window.open('{% url "accounts:user_profile" r.target_user.username %}', '_blank')">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+              {% endif %}
+              <!-- Resolve -->
+              <button class="table-action-btn edit" title="อนุมัติ — ดำเนินการแล้ว" onclick="updateReportStatus({{ r.id }}, 'resolved', false)">
+                <i data-lucide="check-circle" class="w-4 h-4" style="color:#059669;"></i>
+              </button>
+              <!-- Dismiss -->
+              <button class="table-action-btn" title="ยกเลิกรายงาน" style="color:#9CA3AF;" onclick="updateReportStatus({{ r.id }}, 'dismissed', false)">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+              </button>
+              <!-- Resolve + Delete Content -->
+              {% if r.post or r.comment %}
+              <button class="table-action-btn delete" title="ดำเนินการ + ลบเนื้อหา" onclick="updateReportStatus({{ r.id }}, 'resolved', true)">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+              {% endif %}
             </td>
           </tr>
         {% empty %}
@@ -66,28 +97,59 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if reports_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+    {% if reports_page.has_previous %}
+      <a href="?page={{ reports_page.previous_page_number }}&status={{ status_filter }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ reports_page.number }} / {{ reports_page.paginator.num_pages }}</span>
+    {% if reports_page.has_next %}
+      <a href="?page={{ reports_page.next_page_number }}&status={{ status_filter }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  function updateReportStatus(reportId, newStatus) {
-    showConfirmModal('อัปเดตสถานะรายงาน?', `คุณแน่ใจหรือไม่ที่จะเปลี่ยนสถานะรายงานเป็น "${newStatus}"?`, function() {
+  function updateReportStatus(reportId, newStatus, deleteContent) {
+    const labels = { resolved: 'ดำเนินการแล้ว', dismissed: 'ยกเลิก' };
+    const label = labels[newStatus] || newStatus;
+    const confirmMsg = deleteContent
+      ? `ดำเนินการรายงาน #${reportId} และลบเนื้อหาที่ถูกรายงานออกจากระบบด้วย คุณแน่ใจหรือไม่?`
+      : `เปลี่ยนสถานะรายงาน #${reportId} เป็น "${label}" คุณแน่ใจหรือไม่?`;
+
+    showConfirmModal('อัปเดตสถานะรายงาน?', confirmMsg, function() {
+      const body = new URLSearchParams({ status: newStatus, delete_content: deleteContent ? 'true' : 'false' });
       fetch(`/admin-panel/api/report/${reportId}/action/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: `status=${newStatus}`
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
+        body: body.toString()
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
-          alert('อัปเดตรายงานเรียบร้อยแล้ว');
-          window.location.reload();
+        if (data.success) {
+          // Update status badge in-place
+          const statusCell = document.getElementById(`report-status-${reportId}`);
+          if (statusCell) {
+            const badgeClass = newStatus === 'resolved' ? 'emerald' : 'gray';
+            statusCell.innerHTML = `<span class="badge-status ${badgeClass}">${data.new_status}</span>`;
+          }
+          showToast(data.message, 'success');
+          if (deleteContent) {
+            setTimeout(() => {
+              const row = document.getElementById(`report-row-${reportId}`);
+              if (row) row.style.opacity = '0.4';
+            }, 500);
+          }
+        } else {
+          showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
         }
-      });
+      })
+      .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
     });
   }
 </script>

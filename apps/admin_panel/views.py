@@ -34,9 +34,9 @@ def log_admin_action(user, action, target_repr='', details='', request=None):
 @admin_required
 def dashboard_view(request):
     """
-    Main Admin Dashboard reproducing exact layout of reference image
+    Main Admin Dashboard connected 100% to real database data (Zero demo/mock data)
     """
-    # 1. 6 KPI Cards calculations (fallback to realistic numbers matching mockup if DB is fresh)
+    # 1. 6 KPI Cards calculations (100% real database records)
     total_users_count = User.objects.count()
     total_posts_count = Post.objects.count()
     total_locations_count = Location.objects.count()
@@ -46,87 +46,64 @@ def dashboard_view(request):
 
     # Formatted KPI numbers
     kpi_data = {
-        'users': f"{total_users_count if total_users_count > 10 else 12580:,}",
-        'posts': f"{total_posts_count if total_posts_count > 10 else 35642:,}",
-        'locations': f"{total_locations_count if total_locations_count > 5 else 8932:,}",
-        'likes': f"{total_likes_count if total_likes_count > 10 else 256892:,}",
-        'comments': f"{total_comments_count if total_comments_count > 10 else 48651:,}",
-        'saved': f"{total_saved_count if total_saved_count > 10 else 19873:,}",
+        'users': f"{total_users_count:,}",
+        'posts': f"{total_posts_count:,}",
+        'locations': f"{total_locations_count:,}",
+        'likes': f"{total_likes_count:,}",
+        'comments': f"{total_comments_count:,}",
+        'saved': f"{total_saved_count:,}",
     }
 
-    # Trends matching reference image
-    kpi_trends = {
-        'users': '▲ 12.5% จากเดือนที่แล้ว',
-        'posts': '▲ 18.3% จากเดือนที่แล้ว',
-        'locations': '▲ 8.7% จากเดือนที่แล้ว',
-        'likes': '▲ 22.1% จากเดือนที่แล้ว',
-        'comments': '▲ 16.4% จากเดือนที่แล้ว',
-        'saved': '▲ 19.8% จากเดือนที่แล้ว',
-    }
-
-    # 2. Analytics Line Chart Data (7 days by default)
+    # Dynamic Real Trends (Comparison between current 30 days and prior 30 days)
     today = timezone.now().date()
+    curr_30_start = today - timedelta(days=30)
+    prev_30_start = today - timedelta(days=60)
+
+    def calc_trend(model, date_field='created_at'):
+        curr = model.objects.filter(**{f"{date_field}__date__gte": curr_30_start}).count()
+        prev = model.objects.filter(**{f"{date_field}__date__gte": prev_30_start, f"{date_field}__date__lt": curr_30_start}).count()
+        if prev == 0:
+            return f"+{curr} ในเดือนนี้" if curr > 0 else "0% จากเดือนที่แล้ว"
+        pct = round(((curr - prev) / prev) * 100, 1)
+        symbol = "▲" if pct >= 0 else "▼"
+        return f"{symbol} {abs(pct)}% จากเดือนที่แล้ว"
+
+    kpi_trends = {
+        'users': calc_trend(User, 'date_joined'),
+        'posts': calc_trend(Post, 'created_at'),
+        'locations': calc_trend(Location, 'created_at'),
+        'likes': calc_trend(Like, 'created_at'),
+        'comments': calc_trend(Comment, 'created_at'),
+        'saved': calc_trend(SavedPost, 'created_at'),
+    }
+
+    # 2. Analytics Line Chart Data (7 days by default - 100% real records)
     dates_7days = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
-    
-    # Thai date labels format (e.g. 27 พ.ค., 28 พ.ค., ...)
     thai_months = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
     chart_labels = [f"{d.day} {thai_months[d.month]}" for d in dates_7days]
     
-    # Sample curve values matching reference visual line proportions if DB has small data
-    users_chart_data = [3100, 3450, 3300, 3880, 3380, 3980, 3800]
-    posts_chart_data = [2200, 2350, 2200, 2600, 2320, 2620, 2610]
-    likes_chart_data = [850, 1120, 1050, 1250, 1180, 1300, 1310]
+    users_chart_data = [User.objects.filter(date_joined__date=d).count() for d in dates_7days]
+    posts_chart_data = [Post.objects.filter(created_at__date=d).count() for d in dates_7days]
+    likes_chart_data = [Like.objects.filter(created_at__date=d).count() for d in dates_7days]
 
-    # Calculate from actual DB if sufficient records
-    db_users_daily = []
-    db_posts_daily = []
-    for d in dates_7days:
-        u_c = User.objects.filter(date_joined__date=d).count()
-        p_c = Post.objects.filter(created_at__date=d).count()
-        db_users_daily.append(u_c)
-        db_posts_daily.append(p_c)
-
-    if sum(db_users_daily) > 0:
-        users_chart_data = [3000 + c * 50 for c in db_users_daily]
-    if sum(db_posts_daily) > 0:
-        posts_chart_data = [2000 + c * 40 for c in db_posts_daily]
-
-    # 3. Category Donut Breakdown
+    # 3. Category Donut Breakdown (100% real categories and post counts)
     categories = Category.objects.annotate(post_cnt=Count('posts')).order_by('-post_cnt')
-    cat_labels = []
-    cat_counts = []
-    cat_colors = ['#159F8C', '#3B82F6', '#F59E0B', '#EF4444', '#EC4899', '#6B7280']
+    cat_colors = ['#159F8C', '#3B82F6', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#6B7280']
     
-    default_cat_data = [
-        {'name': 'คาเฟ่', 'count': 9842, 'percent': '27.6%'},
-        {'name': 'ธรรมชาติ', 'count': 8765, 'percent': '24.6%'},
-        {'name': 'ท่องเที่ยว', 'count': 7654, 'percent': '21.5%'},
-        {'name': 'อาหาร', 'count': 5432, 'percent': '15.2%'},
-        {'name': 'ช้อปปิ้ง', 'count': 2345, 'percent': '6.6%'},
-        {'name': 'อื่นๆ', 'count': 1604, 'percent': '4.5%'},
-    ]
-
     cat_list_formatted = []
-    if categories.exists():
-        total_p = sum([c.post_cnt for c in categories]) or 35642
-        for idx, cat in enumerate(categories[:6]):
-            color = cat_colors[idx % len(cat_colors)]
-            pct = round((cat.post_cnt / total_p) * 100, 1) if total_p > 0 else 0
-            cat_list_formatted.append({
-                'name': cat.name,
-                'count': f"{cat.post_cnt:,}" if cat.post_cnt else "1,200",
-                'percent': f"({pct}%)",
-                'color': color
-            })
-    
-    if not cat_list_formatted:
-        for idx, item in enumerate(default_cat_data):
-            item['color'] = cat_colors[idx]
-            item['count'] = f"{item['count']:,}"
-            cat_list_formatted.append(item)
+    total_posts_in_cats = sum([c.post_cnt for c in categories])
+    for idx, cat in enumerate(categories):
+        color = cat_colors[idx % len(cat_colors)]
+        pct = round((cat.post_cnt / total_posts_in_cats) * 100, 1) if total_posts_in_cats > 0 else 0
+        cat_list_formatted.append({
+            'name': cat.name,
+            'count': f"{cat.post_cnt:,}",
+            'percent': f"({pct}%)",
+            'color': color
+        })
 
-    # 4. Popular Places Map Markers Data
-    locations_list = Location.objects.all()[:10]
+    # 4. Popular Places Map Markers Data (100% real locations from DB)
+    locations_list = Location.objects.all()[:30]
     map_locations = []
     for loc in locations_list:
         map_locations.append({
@@ -137,24 +114,15 @@ def dashboard_view(request):
             'lng': loc.longitude,
             'image_url': loc.get_cover_url(),
         })
-    
-    if not map_locations:
-        # Fallback default locations matching reference map
-        map_locations = [
-            {'id': 1, 'name': 'คาเฟ่ในสวน เชียงใหม่', 'city': 'เชียงใหม่', 'lat': 18.7883, 'lng': 98.9853, 'image_url': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=150'},
-            {'id': 2, 'name': 'น้ำตกแม่กำปอง', 'city': 'เชียงใหม่', 'lat': 18.8654, 'lng': 99.3512, 'image_url': 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=150'},
-            {'id': 3, 'name': 'ริมโขง หนองคาย', 'city': 'หนองคาย', 'lat': 17.8783, 'lng': 102.7420, 'image_url': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=150'},
-            {'id': 4, 'name': 'ร้านอาหารบ้านสวน', 'city': 'อุบลราชธานี', 'lat': 15.2286, 'lng': 104.8564, 'image_url': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=150'},
-        ]
 
     # 5. Recent Posts (5 items)
-    recent_posts = Post.objects.select_related('user', 'user__profile', 'location', 'category').all()[:5]
+    recent_posts = Post.objects.select_related('user', 'user__profile', 'location', 'category').order_by('-created_at')[:5]
 
     # 6. Recent Users (5 items)
     recent_users = User.objects.select_related('profile').order_by('-date_joined')[:5]
 
-    # 7. Recent Reports (4 items)
-    recent_reports = Report.objects.select_related('reporter', 'post', 'location', 'comment', 'target_user').all()[:5]
+    # 7. Recent Reports (5 items)
+    recent_reports = Report.objects.select_related('reporter', 'post', 'location', 'comment', 'target_user').order_by('-created_at')[:5]
 
     context = {
         'kpi': kpi_data,
@@ -367,33 +335,26 @@ def settings_view(request):
 @admin_required
 def analytics_api(request):
     """
-    AJAX endpoint for chart timeframe switching (7, 30, 90 days)
+    AJAX endpoint for chart timeframe switching (7, 30, 90 days) - 100% Real DB Queries
     """
     days = int(request.GET.get('days', 7))
     today = timezone.now().date()
     dates = [(today - timedelta(days=i)) for i in range(days - 1, -1, -1)]
 
     thai_months = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-    labels = [f"{d.day} {thai_months[d.month]}" for d in dates]
-
-    # Generate smooth data curves based on requested day count
-    if days == 30:
-        users = [3000 + (i % 7)*120 + i*15 for i in range(30)]
-        posts = [2100 + (i % 5)*90 + i*10 for i in range(30)]
-        likes = [800 + (i % 6)*40 + i*8 for i in range(30)]
-    elif days == 90:
-        # Step of 3 days
-        step = 3
-        dates_90 = dates[::step]
-        labels = [f"{d.day} {thai_months[d.month]}" for d in dates_90]
-        users = [2800 + (i % 8)*200 + i*25 for i in range(len(dates_90))]
-        posts = [1900 + (i % 6)*150 + i*18 for i in range(len(dates_90))]
-        likes = [700 + (i % 5)*80 + i*12 for i in range(len(dates_90))]
+    
+    if days == 90:
+        # Step every 3 days for cleaner 90-day chart labels
+        step_dates = dates[::3]
+        labels = [f"{d.day} {thai_months[d.month]}" for d in step_dates]
+        users = [User.objects.filter(date_joined__date=d).count() for d in step_dates]
+        posts = [Post.objects.filter(created_at__date=d).count() for d in step_dates]
+        likes = [Like.objects.filter(created_at__date=d).count() for d in step_dates]
     else:
         labels = [f"{d.day} {thai_months[d.month]}" for d in dates]
-        users = [3100, 3450, 3300, 3880, 3380, 3980, 3800]
-        posts = [2200, 2350, 2200, 2600, 2320, 2620, 2610]
-        likes = [850, 1120, 1050, 1250, 1180, 1300, 1310]
+        users = [User.objects.filter(date_joined__date=d).count() for d in dates]
+        posts = [Post.objects.filter(created_at__date=d).count() for d in dates]
+        likes = [Like.objects.filter(created_at__date=d).count() for d in dates]
 
     return JsonResponse({
         'labels': labels,
@@ -515,7 +476,108 @@ def export_analytics_csv(request):
     today = timezone.now().date()
     for i in range(30, -1, -1):
         d = today - timedelta(days=i)
-        writer.writerow([d.strftime('%Y-%m-%d'), 3000 + i*15, 2000 + i*10, 800 + i*8, 400 + i*5, 200 + i*3])
+        u_cnt = User.objects.filter(date_joined__date=d).count()
+        p_cnt = Post.objects.filter(created_at__date=d).count()
+        l_cnt = Like.objects.filter(created_at__date=d).count()
+        c_cnt = Comment.objects.filter(created_at__date=d).count()
+        s_cnt = SavedPost.objects.filter(created_at__date=d).count()
+        writer.writerow([d.strftime('%Y-%m-%d'), u_cnt, p_cnt, l_cnt, c_cnt, s_cnt])
 
     log_admin_action(request.user, "ส่งออกข้อมูล Analytics (CSV)", request=request)
     return response
+
+
+@admin_required
+def location_delete_api(request, location_id):
+    """
+    AJAX handler to delete a location (and cascade-nullify related posts)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    location = get_object_or_404(Location, id=location_id)
+    loc_name = location.name
+    log_admin_action(request.user, f"ลบสถานที่: {loc_name}", f"Location #{location_id}", request=request)
+    location.delete()
+    return JsonResponse({'success': True, 'message': f'ลบสถานที่ "{loc_name}" เรียบร้อยแล้ว'})
+
+
+@admin_required
+def category_create_api(request):
+    """
+    AJAX handler to create a new category
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    name = request.POST.get('name', '').strip()
+    icon = request.POST.get('icon', 'tag').strip()
+    order = int(request.POST.get('order', 99))
+
+    if not name:
+        return JsonResponse({'success': False, 'message': 'กรุณากรอกชื่อหมวดหมู่'})
+
+    if Category.objects.filter(name__iexact=name).exists():
+        return JsonResponse({'success': False, 'message': f'หมวดหมู่ "{name}" มีอยู่แล้ว'})
+
+    cat = Category.objects.create(name=name, icon=icon, order=order)
+    log_admin_action(request.user, f"เพิ่มหมวดหมู่: {name}", f"Category #{cat.id}", request=request)
+    return JsonResponse({'success': True, 'message': f'เพิ่มหมวดหมู่ "{name}" เรียบร้อยแล้ว', 'id': cat.id})
+
+
+@admin_required
+def category_delete_api(request, category_id):
+    """
+    AJAX handler to delete a category
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    category = get_object_or_404(Category, id=category_id)
+    cat_name = category.name
+    log_admin_action(request.user, f"ลบหมวดหมู่: {cat_name}", f"Category #{category_id}", request=request)
+    category.delete()
+    return JsonResponse({'success': True, 'message': f'ลบหมวดหมู่ "{cat_name}" เรียบร้อยแล้ว'})
+
+
+@admin_required
+def user_edit_api(request, user_id):
+    """
+    AJAX handler to edit user's display_name, email, and staff status
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user = get_object_or_404(User, id=user_id)
+    display_name = request.POST.get('display_name', '').strip()
+    email = request.POST.get('email', '').strip()
+    make_staff = request.POST.get('is_staff') == 'true'
+
+    changes = []
+    if display_name and display_name != user.profile.display_name:
+        user.profile.display_name = display_name
+        user.profile.save()
+        changes.append(f"ชื่อแสดง → {display_name}")
+
+    if email and email != user.email:
+        if User.objects.filter(email__iexact=email).exclude(id=user_id).exists():
+            return JsonResponse({'success': False, 'message': 'อีเมลนี้ถูกใช้งานแล้ว'})
+        user.email = email
+        changes.append(f"อีเมล → {email}")
+
+    if make_staff != user.is_staff:
+        user.is_staff = make_staff
+        changes.append(f"สิทธิ์ Staff → {'เปิด' if make_staff else 'ปิด'}")
+
+    user.save()
+
+    detail = ', '.join(changes) if changes else 'ไม่มีการเปลี่ยนแปลง'
+    log_admin_action(request.user, f"แก้ไขข้อมูลผู้ใช้ @{user.username}: {detail}", f"User #{user.id}", request=request)
+    return JsonResponse({
+        'success': True,
+        'message': f'อัปเดตข้อมูล @{user.username} เรียบร้อยแล้ว',
+        'display_name': user.profile.display_name,
+        'email': user.email,
+        'is_staff': user.is_staff,
+    })
+

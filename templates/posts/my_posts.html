@@ -14,12 +14,17 @@
 
   <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:16px;">
     {% for post in posts %}
-    <div style="background:#FFFFFF;border-radius:var(--radius-md);border:1px solid var(--border-subtle);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;">
+    <div data-post-card-id="{{ post.id }}" style="background:#FFFFFF;border-radius:var(--radius-md);border:1px solid var(--border-subtle);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;">
       <a href="{% url 'posts:detail' post.id %}" style="width:100%;aspect-ratio:4/3;overflow:hidden;background:#f0f0f0;display:block;">
         <img src="{{ post.get_cover_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
       </a>
       <div style="padding:14px;display:flex;flex-direction:column;gap:6px;">
-        <div style="font-size:14px;font-weight:700;color:var(--text-main);">{{ post.location.name }}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ post.location.name }}</div>
+          <button class="btn-icon-circle" style="width:28px;height:28px;flex-shrink:0;" title="ตัวเลือกโพสต์" onclick="openPostOptionsMenu({{ post.id }}, true, '{{ post.location.name|escapejs }}')">
+            <i data-lucide="more-horizontal" style="width:15px;height:15px;"></i>
+          </button>
+        </div>
         <div style="font-size:12px;color:var(--text-muted);">{{ post.get_time_ago_str }} • {{ post.location.city }}</div>
         <p style="font-size:12.5px;color:var(--text-main);line-height:1.4;margin-top:2px;">{{ post.caption }}</p>
       </div>
