@@ -1,5 +1,5 @@
 echo "Starting Vercel Build Phase..."
 mkdir -p staticfiles
 python3 -m pip install -r requirements.txt --break-system-packages
-python3 manage.py collectstatic --noinput
+python3 manage.py collectstatic --noinput --clear
 echo "Vercel Build Phase Completed Successfully!"
