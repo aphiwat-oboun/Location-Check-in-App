@@ -21,8 +21,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- CSRF Token Meta for AJAX requests -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
   <!-- Admin Styles -->
-  <link rel="stylesheet" href="{% static 'css/admin_panel.css' %}">
+  <link rel="stylesheet" href="{% static 'css/admin_panel.css' %}?v=1788643600">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -88,9 +91,12 @@
           <i data-lucide="message-square" class="w-4 h-4"></i>
           <span>คอมเมนต์</span>
         </a>
-        <a href="#" class="menu-item">
+        <a href="{% url 'admin_panel:notifications' %}" class="menu-item {% if active_page == 'notifications' %}active{% endif %}" style="display:flex;align-items:center;">
           <i data-lucide="bell" class="w-4 h-4"></i>
           <span>การแจ้งเตือน</span>
+          {% if admin_unread_notifications %}
+          <span style="margin-left:auto;background:#EF4444;color:#FFF;font-size:11px;font-weight:700;padding:2px 7px;border-radius:9999px;">{{ admin_unread_notifications }}</span>
+          {% endif %}
         </a>
         <a href="{% url 'admin_panel:settings' %}" class="menu-item {% if active_page == 'settings' %}active{% endif %}">
           <i data-lucide="settings" class="w-4 h-4"></i>
@@ -113,8 +119,8 @@
   <!-- Top Header -->
   <header class="admin-header">
     <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-      <button onclick="toggleAdminSidebar()" class="mobile-only-btn" style="width:38px;height:38px;border-radius:10px;background:#F3F4F6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        <i data-lucide="menu" style="width:20px;height:20px;color:#374151;"></i>
+      <button type="button" id="adminSidebarToggleBtn" onclick="toggleAdminSidebar()" class="mobile-only-btn" style="width:38px;height:38px;border-radius:10px;background:#F3F4F6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" aria-label="เปิดเมนูแอดมิน">
+        <i data-lucide="menu" style="width:20px;height:20px;color:#374151;pointer-events:none;"></i>
       </button>
       <div class="header-title-group" style="min-width:0;">
         <h1>{% block header_title %}แดชบอร์ด{% endblock %}</h1>
@@ -136,10 +142,12 @@
       </a>
 
       <!-- Notification Bell -->
-      <button class="icon-badge-btn" title="การแจ้งเตือน">
+      <a href="{% url 'admin_panel:notifications' %}" class="icon-badge-btn" title="การแจ้งเตือน" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">
         <i data-lucide="bell" class="w-4 h-4"></i>
-        <span class="badge">{{ admin_unread_notifications|default:0 }}</span>
-      </button>
+        {% if admin_unread_notifications %}
+        <span class="badge">{{ admin_unread_notifications }}</span>
+        {% endif %}
+      </a>
 
       <!-- Admin Profile Dropdown -->
       <div class="admin-user-profile" id="adminUserDropdownToggle">
@@ -233,7 +241,16 @@
       });
     });
 
-    // CSRF helper
+    // CSRF helper (Checks meta tag first, then cookie)
+    function getCsrfToken() {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta && meta.getAttribute('content')) {
+        return meta.getAttribute('content');
+      }
+      return getCookie('csrftoken') || '';
+    }
+    window.getCsrfToken = getCsrfToken;
+
     function getCookie(name) {
       let cookieValue = null;
       if (document.cookie && document.cookie !== '') {
@@ -246,8 +263,13 @@
           }
         }
       }
-      return cookieValue;
+      if (!cookieValue && name === 'csrftoken') {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.getAttribute('content')) return meta.getAttribute('content');
+      }
+      return cookieValue || '';
     }
+    window.getCookie = getCookie;
 
     // ──────────────────────────────────────────────
     // Admin Toast Notification System

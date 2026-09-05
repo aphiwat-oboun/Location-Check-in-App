@@ -84,7 +84,16 @@ class AuditLog(models.Model):
 
 
 class Notification(models.Model):
+    NOTIFICATION_CATEGORIES = (
+        ('report', 'รายงานปัญหา'),
+        ('user', 'ผู้ใช้งาน'),
+        ('post', 'โพสต์'),
+        ('location', 'สถานที่'),
+        ('system', 'ระบบ'),
+    )
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_notifications')
+    category = models.CharField(max_length=20, choices=NOTIFICATION_CATEGORIES, default='system')
     title = models.CharField(max_length=200)
     message = models.TextField()
     link = models.CharField(max_length=255, blank=True)
@@ -96,3 +105,24 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
+
+
+class SystemSetting(models.Model):
+    site_name = models.CharField(max_length=100, default='ที่นี่มีอะไร?')
+    site_description = models.CharField(max_length=255, default='ค้นพบสถานที่น่าสนใจผ่านเรื่องราวและรูปภาพ', blank=True)
+    default_province = models.CharField(max_length=100, default='ศรีสะเกษ')
+    default_lat = models.FloatField(default=15.1120)
+    default_lng = models.FloatField(default=104.3180)
+    allow_user_registration = models.BooleanField(default=True)
+    require_post_moderation = models.BooleanField(default=False)
+    maintenance_mode = models.BooleanField(default=False)
+    contact_email = models.EmailField(default='support@whatshere.com', blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_settings(cls):
+        setting, _ = cls.objects.get_or_create(id=1)
+        return setting
+
+    def __str__(self):
+        return f"SystemSetting ({self.site_name})"

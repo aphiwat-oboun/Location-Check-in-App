@@ -1,0 +1,348 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}การแจ้งเตือน{% endblock %}
+{% block header_title %}การแจ้งเตือนระบบ{% endblock %}
+{% block header_subtitle %}ศูนย์รวมการแจ้งเตือน รายงานปัญหา และข้อความระบบสำหรับผู้ดูแล{% endblock %}
+
+{% block content %}
+<div class="admin-card" style="margin-bottom: 24px;">
+  <!-- Header Toolbar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid #F3F4F6; padding-bottom: 16px;">
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="?tab=all" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; {% if current_tab == 'all' %}background: #159F8C; color: #fff; box-shadow: 0 4px 12px rgba(21,159,140,0.25);{% else %}background: #F3F4F6; color: #4B5563;{% endif %}">
+        <span>ทั้งหมด</span>
+        <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 9999px; {% if current_tab == 'all' %}background: rgba(255,255,255,0.25); color: #fff;{% else %}background: #E5E7EB; color: #374151;{% endif %}">{{ total_count }}</span>
+      </a>
+
+      <a href="?tab=unread" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; {% if current_tab == 'unread' %}background: #EF4444; color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,0.25);{% else %}background: #FEE2E2; color: #DC2626;{% endif %}">
+        <span>ยังไม่อ่าน</span>
+        <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 9999px; {% if current_tab == 'unread' %}background: rgba(255,255,255,0.3); color: #fff;{% else %}background: #FECACA; color: #B91C1C;{% endif %}">{{ unread_count }}</span>
+      </a>
+
+      <a href="?tab=report" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; {% if current_tab == 'report' %}background: #F59E0B; color: #fff; box-shadow: 0 4px 12px rgba(245,158,11,0.25);{% else %}background: #FEF3C7; color: #D97706;{% endif %}">
+        <i data-lucide="flag" class="w-4 h-4"></i>
+        <span>รายงานปัญหา</span>
+        <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 9999px; {% if current_tab == 'report' %}background: rgba(255,255,255,0.3); color: #fff;{% else %}background: #FDE68A; color: #92400E;{% endif %}">{{ report_count }}</span>
+      </a>
+
+      <a href="?tab=system" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.2s; {% if current_tab == 'system' %}background: #3B82F6; color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.25);{% else %}background: #EFF6FF; color: #2563EB;{% endif %}">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span>ระบบ</span>
+        <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 9999px; {% if current_tab == 'system' %}background: rgba(255,255,255,0.3); color: #fff;{% else %}background: #DBEAFE; color: #1E40AF;{% endif %}">{{ system_count }}</span>
+      </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <button onclick="openCreateNotifModal()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px dashed #159F8C; background: #F0FDF9; color: #159F8C; font-size: 0.825rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>สร้างแจ้งเตือนใหม่</span>
+      </button>
+
+      {% if unread_count > 0 %}
+      <button onclick="markAllNotificationsRead()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; color: #374151; font-size: 0.825rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <i data-lucide="check-check" class="w-4 h-4" style="color: #159F8C;"></i>
+        <span>อ่านทั้งหมด</span>
+      </button>
+      {% endif %}
+
+      {% if total_count > 0 %}
+      <button onclick="clearAllNotifications()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid #FEE2E2; background: #FEF2F2; color: #DC2626; font-size: 0.825rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+        <span>ล้างทั้งหมด</span>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Notification Items List -->
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for notif in notifications_page %}
+      <div id="notif-card-{{ notif.id }}" style="display: flex; align-items: flex-start; justify-content: space-between; padding: 16px 20px; border-radius: 12px; border: 1px solid {% if not notif.is_read %}#C7D2FE{% else %}#F3F4F6{% endif %}; background: {% if not notif.is_read %}#F8FAFC{% else %}#FFFFFF{% endif %}; position: relative; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        
+        <!-- Left: Category Icon & Content -->
+        <div style="display: flex; gap: 16px; align-items: flex-start; flex: 1; min-width: 0;">
+          <!-- Category Icon Badge -->
+          <div style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; 
+            {% if notif.category == 'report' %}background: #FEE2E2; color: #EF4444;
+            {% elif notif.category == 'user' %}background: #F3E8FF; color: #9333EA;
+            {% elif notif.category == 'post' %}background: #FEF3C7; color: #D97706;
+            {% elif notif.category == 'location' %}background: #ECFDF5; color: #10B981;
+            {% else %}background: #EFF6FF; color: #3B82F6;{% endif %}">
+            {% if notif.category == 'report' %}
+              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            {% elif notif.category == 'user' %}
+              <i data-lucide="user-plus" class="w-5 h-5"></i>
+            {% elif notif.category == 'post' %}
+              <i data-lucide="file-text" class="w-5 h-5"></i>
+            {% elif notif.category == 'location' %}
+              <i data-lucide="map-pin" class="w-5 h-5"></i>
+            {% else %}
+              <i data-lucide="info" class="w-5 h-5"></i>
+            {% endif %}
+          </div>
+
+          <!-- Content Text -->
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+              <span style="font-weight: 700; font-size: 0.95rem; color: #1F2937;">{{ notif.title }}</span>
+              {% if not notif.is_read %}
+                <span id="unread-dot-{{ notif.id }}" style="width: 8px; height: 8px; border-radius: 50%; background: #EF4444; display: inline-block;"></span>
+                <span class="badge-status rose" style="font-size: 0.7rem; padding: 1px 8px;">ใหม่</span>
+              {% endif %}
+              <span style="font-size: 0.75rem; color: #9CA3AF; margin-left: auto;">
+                {{ notif.created_at|date:"d M Y H:i" }}
+              </span>
+            </div>
+
+            <p style="font-size: 0.875rem; color: #4B5563; margin: 0 0 10px 0; line-height: 1.5; word-break: break-word;">
+              {{ notif.message }}
+            </p>
+
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              {% if notif.link %}
+                <a href="{{ notif.link }}" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 600; color: #159F8C; text-decoration: none; padding: 3px 10px; border-radius: 6px; background: #F0FDF9; border: 1px solid #CCFBF1;">
+                  <span>ตรวจสอบรายละเอียด</span>
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+              {% endif %}
+
+              <span style="font-size: 0.75rem; color: #9CA3AF; background: #F3F4F6; padding: 2px 8px; border-radius: 4px;">
+                หมวดหมู่: {{ notif.get_category_display }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Actions -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-left: 16px; flex-shrink: 0;">
+          <button class="table-action-btn" title="{% if notif.is_read %}ทำเครื่องหมายว่ายังไม่อ่าน{% else %}ทำเครื่องหมายว่าอ่านแล้ว{% endif %}" onclick="toggleNotifRead({{ notif.id }})" style="color: #6B7280;">
+            <i data-lucide="{% if notif.is_read %}mail-check{% else %}mail{% endif %}" class="w-4 h-4"></i>
+          </button>
+          <button class="table-action-btn delete" title="ลบการแจ้งเตือน" onclick="deleteNotif({{ notif.id }})">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    {% empty %}
+      <div style="text-align: center; padding: 60px 20px; background: #F9FAFB; border-radius: 16px; border: 1px dashed #E5E7EB;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #F3F4F6; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #9CA3AF;">
+          <i data-lucide="bell-off" class="w-7 h-7"></i>
+        </div>
+        <h4 style="font-size: 1rem; font-weight: 600; color: #374151; margin: 0 0 4px 0;">ไม่มีรายการแจ้งเตือน</h4>
+        <p style="font-size: 0.825rem; color: #9CA3AF; margin: 0;">ไม่มีการแจ้งเตือนใหม่ในตัวกรองนี้ ทุกอย่างเป็นไปอย่างราบรื่น</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if notifications_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;flex-wrap:wrap;">
+    {% if notifications_page.has_previous %}
+      <a href="?page={{ notifications_page.previous_page_number }}&tab={{ current_tab }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ notifications_page.number }} / {{ notifications_page.paginator.num_pages }}</span>
+    {% if notifications_page.has_next %}
+      <a href="?page={{ notifications_page.next_page_number }}&tab={{ current_tab }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal Create Notification -->
+<div id="createNotifModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#1F2937;">สร้างการแจ้งเตือนใหม่</h3>
+      <button onclick="closeCreateNotifModal()" style="border:none;background:transparent;cursor:pointer;color:#9CA3AF;">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">หัวข้อแจ้งเตือน <span style="color:#EF4444;">*</span></label>
+        <input type="text" id="newNotifTitle" placeholder="เช่น แจ้งปิดปรับปรุงระบบ, ตรวจสอบโพสต์ใหม่" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
+      </div>
+
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">หมวดหมู่</label>
+        <select id="newNotifCategory" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;background:#fff;">
+          <option value="system">ระบบ (System)</option>
+          <option value="report">รายงานปัญหา (Report)</option>
+          <option value="post">โพสต์ (Post)</option>
+          <option value="location">สถานที่ (Location)</option>
+          <option value="user">สมาชิก (User)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">ข้อความรายละเอียด <span style="color:#EF4444;">*</span></label>
+        <textarea id="newNotifMessage" rows="3" placeholder="ระบุข้อความแจ้งเตือนที่ต้องการให้แสดง..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">ลิงก์ปลายทาง (ถ้ามี)</label>
+        <input type="text" id="newNotifLink" placeholder="/admin-panel/reports/" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button onclick="closeCreateNotifModal()" style="padding:9px 18px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:0.875rem;cursor:pointer;">ยกเลิก</button>
+      <button onclick="submitCreateNotif()" style="padding:9px 20px;border-radius:8px;border:none;background:#159F8C;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">สร้างการแจ้งเตือน</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function markAllNotificationsRead() {
+    fetch('/admin-panel/api/notifications/mark-all-read/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('เกิดข้อผิดพลาด', 'error');
+    });
+  }
+
+  function toggleNotifRead(id) {
+    fetch(`/admin-panel/api/notifications/${id}/toggle-read/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 400);
+      } else {
+        showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('เกิดข้อผิดพลาด', 'error');
+    });
+  }
+
+  function deleteNotif(id) {
+    showConfirmModal('ลบการแจ้งเตือน?', 'คุณต้องการลบรายการแจ้งเตือนนี้ใช่หรือไม่?', function() {
+      fetch(`/admin-panel/api/notifications/${id}/delete/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const card = document.getElementById(`notif-card-${id}`);
+          if (card) card.remove();
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด', 'error');
+      });
+    });
+  }
+
+  function clearAllNotifications() {
+    showConfirmModal('ล้างการแจ้งเตือนทั้งหมด?', 'คุณแน่ใจหรือไม่ที่จะลบการแจ้งเตือนทั้งหมดของคุณ? ข้อมูลที่ถูกลบจะไม่สามารถกู้คืนได้', function() {
+      fetch('/admin-panel/api/notifications/clear-all/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast(data.message, 'success');
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด', 'error');
+      });
+    });
+  }
+
+  function openCreateNotifModal() {
+    document.getElementById('createNotifModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeCreateNotifModal() {
+    document.getElementById('createNotifModal').style.display = 'none';
+  }
+
+  function submitCreateNotif() {
+    const title = document.getElementById('newNotifTitle').value.trim();
+    const message = document.getElementById('newNotifMessage').value.trim();
+    const category = document.getElementById('newNotifCategory').value;
+    const link = document.getElementById('newNotifLink').value.trim();
+
+    if (!title || !message) {
+      showToast('กรุณากรอกหัวข้อและข้อความแจ้งเตือน', 'error');
+      return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('title', title);
+    formData.append('message', message);
+    formData.append('category', category);
+    formData.append('link', link);
+
+    fetch('/admin-panel/api/notifications/create-test/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+      },
+      body: formData.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        closeCreateNotifModal();
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('เกิดข้อผิดพลาด', 'error');
+    });
+  }
+
+  document.getElementById('createNotifModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCreateNotifModal();
+  });
+</script>
+{% endblock %}

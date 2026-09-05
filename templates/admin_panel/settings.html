@@ -1,49 +1,195 @@
 {% extends "admin_panel/base.html" %}
 
-{% block title %}การตั้งค่า{% endblock %}
+{% block title %}การตั้งค่าระบบ{% endblock %}
 {% block header_title %}การตั้งค่าระบบ{% endblock %}
-{% block header_subtitle %}จัดการการตั้งค่าและบันทึกประวัติ Admin Audit Log{% endblock %}
+{% block header_subtitle %}กำหนดค่าคอนฟิกระบบ แผนที่ นโยบายความปลอดภัย และบันทึกประวัติ Admin Audit Log{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px;">
 
-  <!-- General Site Settings Card -->
-  <div class="admin-card">
-    <h3 class="card-title" style="margin-bottom: 16px;">การตั้งค่าทั่วไป</h3>
-    <form style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
-      <div>
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ชื่อระบบ</label>
-        <input type="text" value="ที่นี่มีอะไร?" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.85rem;">
+  <!-- Form Wrapper for Real System Settings -->
+  <form id="settingsForm" onsubmit="saveSystemSettings(event)">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <!-- Top Action Bar -->
+      <div class="admin-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 18px 24px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #159F8C; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="sliders" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1F2937; margin: 0 0 2px 0;">การตั้งค่าคอนฟิกส่วนกลาง</h3>
+            <p style="font-size: 0.8rem; color: #6B7280; margin: 0;">
+              อัปเดตล่าสุด: <span id="lastUpdatedTime">{{ system_setting.updated_at|date:"d M Y H:i:s" }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button type="button" onclick="resetFormToDefaults()" style="padding: 10px 18px; border-radius: 10px; border: 1px solid #E5E7EB; background: #fff; color: #4B5563; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            รีเซ็ต
+          </button>
+          <button type="submit" id="saveBtn" style="display: flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 10px; border: none; background: #159F8C; color: #fff; font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(21,159,140,0.3); transition: all 0.2s;">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>บันทึกการตั้งค่า</span>
+          </button>
+        </div>
       </div>
-      <div>
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">จังหวัดเริ่มต้น</label>
-        <input type="text" value="ศรีสะเกษ" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.85rem;">
+
+      <!-- Settings Grid: 2 Columns on Desktop -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+
+        <!-- Card 1: ข้อมูลระบบทั่วไป -->
+        <div class="admin-card" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F3F4F6; padding-bottom: 12px;">
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="globe" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: #1F2937; margin: 0;">ข้อมูลระบบทั่วไป</h4>
+              <p style="font-size: 0.775rem; color: #9CA3AF; margin: 0;">กำหนดชื่อและข้อมูลพื้นฐานของแอปพลิเคชัน</p>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+              ชื่อระบบ / แอปพลิเคชัน <span style="color: #EF4444;">*</span>
+            </label>
+            <input type="text" id="settingSiteName" name="site_name" value="{{ system_setting.site_name }}" placeholder="ที่นี่มีอะไร?" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+
+          <div>
+            <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+              คำอธิบายระบบ (Tagline / Description)
+            </label>
+            <textarea id="settingSiteDesc" name="site_description" rows="3" placeholder="ระบบเช็คอินและสำรวจสถานที่น่าสนใจผ่านรูปภาพ..." style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.875rem; box-sizing: border-box; resize: vertical;">{{ system_setting.site_description }}</textarea>
+          </div>
+
+          <div>
+            <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+              อีเมลติดต่อผู้ดูแลระบบ (Support Email)
+            </label>
+            <input type="email" id="settingContactEmail" name="contact_email" value="{{ system_setting.contact_email }}" placeholder="admin@example.com" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <!-- Card 2: ค่าเริ่มต้นแผนที่และพิกัด -->
+        <div class="admin-card" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F3F4F6; padding-bottom: 12px;">
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: #1F2937; margin: 0;">ค่าเริ่มต้นแผนที่และพิกัด</h4>
+              <p style="font-size: 0.775rem; color: #9CA3AF; margin: 0;">ตำแหน่งศูนย์กลางเมื่อผู้ใช้เปิดหน้าแผนที่</p>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">
+              จังหวัดเริ่มต้น
+            </label>
+            <input type="text" id="settingDefaultProvince" name="default_province" value="{{ system_setting.default_province }}" placeholder="ศรีสะเกษ" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ละติจูด (Latitude)</label>
+              <input type="number" step="any" id="settingDefaultLat" name="default_lat" value="{{ system_setting.default_lat }}" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.875rem; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ลองจิจูด (Longitude)</label>
+              <input type="number" step="any" id="settingDefaultLng" name="default_lng" value="{{ system_setting.default_lng }}" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 0.875rem; box-sizing: border-box;">
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div>
+            <span style="font-size: 0.775rem; color: #6B7280; display: block; margin-bottom: 6px;">เลือกพิกัดจังหวัดแนะนำ:</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" onclick="setCoordinates('ศรีสะเกษ', 15.1186, 104.3297)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.775rem; cursor: pointer; color: #374151;">ศรีสะเกษ</button>
+              <button type="button" onclick="setCoordinates('อุบลราชธานี', 15.2448, 104.8473)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.775rem; cursor: pointer; color: #374151;">อุบลราชธานี</button>
+              <button type="button" onclick="setCoordinates('กรุงเทพมหานคร', 13.7563, 100.5018)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.775rem; cursor: pointer; color: #374151;">กรุงเทพฯ</button>
+              <button type="button" onclick="setCoordinates('เชียงใหม่', 18.7883, 98.9853)" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 0.775rem; cursor: pointer; color: #374151;">เชียงใหม่</button>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div>
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">การอนุญาตให้ลงทะเบียนผู้ใช้ใหม่</label>
-        <select style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
-          <option selected>เปิดใช้งาน (Enabled)</option>
-          <option>ปิดใช้งาน (Disabled)</option>
-        </select>
+
+      <!-- Card 3: สิทธิ์ ความปลอดภัย และโหมดการทำงาน -->
+      <div class="admin-card" style="display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F3F4F6; padding-bottom: 12px;">
+          <div style="width: 34px; height: 34px; border-radius: 8px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #1F2937; margin: 0;">นโยบายระบบและการควบคุมความปลอดภัย</h4>
+            <p style="font-size: 0.775rem; color: #9CA3AF; margin: 0;">จัดการการลงทะเบียนสมาชิกและการตรวจสอบความปลอดภัยของเนื้อหา</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+
+          <!-- Toggle 1: User Registration -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FAFAFA;">
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 600; color: #1F2937;">อนุญาตให้ลงทะเบียนสมาชิกใหม่ (User Registration)</div>
+              <div style="font-size: 0.775rem; color: #6B7280;">เปิดให้บุคคลทั่วไปสามารถสมัครสมาชิกใหม่ผ่านหน้าเว็บหรือ LINE Login ได้</div>
+            </div>
+            <label style="position: relative; display: inline-block; width: 48px; height: 26px; cursor: pointer;">
+              <input type="checkbox" id="settingAllowReg" {% if system_setting.allow_user_registration %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+              <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #D1D5DB; transition: .3s; border-radius: 26px;"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 2: Post Moderation -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FAFAFA;">
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 600; color: #1F2937;">โหมดตรวจสอบโพสต์ก่อนเผยแพร่ (Post Moderation)</div>
+              <div style="font-size: 0.775rem; color: #6B7280;">หากเปิดใช้งาน โพสต์ใหม่จะต้องได้รับการอนุมัติจากแอดมินก่อนแสดงบนแผนที่</div>
+            </div>
+            <label style="position: relative; display: inline-block; width: 48px; height: 26px; cursor: pointer;">
+              <input type="checkbox" id="settingRequireMod" {% if system_setting.require_post_moderation %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+              <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #D1D5DB; transition: .3s; border-radius: 26px;"></span>
+            </label>
+          </div>
+
+          <!-- Toggle 3: Maintenance Mode -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 12px; border: 1px solid #FEE2E2; background: #FEF2F2;">
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 600; color: #991B1B;">โหมดปิดปรับปรุงระบบ (Maintenance Mode)</div>
+              <div style="font-size: 0.775rem; color: #B91C1C;">หากเปิดใช้งาน จะมีแบนเนอร์แจ้งเตือนและระงับการโพสต์ข้อมูลชั่วคราว</div>
+            </div>
+            <label style="position: relative; display: inline-block; width: 48px; height: 26px; cursor: pointer;">
+              <input type="checkbox" id="settingMaintMode" {% if system_setting.maintenance_mode %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+              <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #D1D5DB; transition: .3s; border-radius: 26px;"></span>
+            </label>
+          </div>
+
+        </div>
       </div>
-      <div>
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">โหมดการตรวจทานโพสต์</label>
-        <select style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
-          <option selected>เผยแพร่ทันที (Instant Publish)</option>
-          <option>ต้องผ่านการอนุมัติก่อน (Require Admin Moderation)</option>
-        </select>
-      </div>
-    </form>
-  </div>
+
+    </div>
+  </form>
 
   <!-- Admin Audit Log Card -->
   <div class="admin-card">
-    <h3 class="card-title" style="margin-bottom: 16px;">ประวัติการดำเนินการ (Admin Audit Log)</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h3 class="card-title" style="margin: 0 0 2px 0;">ประวัติการดำเนินการ (Admin Audit Log)</h3>
+        <p style="font-size: 0.775rem; color: #9CA3AF; margin: 0;">บันทึกความเคลื่อนไหวและการเปลี่ยนแปลงข้อมูลโดยผู้ดูแลระบบ 25 รายการล่าสุด</p>
+      </div>
+      <span style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; background: #F3F4F6; color: #4B5563; font-weight: 600;">
+        {{ audit_logs|length }} รายการล่าสุด
+      </span>
+    </div>
+
     <div style="overflow-x: auto;">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>เวลา</th>
+            <th>วัน-เวลา</th>
             <th>ผู้ดูแลระบบ</th>
             <th>การดำเนินการ</th>
             <th>เป้าหมาย</th>
@@ -53,15 +199,22 @@
         <tbody>
           {% for log in audit_logs %}
             <tr>
-              <td>{{ log.timestamp|date:"d M Y H:i:s" }}</td>
-              <td style="font-weight: 600;">@{{ log.admin_user.username }}</td>
-              <td>{{ log.action }}</td>
-              <td><code>{{ log.target_repr|default:"-" }}</code></td>
+              <td style="white-space: nowrap; font-size: 0.8rem; color: #6B7280;">{{ log.timestamp|date:"d M Y H:i:s" }}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: #159F8C; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">
+                    {{ log.admin_user.username|slice:":1"|upper }}
+                  </div>
+                  <span style="font-weight: 600; color: #1F2937;">@{{ log.admin_user.username }}</span>
+                </div>
+              </td>
+              <td style="font-weight: 500; color: #374151;">{{ log.action }}</td>
+              <td><code style="font-size: 0.75rem; background: #F3F4F6; padding: 2px 8px; border-radius: 4px; color: #4B5563;">{{ log.target_repr|default:"-" }}</code></td>
               <td><span style="font-size: 0.75rem; color: #9CA3AF;">{{ log.ip_address|default:"127.0.0.1" }}</span></td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 24px;">ยังไม่มีประวัติการดำเนินการ</td>
+              <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 30px;">ยังไม่มีประวัติการดำเนินการ</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -70,4 +223,111 @@
   </div>
 
 </div>
+
+<style>
+  /* Custom Switch Toggle Slider Styling */
+  input:checked + .slider {
+    background-color: #159F8C !important;
+  }
+  #settingMaintMode:checked + .slider {
+    background-color: #EF4444 !important;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setCoordinates(province, lat, lng) {
+    document.getElementById('settingDefaultProvince').value = province;
+    document.getElementById('settingDefaultLat').value = lat;
+    document.getElementById('settingDefaultLng').value = lng;
+    showToast(`เลือกพิกัดจังหวัด ${province} แล้ว`, 'success');
+  }
+
+  function resetFormToDefaults() {
+    showConfirmModal('รีเซ็ตการตั้งค่า?', 'คุณต้องการโหลดค่าเดิมที่บันทึกไว้ใช่หรือไม่?', function() {
+      window.location.reload();
+    });
+  }
+
+  function saveSystemSettings(event) {
+    event.preventDefault();
+    const saveBtn = document.getElementById('saveBtn');
+    const originalContent = saveBtn.innerHTML;
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span>กำลังบันทึก...</span>`;
+
+    const siteName = document.getElementById('settingSiteName').value.trim();
+    const siteDesc = document.getElementById('settingSiteDesc').value.trim();
+    const contactEmail = document.getElementById('settingContactEmail').value.trim();
+    const defaultProvince = document.getElementById('settingDefaultProvince').value.trim();
+    const defaultLat = document.getElementById('settingDefaultLat').value.trim();
+    const defaultLng = document.getElementById('settingDefaultLng').value.trim();
+    const allowReg = document.getElementById('settingAllowReg').checked;
+    const requireMod = document.getElementById('settingRequireMod').checked;
+    const maintMode = document.getElementById('settingMaintMode').checked;
+
+    if (!siteName) {
+      showToast('กรุณากรอกชื่อระบบ', 'error');
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalContent;
+      return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('site_name', siteName);
+    formData.append('site_description', siteDesc);
+    formData.append('contact_email', contactEmail);
+    formData.append('default_province', defaultProvince);
+    formData.append('default_lat', defaultLat);
+    formData.append('default_lng', defaultLng);
+    formData.append('allow_user_registration', allowReg);
+    formData.append('require_post_moderation', requireMod);
+    formData.append('maintenance_mode', maintMode);
+
+    fetch('/admin-panel/api/settings/save/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+      },
+      body: formData.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalContent;
+      if (data.success) {
+        showToast(data.message, 'success');
+        const now = new Date();
+        document.getElementById('lastUpdatedTime').textContent = now.toLocaleDateString('th-TH') + ' ' + now.toLocaleTimeString('th-TH');
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        showToast(data.message || 'บันทึกการตั้งค่าไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalContent;
+      showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+    });
+  }
+</script>
 {% endblock %}

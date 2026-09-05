@@ -17,12 +17,14 @@ window.submitComment = submitComment;
 window.setCommentReply = setCommentReply;
 window.cancelCommentReply = cancelCommentReply;
 window.fetchNotifications = fetchNotifications;
-window.toggleNotificationDrawer = toggleNotificationDrawer;
+window.openNotificationDrawer = openNotificationDrawer;
+window.closeNotificationDrawer = closeNotificationDrawer;
 window.navigateToLocation = navigateToLocation;
 window.initRealTimeGPSDistance = initRealTimeGPSDistance;
 window.requestGPSPermissionPrompt = requestGPSPermissionPrompt;
 window.acceptGPSPermission = acceptGPSPermission;
 window.declineGPSPermission = declineGPSPermission;
+window.handleGPSBadgeClick = handleGPSBadgeClick;
 window.calculateHaversineDistance = calculateHaversineDistance;
 window.getCookie = getCookie;
 
@@ -31,13 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
   }
 
-  // Set initial loading GPS badge content
-  document.querySelectorAll('.user-gps-location-text').forEach(el => {
-    el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i> <span>กำลังระบุพิกัดของคุณ...</span>`;
-  });
-  if (window.lucide) lucide.createIcons();
+  // 1. Immediately restore saved GPS state from previous page so it NEVER turns off on page change
+  restoreSavedGPSState();
 
-  // Initialize Real-time GPS Tracking based on user's actual location
+  // 2. Initialize / Refresh GPS Tracking in background
   initRealTimeGPSDistance();
 
   // Check notifications count
@@ -47,6 +46,69 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Real-Time GPS Distance Calculation (Haversine Formula) & Reverse Geocoding
  */
+function restoreSavedGPSState() {
+  const savedLat = localStorage.getItem('user_lat');
+  const savedLng = localStorage.getItem('user_lng');
+  const savedName = localStorage.getItem('user_location_name');
+  const permStatus = localStorage.getItem('gps_permission_status');
+
+  if (savedLat && savedLng && permStatus === 'granted') {
+    window.currentUserLat = parseFloat(savedLat);
+    window.currentUserLng = parseFloat(savedLng);
+
+    const displayName = savedName || 'เปิดใช้งานอยู่';
+    document.querySelectorAll('.user-gps-location-text').forEach(el => {
+      el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:#10B981;stroke-width:2.5;"></i> <span>GPS: ${displayName}</span>`;
+      el.setAttribute('title', `ตำแหน่ง GPS: ${displayName} (คลิกเพื่ออัปเดตตำแหน่งล่าสุด)`);
+    });
+    if (window.lucide) lucide.createIcons();
+
+    // Recalculate distance for all location badges on the new page instantly!
+    recalculateAllDistances();
+  } else if (permStatus === 'granted') {
+    document.querySelectorAll('.user-gps-location-text').forEach(el => {
+      el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i> <span>กำลังระบุพิกัดของคุณ...</span>`;
+    });
+    if (window.lucide) lucide.createIcons();
+  } else {
+    showDefaultGPSBadge();
+  }
+}
+
+function handleGPSBadgeClick() {
+  const permStatus = localStorage.getItem('gps_permission_status');
+  const hasSavedLocation = localStorage.getItem('user_lat') && localStorage.getItem('user_lng');
+
+  if (permStatus === 'granted' && hasSavedLocation) {
+    // Already granted & active -> show feedback and refresh coordinates
+    document.querySelectorAll('.user-gps-location-text').forEach(el => {
+      el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:#10B981;stroke-width:2.5;"></i> <span>กำลังอัปเดตพิกัด...</span>`;
+    });
+    if (window.lucide) lucide.createIcons();
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          updateDistanceElements(pos);
+          if (typeof showToast === 'function') {
+            showToast('อัปเดตพิกัด GPS ล่าสุดเรียบร้อยแล้ว', 'success');
+          }
+        },
+        (err) => {
+          restoreSavedGPSState();
+          if (typeof showToast === 'function') {
+            showToast('ใช้พิกัด GPS ล่าสุดที่บันทึกไว้', 'info');
+          }
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    }
+  } else {
+    // Not granted yet -> prompt user to enable
+    requestGPSPermissionPrompt(true);
+  }
+}
+
 function requestGPSPermissionPrompt(force = false) {
   const status = localStorage.getItem('gps_permission_status');
   
@@ -83,6 +145,12 @@ function requestGPSPermissionPrompt(force = false) {
 function acceptGPSPermission() {
   localStorage.setItem('gps_permission_status', 'granted');
   if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
+  
+  document.querySelectorAll('.user-gps-location-text').forEach(el => {
+    el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i> <span>กำลังระบุพิกัดของคุณ...</span>`;
+  });
+  if (window.lucide) lucide.createIcons();
+
   initRealTimeGPSDistance();
 }
 
@@ -94,14 +162,16 @@ function declineGPSPermission() {
 
 function initRealTimeGPSDistance() {
   if (!navigator.geolocation) {
-    detectLocationViaIP();
+    if (!localStorage.getItem('user_lat')) {
+      detectLocationViaIP();
+    }
     return;
   }
 
   const options = {
     enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 10000
+    timeout: 12000,
+    maximumAge: 60000 // Cache for 60 seconds to avoid constant cold re-aquires between pages
   };
 
   navigator.geolocation.getCurrentPosition(updateDistanceElements, handleGPSError, options);
@@ -112,6 +182,11 @@ function updateDistanceElements(pos) {
   if (!pos || !pos.coords) return;
   window.currentUserLat = pos.coords.latitude;
   window.currentUserLng = pos.coords.longitude;
+
+  // Persist coordinates and granted status so they survive across page navigation
+  localStorage.setItem('user_lat', window.currentUserLat);
+  localStorage.setItem('user_lng', window.currentUserLng);
+  localStorage.setItem('gps_permission_status', 'granted');
 
   // Recalculate distance for all location badges on page
   recalculateAllDistances();
@@ -148,9 +223,13 @@ function fetchReverseGeocodeAddress(lat, lng) {
         let fullLocationName = [district, province].filter(Boolean).join(', ');
         if (!fullLocationName) fullLocationName = data.display_name.split(',')[0];
 
+        // Save location name to localStorage for instant restoration on subsequent pages
+        localStorage.setItem('user_location_name', fullLocationName);
+
         // Update GPS Location Badge to user's real location
         document.querySelectorAll('.user-gps-location-text').forEach(el => {
           el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:#10B981;stroke-width:2.5;"></i> <span>GPS: ${fullLocationName}</span>`;
+          el.setAttribute('title', `ตำแหน่ง GPS: ${fullLocationName} (คลิกเพื่ออัปเดตตำแหน่งล่าสุด)`);
           if (window.lucide) lucide.createIcons();
         });
       }
@@ -159,7 +238,23 @@ function fetchReverseGeocodeAddress(lat, lng) {
 }
 
 function handleGPSError(err) {
-  console.log('Browser GPS prompt info:', err.message);
+  console.log('Browser GPS prompt info:', err ? err.message : '');
+  
+  // If user explicitly denied permission in browser popup
+  if (err && err.code === 1) {
+    localStorage.setItem('gps_permission_status', 'declined');
+    showDefaultGPSBadge();
+    return;
+  }
+
+  // If we already have a saved location from previous page, KEEP IT!
+  const savedLat = localStorage.getItem('user_lat');
+  const savedLng = localStorage.getItem('user_lng');
+  if (savedLat && savedLng) {
+    // Keep GPS active with saved location, do not revert to "Click to open GPS"
+    return;
+  }
+
   detectLocationViaIP();
 }
 
@@ -171,20 +266,25 @@ function detectLocationViaIP() {
       if (data && data.latitude && data.longitude) {
         window.currentUserLat = data.latitude;
         window.currentUserLng = data.longitude;
+        localStorage.setItem('user_lat', data.latitude);
+        localStorage.setItem('user_lng', data.longitude);
         recalculateAllDistances();
         fetchReverseGeocodeAddress(window.currentUserLat, window.currentUserLng);
       } else {
-        showDefaultGPSBadge();
+        const savedLat = localStorage.getItem('user_lat');
+        if (!savedLat) showDefaultGPSBadge();
       }
     })
     .catch(() => {
-      showDefaultGPSBadge();
+      const savedLat = localStorage.getItem('user_lat');
+      if (!savedLat) showDefaultGPSBadge();
     });
 }
 
 function showDefaultGPSBadge() {
   document.querySelectorAll('.user-gps-location-text').forEach(el => {
     el.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i> <span>คลิกเพื่อเปิด GPS</span>`;
+    el.setAttribute('title', 'คลิกเพื่อเปิด/ระบุตำแหน่ง GPS เรียลไทม์');
     if (window.lucide) lucide.createIcons();
   });
 }

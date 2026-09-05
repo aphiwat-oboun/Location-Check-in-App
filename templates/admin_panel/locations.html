@@ -48,6 +48,9 @@
               <button class="table-action-btn view" title="ดูบน Google Maps" onclick="window.open('https://maps.google.com/?q={{ loc.latitude }},{{ loc.longitude }}', '_blank')">
                 <i data-lucide="map" class="w-4 h-4"></i>
               </button>
+              <button class="table-action-btn edit" title="แก้ไขข้อมูลสถานที่" onclick="openEditLocationModal({{ loc.id }}, '{{ loc.name|escapejs }}', '{{ loc.category.id|default:'' }}', '{{ loc.city|escapejs }}', '{{ loc.province|escapejs }}', '{{ loc.latitude }}', '{{ loc.longitude }}', '{{ loc.description|escapejs }}')">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
               <button class="table-action-btn delete" title="ลบสถานที่" onclick="deleteLocation({{ loc.id }}, '{{ loc.name|escapejs }}')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
@@ -75,15 +78,142 @@
   </div>
   {% endif %}
 </div>
+
+<!-- Edit Location Modal -->
+<div id="editLocationModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#1F2937;">แก้ไขข้อมูลสถานที่</h3>
+      <button onclick="closeEditLocationModal()" style="border:none;background:transparent;cursor:pointer;color:#9CA3AF;">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <input type="hidden" id="editLocId">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">ชื่อสถานที่ <span style="color:#EF4444;">*</span></label>
+        <input type="text" id="editLocName" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">หมวดหมู่</label>
+          <select id="editLocCategory" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;background:#fff;">
+            <option value="">-- ไม่ระบุ --</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">จังหวัด</label>
+          <input type="text" id="editLocProvince" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">อำเภอ / เมือง</label>
+          <input type="text" id="editLocCity" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">พิกัด Lat / Lng</label>
+          <div style="display:flex;gap:6px;">
+            <input type="number" step="any" id="editLocLat" placeholder="Latitude" style="width:50%;padding:9px 8px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.8rem;box-sizing:border-box;">
+            <input type="number" step="any" id="editLocLng" placeholder="Longitude" style="width:50%;padding:9px 8px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.8rem;box-sizing:border-box;">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">คำอธิบายสถานที่</label>
+        <textarea id="editLocDesc" rows="3" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button onclick="closeEditLocationModal()" style="padding:9px 18px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:0.875rem;cursor:pointer;">ยกเลิก</button>
+      <button onclick="submitEditLocation()" style="padding:9px 20px;border-radius:8px;border:none;background:#159F8C;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">บันทึกการแก้ไข</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+  function openEditLocationModal(id, name, categoryId, city, province, lat, lng, desc) {
+    document.getElementById('editLocId').value = id;
+    document.getElementById('editLocName').value = name || '';
+    document.getElementById('editLocCategory').value = categoryId || '';
+    document.getElementById('editLocCity').value = city || '';
+    document.getElementById('editLocProvince').value = province || '';
+    document.getElementById('editLocLat').value = lat || '';
+    document.getElementById('editLocLng').value = lng || '';
+    document.getElementById('editLocDesc').value = desc || '';
+    
+    document.getElementById('editLocationModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeEditLocationModal() {
+    document.getElementById('editLocationModal').style.display = 'none';
+  }
+
+  function submitEditLocation() {
+    const locId = document.getElementById('editLocId').value;
+    const name = document.getElementById('editLocName').value.trim();
+    const categoryId = document.getElementById('editLocCategory').value;
+    const city = document.getElementById('editLocCity').value.trim();
+    const province = document.getElementById('editLocProvince').value.trim();
+    const lat = document.getElementById('editLocLat').value.trim();
+    const lng = document.getElementById('editLocLng').value.trim();
+    const desc = document.getElementById('editLocDesc').value.trim();
+
+    if (!name) {
+      showToast('กรุณากรอกชื่อสถานที่', 'error');
+      return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('name', name);
+    formData.append('category_id', categoryId);
+    formData.append('city', city);
+    formData.append('province', province);
+    formData.append('latitude', lat);
+    formData.append('longitude', lng);
+    formData.append('description', desc);
+
+    fetch(`/admin-panel/api/location/${locId}/edit/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+      },
+      body: formData.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        closeEditLocationModal();
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showToast(data.message || 'ไม่สามารถแก้ไขสถานที่ได้', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
+    });
+  }
+
   function deleteLocation(locId, locName) {
     showConfirmModal('ยืนยันการลบสถานที่?', `การลบ "${locName}" จะทำให้โพสต์ที่เชื่อมโยงกับสถานที่นี้ไม่มีสถานที่ คุณแน่ใจหรือไม่?`, function() {
       fetch(`/admin-panel/api/location/${locId}/delete/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        headers: {
+          'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+        }
       })
       .then(res => res.json())
       .then(data => {
@@ -95,8 +225,16 @@
           showToast(data.message || 'ไม่สามารถลบสถานที่ได้', 'error');
         }
       })
-      .catch(() => showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error'));
+      .catch(err => {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+      });
     });
   }
+
+  // Close modal on backdrop click
+  document.getElementById('editLocationModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditLocationModal();
+  });
 </script>
 {% endblock %}

@@ -12,7 +12,7 @@ from apps.accounts.models import Profile
 from apps.posts.models import Post, PostImage
 from apps.locations.models import Location, Category
 from apps.interactions.models import Like, Comment, SavedPost
-from apps.admin_panel.models import Report, AuditLog, Notification
+from apps.admin_panel.models import Report, AuditLog, Notification, SystemSetting
 from apps.admin_panel.decorators import admin_required
 
 def log_admin_action(user, action, target_repr='', details='', request=None):
@@ -124,6 +124,9 @@ def dashboard_view(request):
     # 7. Recent Reports (5 items)
     recent_reports = Report.objects.select_related('reporter', 'post', 'location', 'comment', 'target_user').order_by('-created_at')[:5]
 
+    # Top 3 Popular Places for dashboard map card
+    top_locations = Location.objects.select_related('category').annotate(p_cnt=Count('posts')).order_by('-p_cnt', '-created_at')[:3]
+
     context = {
         'kpi': kpi_data,
         'trends': kpi_trends,
@@ -139,6 +142,7 @@ def dashboard_view(request):
         'recent_posts': recent_posts,
         'recent_users': recent_users,
         'recent_reports': recent_reports,
+        'top_locations': top_locations,
         'active_page': 'dashboard',
     }
     return render(request, 'admin_panel/dashboard.html', context)
@@ -316,12 +320,90 @@ def reports_view(request):
 
 
 @admin_required
+def notifications_view(request):
+    """
+    Admin Notifications Page with real database records and category tabs
+    """
+    # Seed initial notifications for this admin if none exist yet
+    if not Notification.objects.filter(user=request.user).exists():
+        recent_rep = Report.objects.filter(status='pending').first()
+        if recent_rep:
+            Notification.objects.create(
+                user=request.user,
+                category='report',
+                title=f'มีรายงานใหม่ #{recent_rep.id} รอการตรวจสอบ',
+                message=f'ผู้ใช้ @{recent_rep.reporter.username} รายงาน {recent_rep.get_report_type_display()} เรื่อง: {recent_rep.get_reason_display()}',
+                link='/admin-panel/reports/',
+                is_read=False
+            )
+        newest_u = User.objects.exclude(id=request.user.id).order_by('-date_joined').first()
+        if newest_u:
+            Notification.objects.create(
+                user=request.user,
+                category='user',
+                title=f'ผู้ใช้ใหม่ลงทะเบียนเข้าสู่ระบบ',
+                message=f'@{newest_u.username} ({newest_u.profile.get_display_name()}) ลงทะเบียนเข้าใช้งานระบบเรียบร้อยแล้ว',
+                link='/admin-panel/users/',
+                is_read=False
+            )
+        Notification.objects.create(
+            user=request.user,
+            category='system',
+            title='ระบบ Cloudinary CDN และ GPS พร้อมใช้งาน',
+            message='การเชื่อมต่อ Cloudinary Storage และระบบระบุพิกัด GPS อัตโนมัติทำงานสมบูรณ์แล้ว',
+            link='/admin-panel/settings/',
+            is_read=True
+        )
+        Notification.objects.create(
+            user=request.user,
+            category='location',
+            title='ตรวจสอบตำแหน่งสถานที่ในระบบ',
+            message=f'มีสถานที่ทั้งหมด {Location.objects.count()} แห่ง พร้อมสำหรับการเช็คอินและนำทาง',
+            link='/admin-panel/locations/',
+            is_read=True
+        )
+
+    filter_tab = request.GET.get('tab', 'all')
+    notifs = Notification.objects.filter(user=request.user).order_by('-created_at')
+
+    # Category and status tab counts
+    total_count = notifs.count()
+    unread_count = notifs.filter(is_read=False).count()
+    report_count = notifs.filter(category='report').count()
+    system_count = notifs.filter(category__in=['system', 'location', 'user']).count()
+
+    if filter_tab == 'unread':
+        notifs = notifs.filter(is_read=False)
+    elif filter_tab == 'report':
+        notifs = notifs.filter(category='report')
+    elif filter_tab == 'system':
+        notifs = notifs.filter(category__in=['system', 'location', 'user'])
+
+    paginator = Paginator(notifs, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'notifications_page': page_obj,
+        'current_tab': filter_tab,
+        'total_count': total_count,
+        'unread_count': unread_count,
+        'report_count': report_count,
+        'system_count': system_count,
+        'active_page': 'notifications',
+    }
+    return render(request, 'admin_panel/notifications.html', context)
+
+
+@admin_required
 def settings_view(request):
     """
-    Admin Settings Page
+    Admin Settings Page with real SystemSetting persistence & AuditLog
     """
-    audit_logs = AuditLog.objects.select_related('admin_user').all()[:20]
+    system_setting = SystemSetting.get_settings()
+    audit_logs = AuditLog.objects.select_related('admin_user').all()[:25]
     context = {
+        'system_setting': system_setting,
         'audit_logs': audit_logs,
         'active_page': 'settings',
     }
@@ -376,6 +458,8 @@ def user_action_api(request, user_id):
     action = request.POST.get('action') # 'toggle_suspend' or 'delete'
 
     if action == 'toggle_suspend':
+        if user.id == request.user.id:
+            return JsonResponse({'success': False, 'message': 'ไม่สามารถระงับการใช้งานบัญชีของตนเองได้'}, status=400)
         profile = user.profile
         profile.is_suspended = not profile.is_suspended
         profile.save()
@@ -388,10 +472,18 @@ def user_action_api(request, user_id):
         })
 
     elif action == 'delete':
-        username = user.username
-        log_admin_action(request.user, f"ลบผู้ใช้ @{username}", f"User #{user.id}", request=request)
-        user.delete()
-        return JsonResponse({'success': True, 'message': f'ลบผู้ใช้ @{username} เรียบร้อยแล้ว'})
+        if user.id == request.user.id:
+            return JsonResponse({'success': False, 'message': 'ไม่สามารถลบบัญชีของตนเองขณะกำลังใช้งานอยู่ได้'}, status=400)
+        if user.is_superuser and not request.user.is_superuser:
+            return JsonResponse({'success': False, 'message': 'ไม่มีสิทธิ์ลบบัญชี Superuser'}, status=403)
+        try:
+            username = user.username
+            user_id_val = user.id
+            log_admin_action(request.user, f"ลบผู้ใช้ @{username}", f"User #{user_id_val}", request=request)
+            user.delete()
+            return JsonResponse({'success': True, 'message': f'ลบผู้ใช้ @{username} เรียบร้อยแล้ว'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'ไม่สามารถลบผู้ใช้ได้: {str(e)}'}, status=400)
 
     return JsonResponse({'error': 'Invalid action'}, status=400)
 
@@ -404,14 +496,17 @@ def post_delete_api(request, post_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    post = get_object_or_404(Post, id=post_id)
-    post_title = post.title or f"Post #{post.id}"
-    author = post.user.username
-    
-    log_admin_action(request.user, f"ลบโพสต์: {post_title} (โดย @{author})", f"Post #{post.id}", request=request)
-    post.delete()
+    try:
+        post = get_object_or_404(Post, id=post_id)
+        post_title = post.title or f"Post #{post.id}"
+        author = post.user.username
+        
+        log_admin_action(request.user, f"ลบโพสต์: {post_title} (โดย @{author})", f"Post #{post.id}", request=request)
+        post.delete()
 
-    return JsonResponse({'success': True, 'message': 'ลบโพสต์เรียบร้อยแล้ว'})
+        return JsonResponse({'success': True, 'message': 'ลบโพสต์เรียบร้อยแล้ว'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'ไม่สามารถลบโพสต์ได้: {str(e)}'}, status=400)
 
 
 @admin_required
@@ -422,11 +517,13 @@ def comment_delete_api(request, comment_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    comment = get_object_or_404(Comment, id=comment_id)
-    log_admin_action(request.user, f"ลบคอมเมนต์ #{comment.id} โดย @{comment.user.username}", f"Comment #{comment.id}", request=request)
-    comment.delete()
-
-    return JsonResponse({'success': True, 'message': 'ลบคอมเมนต์เรียบร้อยแล้ว'})
+    try:
+        comment = get_object_or_404(Comment, id=comment_id)
+        log_admin_action(request.user, f"ลบคอมเมนต์ #{comment.id} โดย @{comment.user.username}", f"Comment #{comment.id}", request=request)
+        comment.delete()
+        return JsonResponse({'success': True, 'message': 'ลบคอมเมนต์เรียบร้อยแล้ว'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'ไม่สามารถลบคอมเมนต์ได้: {str(e)}'}, status=400)
 
 
 @admin_required
@@ -437,29 +534,32 @@ def report_action_api(request, report_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    report = get_object_or_404(Report, id=report_id)
-    status_choice = request.POST.get('status') # 'resolved', 'dismissed', 'reviewing'
-    action_note = request.POST.get('note', '')
+    try:
+        report = get_object_or_404(Report, id=report_id)
+        status_choice = request.POST.get('status') # 'resolved', 'dismissed', 'reviewing'
+        action_note = request.POST.get('note', '')
 
-    if status_choice in ['resolved', 'dismissed', 'reviewing']:
-        report.status = status_choice
-        report.action_taken = action_note
-        report.reviewed_by = request.user
-        report.reviewed_at = timezone.now()
-        report.save()
+        if status_choice in ['resolved', 'dismissed', 'reviewing']:
+            report.status = status_choice
+            report.action_taken = action_note
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.save()
 
-        # Optional content action
-        delete_content = request.POST.get('delete_content') == 'true'
-        if delete_content:
-            if report.post:
-                report.post.delete()
-            elif report.comment:
-                report.comment.delete()
+            # Optional content action
+            delete_content = request.POST.get('delete_content') == 'true'
+            if delete_content:
+                if report.post:
+                    report.post.delete()
+                elif report.comment:
+                    report.comment.delete()
 
-        log_admin_action(request.user, f"อัปเดตสถานะรายงาน #{report.id} เป็น {report.get_status_display_thai()}", f"Report #{report.id}", request=request)
-        return JsonResponse({'success': True, 'message': 'อัปเดตรายงานเรียบร้อยแล้ว', 'new_status': report.get_status_display_thai()})
+            log_admin_action(request.user, f"อัปเดตสถานะรายงาน #{report.id} เป็น {report.get_status_display_thai()}", f"Report #{report.id}", request=request)
+            return JsonResponse({'success': True, 'message': 'อัปเดตรายงานเรียบร้อยแล้ว', 'new_status': report.get_status_display_thai()})
 
-    return JsonResponse({'error': 'Invalid status'}, status=400)
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'เกิดข้อผิดพลาด: {str(e)}'}, status=400)
 
 
 @admin_required
@@ -488,18 +588,75 @@ def export_analytics_csv(request):
 
 
 @admin_required
-def location_delete_api(request, location_id):
+def location_edit_api(request, location_id):
     """
-    AJAX handler to delete a location (and cascade-nullify related posts)
+    AJAX handler to edit a location's details
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    location = get_object_or_404(Location, id=location_id)
-    loc_name = location.name
-    log_admin_action(request.user, f"ลบสถานที่: {loc_name}", f"Location #{location_id}", request=request)
-    location.delete()
-    return JsonResponse({'success': True, 'message': f'ลบสถานที่ "{loc_name}" เรียบร้อยแล้ว'})
+    try:
+        location = get_object_or_404(Location, id=location_id)
+        name = request.POST.get('name', '').strip()
+        city = request.POST.get('city', '').strip()
+        province = request.POST.get('province', '').strip()
+        category_id = request.POST.get('category_id')
+        lat_val = request.POST.get('latitude')
+        lng_val = request.POST.get('longitude')
+        description = request.POST.get('description', '').strip()
+
+        if not name:
+            return JsonResponse({'success': False, 'message': 'กรุณากรอกชื่อสถานที่'})
+
+        location.name = name
+        if city:
+            location.city = city
+        if province:
+            location.province = province
+        if category_id:
+            location.category_id = category_id
+        if lat_val:
+            location.latitude = float(lat_val)
+        if lng_val:
+            location.longitude = float(lng_val)
+        location.description = description
+        location.save()
+
+        log_admin_action(request.user, f"แก้ไขข้อมูลสถานที่: {name}", f"Location #{location.id}", request=request)
+        return JsonResponse({
+            'success': True,
+            'message': f'อัปเดตข้อมูลสถานที่ "{name}" สำเร็จ',
+            'location': {
+                'id': location.id,
+                'name': location.name,
+                'category_name': location.category.name if location.category else 'ทั่วไป',
+                'city': location.city,
+                'province': location.province,
+                'latitude': location.latitude,
+                'longitude': location.longitude,
+                'description': location.description,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'ไม่สามารถแก้ไขสถานที่ได้: {str(e)}'}, status=400)
+
+
+@admin_required
+def location_delete_api(request, location_id):
+    """
+    AJAX handler to delete a location
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        location = get_object_or_404(Location, id=location_id)
+        loc_name = location.name
+        log_admin_action(request.user, f"ลบสถานที่: {loc_name}", f"Location #{location_id}", request=request)
+        location.delete()
+        return JsonResponse({'success': True, 'message': f'ลบสถานที่ "{loc_name}" เรียบร้อยแล้ว'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'ไม่สามารถลบสถานที่ได้: {str(e)}'}, status=400)
 
 
 @admin_required
@@ -548,36 +705,163 @@ def user_edit_api(request, user_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    user = get_object_or_404(User, id=user_id)
-    display_name = request.POST.get('display_name', '').strip()
-    email = request.POST.get('email', '').strip()
-    make_staff = request.POST.get('is_staff') == 'true'
+    try:
+        user = get_object_or_404(User, id=user_id)
+        display_name = request.POST.get('display_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        make_staff = request.POST.get('is_staff') == 'true'
 
-    changes = []
-    if display_name and display_name != user.profile.display_name:
-        user.profile.display_name = display_name
-        user.profile.save()
-        changes.append(f"ชื่อแสดง → {display_name}")
+        changes = []
+        if display_name and display_name != user.profile.display_name:
+            user.profile.display_name = display_name
+            user.profile.save()
+            changes.append(f"ชื่อแสดง → {display_name}")
 
-    if email and email != user.email:
-        if User.objects.filter(email__iexact=email).exclude(id=user_id).exists():
-            return JsonResponse({'success': False, 'message': 'อีเมลนี้ถูกใช้งานแล้ว'})
-        user.email = email
-        changes.append(f"อีเมล → {email}")
+        if email and email != user.email:
+            if User.objects.filter(email__iexact=email).exclude(id=user_id).exists():
+                return JsonResponse({'success': False, 'message': 'อีเมลนี้ถูกใช้งานแล้ว'})
+            user.email = email
+            changes.append(f"อีเมล → {email}")
 
-    if make_staff != user.is_staff:
-        user.is_staff = make_staff
-        changes.append(f"สิทธิ์ Staff → {'เปิด' if make_staff else 'ปิด'}")
+        if make_staff != user.is_staff:
+            user.is_staff = make_staff
+            changes.append(f"สิทธิ์ Staff → {'เปิด' if make_staff else 'ปิด'}")
 
-    user.save()
+        user.save()
 
-    detail = ', '.join(changes) if changes else 'ไม่มีการเปลี่ยนแปลง'
-    log_admin_action(request.user, f"แก้ไขข้อมูลผู้ใช้ @{user.username}: {detail}", f"User #{user.id}", request=request)
+        detail = ', '.join(changes) if changes else 'ไม่มีการเปลี่ยนแปลง'
+        log_admin_action(request.user, f"แก้ไขข้อมูลผู้ใช้ @{user.username}: {detail}", f"User #{user.id}", request=request)
+        return JsonResponse({
+            'success': True,
+            'message': f'อัปเดตข้อมูล @{user.username} เรียบร้อยแล้ว',
+            'display_name': user.profile.display_name,
+            'email': user.email,
+            'is_staff': user.is_staff,
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'เกิดข้อผิดพลาด: {str(e)}'}, status=400)
+
+
+@admin_required
+def notifications_mark_all_read_api(request):
+    """
+    AJAX handler to mark all admin notifications as read
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True, 'message': f'ทำเครื่องหมายว่าอ่านแล้วทั้งหมด ({updated} รายการ)'})
+
+
+@admin_required
+def notification_toggle_read_api(request, notification_id):
+    """
+    AJAX handler to toggle individual notification read/unread
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    notif = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notif.is_read = not notif.is_read
+    notif.save()
     return JsonResponse({
         'success': True,
-        'message': f'อัปเดตข้อมูล @{user.username} เรียบร้อยแล้ว',
-        'display_name': user.profile.display_name,
-        'email': user.email,
-        'is_staff': user.is_staff,
+        'is_read': notif.is_read,
+        'message': 'เปลี่ยนสถานะเรียบร้อยแล้ว'
     })
+
+
+@admin_required
+def notification_delete_api(request, notification_id):
+    """
+    AJAX handler to delete a single notification
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    notif = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notif.delete()
+    return JsonResponse({'success': True, 'message': 'ลบการแจ้งเตือนแล้ว'})
+
+
+@admin_required
+def notifications_clear_all_api(request):
+    """
+    AJAX handler to clear all notifications for current admin
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    cnt, _ = Notification.objects.filter(user=request.user).delete()
+    return JsonResponse({'success': True, 'message': f'ลบการแจ้งเตือนทั้งหมดแล้ว ({cnt} รายการ)'})
+
+
+@admin_required
+def notification_create_test_api(request):
+    """
+    AJAX handler to create a test notification / announcement
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    title = request.POST.get('title', '').strip() or 'แจ้งเตือนระบบทดสอบ'
+    message = request.POST.get('message', '').strip() or 'นี่คือการแจ้งเตือนทดสอบของแอดมิน เพื่อตรวจสอบความพร้อมของระบบ'
+    category = request.POST.get('category', 'system')
+    link = request.POST.get('link', '/admin-panel/dashboard/').strip()
+
+    notif = Notification.objects.create(
+        user=request.user,
+        category=category,
+        title=title,
+        message=message,
+        link=link,
+        is_read=False
+    )
+    log_admin_action(request.user, f"สร้างการแจ้งเตือน: {title}", f"Notification #{notif.id}", request=request)
+    return JsonResponse({'success': True, 'message': 'สร้างการแจ้งเตือนใหม่เรียบร้อยแล้ว'})
+
+
+@admin_required
+def settings_save_api(request):
+    """
+    AJAX handler to save system settings with audit logging
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        setting = SystemSetting.get_settings()
+        site_name = request.POST.get('site_name', '').strip()
+        site_desc = request.POST.get('site_description', '').strip()
+        default_province = request.POST.get('default_province', '').strip()
+        default_lat = request.POST.get('default_lat')
+        default_lng = request.POST.get('default_lng')
+        allow_reg = request.POST.get('allow_user_registration') == 'true'
+        require_mod = request.POST.get('require_post_moderation') == 'true'
+        maint_mode = request.POST.get('maintenance_mode') == 'true'
+        contact_email = request.POST.get('contact_email', '').strip()
+
+        if site_name:
+            setting.site_name = site_name
+        setting.site_description = site_desc
+        if default_province:
+            setting.default_province = default_province
+        if default_lat:
+            setting.default_lat = float(default_lat)
+        if default_lng:
+            setting.default_lng = float(default_lng)
+
+        setting.allow_user_registration = allow_reg
+        setting.require_post_moderation = require_mod
+        setting.maintenance_mode = maint_mode
+        if contact_email:
+            setting.contact_email = contact_email
+        setting.save()
+
+        log_admin_action(request.user, "บันทึกการตั้งค่าระบบทั่วไป", "SystemSetting", request=request)
+        return JsonResponse({'success': True, 'message': 'บันทึกการตั้งค่าระบบเรียบร้อยแล้ว'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'บันทึกไม่สำเร็จ: {str(e)}'}, status=400)
+
 

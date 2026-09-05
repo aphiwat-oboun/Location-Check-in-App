@@ -97,7 +97,7 @@
     showConfirmModal('ยืนยันการลบโพสต์?', `คุณแน่ใจหรือไม่ที่จะลบโพสต์ "${caption}"?`, function() {
       fetch(`/admin-panel/api/post/${postId}/delete/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        headers: { 'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken')) }
       })
       .then(res => res.json())
       .then(data => {

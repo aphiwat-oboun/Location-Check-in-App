@@ -123,7 +123,7 @@
     showConfirmModal('สลับสถานะระงับบัญชี?', `คุณต้องการเปลี่ยนสถานะการระงับของ @${username} ใช่หรือไม่?`, function() {
       fetch(`/admin-panel/api/user/${userId}/action/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken')) },
         body: 'action=toggle_suspend'
       })
       .then(res => res.json())
@@ -143,7 +143,7 @@
     showConfirmModal('ยืนยันการลบผู้ใช้?', `การลบผู้ใช้ @${username} จะลบโพสต์และข้อมูลที่เกี่ยวข้องทั้งหมด! การกระทำนี้ไม่สามารถยกเลิกได้`, function() {
       fetch(`/admin-panel/api/user/${userId}/action/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken')) },
         body: 'action=delete'
       })
       .then(res => res.json())
@@ -181,7 +181,7 @@
 
     fetch(`/admin-panel/api/user/${userId}/edit/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken')) },
       body: `display_name=${encodeURIComponent(displayName)}&email=${encodeURIComponent(email)}&is_staff=${isStaff}`
     })
     .then(res => res.json())

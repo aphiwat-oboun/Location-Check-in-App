@@ -20,7 +20,7 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
 
   // If container height/width is not yet computed by DOM layout, wait briefly
   if (mapElement.clientHeight === 0 || mapElement.clientWidth === 0) {
-    setTimeout(() => initWhatsHereMap(containerId, initialLocations, selectedLocId), 150);
+    setTimeout(() => initWhatsHereMap(containerId, initialLocations, selectedLocId), 50);
     return;
   }
 
@@ -30,10 +30,19 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
     appMap = null;
   }
 
-  // Mueang Si Sa Ket Default Coordinates
-  const defaultLat = 15.1120;
-  const defaultLng = 104.3180;
-  const defaultZoom = 13.5;
+  // Default coordinates: center on selected location if available, otherwise Mueang Si Sa Ket
+  let defaultLat = 15.1120;
+  let defaultLng = 104.3180;
+  let defaultZoom = 13.5;
+
+  if (selectedLocId && initialLocations && initialLocations.length > 0) {
+    const matched = initialLocations.find(l => l.id === selectedLocId);
+    if (matched && matched.lat && matched.lng) {
+      defaultLat = matched.lat;
+      defaultLng = matched.lng;
+      defaultZoom = 14;
+    }
+  }
 
   appMap = L.map(containerId, {
     center: [defaultLat, defaultLng],
@@ -43,6 +52,7 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
     zoomControl: false,
     attributionControl: false
   });
+  window.appMap = appMap;
 
   // Standard OpenStreetMap Tile Layer
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -51,10 +61,14 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
     attribution: '© OpenStreetMap contributors'
   }).addTo(appMap);
 
-  // Ensure map fills container dimensions properly upon rendering
-  [100, 300, 600, 1000].forEach(delay => {
+  // Ensure map fills container dimensions properly upon rendering without requiring manual zoom
+  appMap.whenReady(() => {
+    appMap.invalidateSize({ animate: false, reset: true });
+  });
+
+  [50, 150, 300, 600, 1000].forEach(delay => {
     setTimeout(() => {
-      if (appMap) appMap.invalidateSize();
+      if (appMap) appMap.invalidateSize({ animate: false, reset: false });
     }, delay);
   });
 
@@ -77,7 +91,9 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
 
 function renderPhotoMarkers(locations, defaultSelectedId = null) {
   // Clear existing
-  currentMarkers.forEach(m => appMap.removeLayer(m));
+  currentMarkers.forEach(m => {
+    if (appMap) appMap.removeLayer(m);
+  });
   currentMarkers = [];
 
   locations.forEach(loc => {
@@ -97,7 +113,10 @@ function renderPhotoMarkers(locations, defaultSelectedId = null) {
       iconAnchor: [23, 50]
     });
 
-    const marker = L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(appMap);
+    const marker = L.marker([loc.lat, loc.lng], { 
+      icon: customIcon,
+      zIndexOffset: defaultSelectedId === loc.id ? 1000 : 0
+    }).addTo(appMap);
 
     marker.on('click', () => {
       selectLocationOnMap(loc);
@@ -111,6 +130,10 @@ function renderPhotoMarkers(locations, defaultSelectedId = null) {
       selectLocationOnMap(loc, false, false);
     }
   });
+
+  if (appMap) {
+    appMap.invalidateSize();
+  }
 }
 
 function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
@@ -128,6 +151,8 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
     appMap.flyTo([loc.lat, loc.lng], 14, {
       duration: 0.8
     });
+  } else if (appMap && !smoothPan) {
+    appMap.setView([loc.lat, loc.lng], 14);
   }
 
   const post = loc.latest_post || {};

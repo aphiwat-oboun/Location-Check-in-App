@@ -175,7 +175,7 @@ def google_callback_view(request):
 
     google_email = "user.google@example.com"
     google_name = "Google User"
-    google_avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+    google_avatar = None
 
     if code and client_id and client_secret:
         token_url = "https://oauth2.googleapis.com/token"
@@ -197,7 +197,7 @@ def google_callback_view(request):
                 user_info = user_info_res.json()
                 google_email = user_info.get('email', google_email)
                 google_name = user_info.get('name', google_name)
-                google_avatar = user_info.get('picture', google_avatar)
+                google_avatar = user_info.get('picture')
 
     # Find or Create User
     username = f"google_{google_email.split('@')[0]}"
@@ -211,8 +211,7 @@ def google_callback_view(request):
 
     profile = user.profile
     profile.display_name = google_name
-    if google_avatar:
-        profile.avatar_url = google_avatar
+    profile.avatar_url = google_avatar
     profile.save()
 
     login(request, user)
@@ -252,7 +251,7 @@ def line_callback_view(request):
     redirect_uri = request.build_absolute_uri(reverse('accounts:line_callback'))
 
     line_name = "LINE User"
-    line_avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200"
+    line_avatar = None
     line_user_id = "line_user_demo"
 
     if code and channel_id and channel_secret:
@@ -276,7 +275,7 @@ def line_callback_view(request):
                 profile_info = profile_res.json()
                 line_user_id = profile_info.get('userId', line_user_id)
                 line_name = profile_info.get('displayName', line_name)
-                line_avatar = profile_info.get('pictureUrl', line_avatar)
+                line_avatar = profile_info.get('pictureUrl')
 
     # Find or Create User
     username = f"line_{line_user_id[:12]}"
@@ -290,8 +289,7 @@ def line_callback_view(request):
 
     profile = user.profile
     profile.display_name = line_name
-    if line_avatar:
-        profile.avatar_url = line_avatar
+    profile.avatar_url = line_avatar
     profile.save()
 
     login(request, user)

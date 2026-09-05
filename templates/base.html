@@ -23,7 +23,7 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <!-- Custom CSS & App Scripts -->
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1788641000">
   <style>
     .leaflet-container {
       background-color: #cbd5e1 !important; /* Soft neutral blue-grey background for zoomed-out map bounds */
@@ -56,7 +56,7 @@
       border: none !important;
     }
   </style>
-  <script src="{% static 'js/app.js' %}"></script>
+  <script src="{% static 'js/app.js' %}?v=1788641000"></script>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -174,8 +174,8 @@
 
     <!-- App Main Frame -->
     <main class="app-main">
-      <!-- Top Header (Hidden on Auth Pages) -->
       {% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
+      <!-- Top Header for Regular Pages -->
       <header class="app-header">
         <div class="search-container">
           <form action="{% url 'core:home' %}" method="GET">
@@ -188,10 +188,25 @@
 
         <div class="header-right" style="display:flex;align-items:center;gap:10px;">
           <!-- GPS Location Badge -->
-          <div class="user-gps-location-text" style="font-size:12.5px;font-weight:600;color:var(--text-main);background:var(--bg-surface-subtle);padding:6px 14px;border-radius:9999px;border:1px solid var(--border-light);display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="if(typeof requestGPSPermissionPrompt === 'function') requestGPSPermissionPrompt(true);" title="คลิกเพื่อเปิด/ระบุตำแหน่ง GPS เรียลไทม์">
+          <div class="user-gps-location-text" style="font-size:12.5px;font-weight:600;color:var(--text-main);background:var(--bg-surface-subtle);padding:6px 14px;border-radius:9999px;border:1px solid var(--border-light);display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="if(typeof handleGPSBadgeClick === 'function') handleGPSBadgeClick(); else if(typeof requestGPSPermissionPrompt === 'function') requestGPSPermissionPrompt(true);" title="คลิกเพื่อเปิด/ระบุตำแหน่ง GPS เรียลไทม์">
             <i data-lucide="crosshair" style="width:13px;height:13px;color:var(--primary);"></i>
             <span>กำลังระบุพิกัดของคุณ...</span>
           </div>
+          <script>
+            (function() {
+              try {
+                var name = localStorage.getItem('user_location_name');
+                var status = localStorage.getItem('gps_permission_status');
+                var lat = localStorage.getItem('user_lat');
+                if (status === 'granted' && lat) {
+                  var badge = document.querySelector('.user-gps-location-text span');
+                  if (badge) badge.textContent = 'GPS: ' + (name || 'เปิดใช้งานอยู่');
+                  var icon = document.querySelector('.user-gps-location-text i');
+                  if (icon) icon.style.color = '#10B981';
+                }
+              } catch(e) {}
+            })();
+          </script>
 
           {% if user.is_authenticated and user.is_staff %}
           <!-- Admin Panel Button in Header -->
@@ -215,6 +230,29 @@
           </a>
           {% endif %}
         </div>
+      </header>
+      {% else %}
+      <!-- Auth Top Navigation Bar -->
+      <header class="auth-top-bar" style="height: 58px; background: #FFFFFF; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 50; width: 100%; box-sizing: border-box;">
+        <a href="{% url 'core:home' %}" style="display: flex; align-items: center; gap: 6px; color: #4B5563; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; background: #F3F4F6;">
+          <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i>
+          <span>หน้าหลัก</span>
+        </a>
+        <a href="{% url 'core:home' %}" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1F2937; font-weight: 700; font-size: 1.05rem;">
+          <div style="width: 30px; height: 30px; border-radius: 9px; background: #159F8C; color: #fff; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="map-pin" style="width: 17px; height: 17px;"></i>
+          </div>
+          <span>ที่นี่มีอะไร?</span>
+        </a>
+        {% if request.resolver_match.url_name == 'login' %}
+          <a href="{% url 'accounts:register' %}" style="font-size: 0.825rem; font-weight: 700; color: #159F8C; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid #CCFBF1; background: #F0FDF9;">
+            สมัครสมาชิก
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" style="font-size: 0.825rem; font-weight: 700; color: #159F8C; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid #CCFBF1; background: #F0FDF9;">
+            เข้าสู่ระบบ
+          </a>
+        {% endif %}
       </header>
       {% endif %}
 
@@ -257,7 +295,8 @@
   </script>
   {% endif %}
 
-  <!-- Mobile Bottom Navigation (Visible on mobile screens) -->
+  <!-- Mobile Bottom Navigation (Hidden on login/register pages) -->
+  {% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
   <nav class="mobile-bottom-nav">
     <a href="{% url 'core:home' %}" class="mobile-nav-item {% if active_nav == 'home' %}active{% endif %}">
       <i data-lucide="home" style="width:20px;height:20px;"></i>
@@ -285,6 +324,7 @@
       <span>โปรไฟล์</span>
     </a>
   </nav>
+  {% endif %}
 
   <!-- Mobile Bottom Sheet Backdrop & Container -->
   <div class="mobile-bottom-sheet-backdrop" id="mobileBottomSheetBackdrop" onclick="closeMobileBottomSheet()"></div>
@@ -330,7 +370,7 @@
   </div>
 
   <!-- Global Scripts -->
-  <script src="{% static 'js/map.js' %}"></script>
+  <script src="{% static 'js/map.js' %}?v=1788641000"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {

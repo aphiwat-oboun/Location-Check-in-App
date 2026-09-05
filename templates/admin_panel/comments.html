@@ -2,14 +2,17 @@
 
 {% block title %}คอมเมนต์{% endblock %}
 {% block header_title %}จัดการคอมเมนต์{% endblock %}
-{% block header_subtitle %}ตรวจสอบและจัดการความคิดเห็น{% endblock %}
+{% block header_subtitle %}ตรวจสอบและจัดการความคิดเห็นทั้งหมดในระบบ{% endblock %}
 
 {% block content %}
 <div class="admin-card">
   <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
-    <h3 class="card-title">ความคิดเห็นทั้งหมด</h3>
+    <div>
+      <h3 class="card-title">ความคิดเห็นทั้งหมด</h3>
+      <p style="font-size: 0.8rem; color: #6B7280; margin-top: 2px;">รวมความคิดเห็นจากสมาชิกในทุกโพสต์</p>
+    </div>
     <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 380px;">
-      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาข้อความคอมเมนต์..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; flex: 1; min-width: 160px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาข้อความ หรือชื่อผู้ใช้..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; flex: 1; min-width: 160px;">
       <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
     </form>
   </div>
@@ -18,23 +21,55 @@
     <table class="admin-table">
       <thead>
         <tr>
-          <th>ข้อความ</th>
-          <th>ผู้เขียน</th>
-          <th>โพสต์</th>
-          <th>วันที่</th>
-          <th style="text-align: center;">การจัดการ</th>
+          <th style="min-width: 200px;">ผู้เขียน</th>
+          <th style="min-width: 260px;">ข้อความความคิดเห็น</th>
+          <th style="min-width: 180px;">โพสต์ / สถานที่</th>
+          <th style="min-width: 130px;">วันที่</th>
+          <th style="text-align: center; width: 80px;">การจัดการ</th>
         </tr>
       </thead>
       <tbody>
         {% for c in comments_page %}
           <tr id="comment-row-{{ c.id }}">
-            <td style="font-weight: 500; color: #1F2937;">{{ c.content }}</td>
+            <!-- 1. ผู้เขียนไว้หน้าสุด มีรูป User พร้อมชื่อ -->
             <td>
-              <div style="font-weight: 600; font-size: 0.825rem;">{{ c.user.profile.get_display_name }}</div>
-              <div style="font-size: 0.725rem; color: #9CA3AF;">@{{ c.user.username }}</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="{{ c.user.profile.get_avatar_url }}" alt="{{ c.user.profile.get_display_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #F3F4F6; flex-shrink: 0; background: #E5E7EB;">
+                <div style="min-width: 0;">
+                  <div style="font-weight: 600; font-size: 0.85rem; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.user.profile.get_display_name }}</div>
+                  <div style="font-size: 0.725rem; color: #6B7280;">@{{ c.user.username }}</div>
+                </div>
+              </div>
             </td>
-            <td>{{ c.post.location.name }}</td>
-            <td>{{ c.created_at|date:"d M Y H:i" }}</td>
+
+            <!-- 2. ข้อความคอมเมนต์ -->
+            <td>
+              <div style="font-weight: 500; color: #1F2937; font-size: 0.875rem; line-height: 1.45; word-break: break-word;">
+                {{ c.content }}
+              </div>
+            </td>
+
+            <!-- 3. โพสต์และสถานที่ -->
+            <td>
+              <div style="font-weight: 600; font-size: 0.825rem; color: #159F8C;">
+                <i data-lucide="map-pin" style="width: 12px; height: 12px; display: inline-block; vertical-align: -1px;"></i>
+                {{ c.post.location.name|default:"ไม่มีสถานที่" }}
+              </div>
+              {% if c.post.title %}
+              <div style="font-size: 0.75rem; color: #6B7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">
+                {{ c.post.title }}
+              </div>
+              {% endif %}
+            </td>
+
+            <!-- 4. วันที่ -->
+            <td>
+              <span style="font-size: 0.8rem; color: #6B7280; white-space: nowrap;">
+                {{ c.created_at|date:"d M Y H:i" }}
+              </span>
+            </td>
+
+            <!-- 5. การจัดการ -->
             <td style="text-align: center;">
               <button class="table-action-btn delete" title="ลบคอมเมนต์" onclick="deleteComment({{ c.id }})">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -43,12 +78,28 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบความคิดเห็น</td>
+            <td colspan="5" style="text-align: center; color: #9CA3AF; padding: 36px 20px;">
+              <i data-lucide="message-square" style="width: 36px; height: 36px; color: #D1D5DB; margin-bottom: 8px; display: inline-block;"></i>
+              <div>ไม่พบความคิดเห็น</div>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if comments_page.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;flex-wrap:wrap;">
+    {% if comments_page.has_previous %}
+      <a href="?page={{ comments_page.previous_page_number }}&search={{ search_query }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">‹ ก่อนหน้า</a>
+    {% endif %}
+    <span style="padding:6px 14px;border-radius:8px;background:#159F8C;color:#fff;font-size:0.825rem;font-weight:600;">{{ comments_page.number }} / {{ comments_page.paginator.num_pages }}</span>
+    {% if comments_page.has_next %}
+      <a href="?page={{ comments_page.next_page_number }}&search={{ search_query }}" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.825rem;text-decoration:none;color:#374151;">ถัดไป ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -58,15 +109,23 @@
     showConfirmModal('ยืนยันการลบคอมเมนต์?', 'คุณแน่ใจหรือไม่ที่จะลบความคิดเห็นนี้?', function() {
       fetch(`/admin-panel/api/comment/${commentId}/delete/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCsrfToken() 
+        }
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
+        if (data.success) {
           const row = document.getElementById(`comment-row-${commentId}`);
-          if(row) row.remove();
-          alert('ลบคอมเมนต์เรียบร้อยแล้ว');
+          if (row) row.remove();
+          showToast(data.message || 'ลบคอมเมนต์เรียบร้อยแล้ว', 'success');
+        } else {
+          showToast(data.message || 'ไม่สามารถลบคอมเมนต์ได้', 'error');
         }
+      })
+      .catch(err => {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่', 'error');
       });
     });
   }

@@ -10,8 +10,13 @@
   <div class="tiktok-profile-card">
     
     <!-- Top Cover / Ambient Background -->
-    <div class="tiktok-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}');{% endif %}">
+    <div class="tiktok-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}');{% endif %} position: relative;">
       <div class="tiktok-cover-gradient"></div>
+      {% if is_own_profile %}
+      <button type="button" onclick="openProfileSettingsModal()" title="การตั้งค่า" style="position: absolute; top: 12px; right: 12px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); color: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.6)'" onmouseout="this.style.background='rgba(0,0,0,0.4)'">
+        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+      </button>
+      {% endif %}
     </div>
 
     <!-- Main Profile Info Box -->
@@ -86,16 +91,10 @@
             <span>แชร์</span>
           </button>
 
-          {% if user.is_staff %}
-          <a href="{% url 'admin_panel:dashboard' %}" class="btn-tiktok-action admin-btn" title="เข้าสู่แผงควบคุมระบบ">
-            <i data-lucide="shield" style="width:15px;height:15px;"></i>
-            <span>แผงควบคุม</span>
-          </a>
-          {% endif %}
-
-          <a href="{% url 'accounts:logout' %}" class="btn-tiktok-action logout-btn" title="ออกจากระบบ" onclick="confirmLogout(event, '{% url 'accounts:logout' %}')">
-            <i data-lucide="log-out" style="width:15px;height:15px;"></i>
-          </a>
+          <button type="button" class="btn-tiktok-action secondary" onclick="openProfileSettingsModal()" title="การตั้งค่าและจัดการบัญชี" style="color:#1F2937;">
+            <i data-lucide="settings" style="width:15px;height:15px;"></i>
+            <span>ตั้งค่า</span>
+          </button>
         {% else %}
           <!-- Follow / Following Button (TikTok Style) -->
           <button id="btnToggleFollow" class="btn-tiktok-action {% if is_following %}following{% else %}primary{% endif %}" onclick="toggleFollow('{{ profile_user.username }}', this)">
@@ -254,4 +253,146 @@
     </div>
   </div>
 </div>
+
+<!-- Profile Settings Modal (Modern Mobile-Friendly Bottom Sheet / Modal) -->
+{% if is_own_profile %}
+<div id="profileSettingsModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:99999; align-items:flex-end; justify-content:center; padding:0;" onclick="closeProfileSettingsModal()">
+  <div id="profileSettingsModalSheet" style="background:#FFFFFF; border-top-left-radius:24px; border-top-right-radius:24px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; padding:20px 20px 36px 20px; box-shadow:0 -10px 40px rgba(0,0,0,0.25); animation:slideUpProfileSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1); box-sizing:border-box;" onclick="event.stopPropagation()">
+    
+    <!-- Handle bar for mobile drag feeling -->
+    <div style="width:40px; height:4px; background:#E5E7EB; border-radius:9999px; margin:0 auto 16px auto;"></div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; border-bottom:1px solid #F3F4F6; padding-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:36px; height:36px; border-radius:10px; background:#E6F5F3; color:#159F8C; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="settings" style="width:20px; height:20px;"></i>
+        </div>
+        <div>
+          <h3 style="font-size:1.05rem; font-weight:700; color:#1F2937; margin:0;">การตั้งค่าและจัดการ</h3>
+          <p style="font-size:0.775rem; color:#6B7280; margin:0;">@{{ profile_user.username }}</p>
+        </div>
+      </div>
+      <button onclick="closeProfileSettingsModal()" style="width:32px; height:32px; border-radius:50%; background:#F3F4F6; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#6B7280;">
+        <i data-lucide="x" style="width:16px; height:16px;"></i>
+      </button>
+    </div>
+
+    <!-- Group 1: ข้อมูลและการจัดการ -->
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+      <span style="font-size:0.75rem; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">บัญชีและโปรไฟล์</span>
+      
+      <a href="{% url 'accounts:edit_profile' %}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:#F9FAFB; text-decoration:none; color:#1F2937; transition:all 0.15s ease;">
+        <div style="width:34px; height:34px; border-radius:9px; background:#EEF2FF; color:#4F46E5; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="user-cog" style="width:17px; height:17px;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.875rem; font-weight:600;">แก้ไขข้อมูลส่วนตัว</div>
+          <div style="font-size:0.75rem; color:#6B7280;">เปลี่ยนรูปภาพ, ชื่อแสดง, คำแนะนำตัว และเมือง</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px; height:16px; color:#9CA3AF;"></i>
+      </a>
+
+      <a href="{% url 'core:saved' %}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:#F9FAFB; text-decoration:none; color:#1F2937; transition:all 0.15s ease;">
+        <div style="width:34px; height:34px; border-radius:9px; background:#FEF3C7; color:#D97706; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="bookmark" style="width:17px; height:17px;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.875rem; font-weight:600;">สถานที่ที่บันทึกไว้</div>
+          <div style="font-size:0.75rem; color:#6B7280;">ดูรายการจุดเช็คอินที่คุณชื่นชอบ</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px; height:16px; color:#9CA3AF;"></i>
+      </a>
+
+      <a href="{% url 'posts:my_posts' %}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:#F9FAFB; text-decoration:none; color:#1F2937; transition:all 0.15s ease;">
+        <div style="width:34px; height:34px; border-radius:9px; background:#ECFDF5; color:#10B981; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="image" style="width:17px; height:17px;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.875rem; font-weight:600;">โพสต์ของฉัน</div>
+          <div style="font-size:0.75rem; color:#6B7280;">ประวัติการแชร์ภาพและสถานที่ทั้งหมดของคุณ</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px; height:16px; color:#9CA3AF;"></i>
+      </a>
+    </div>
+
+    {% if user.is_staff %}
+    <!-- Group 2: สำหรับผู้ดูแลระบบ -->
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+      <span style="font-size:0.75rem; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">ผู้ดูแลระบบ (Admin)</span>
+      
+      <a href="{% url 'admin_panel:dashboard' %}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:#111827; text-decoration:none; color:#FFFFFF; border:1px solid rgba(16,185,129,0.3); box-shadow:0 4px 14px rgba(0,0,0,0.15);">
+        <div style="width:34px; height:34px; border-radius:9px; background:rgba(16,185,129,0.2); color:#10B981; display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="shield" style="width:17px; height:17px;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.875rem; font-weight:700; color:#F9FAFB; display:flex; align-items:center; gap:6px;">
+            <span>แผงควบคุมระบบ (Admin Panel)</span>
+            <span style="background:#10B981; color:#000; font-size:10px; padding:1px 6px; border-radius:9999px; font-weight:800;">ADMIN</span>
+          </div>
+          <div style="font-size:0.75rem; color:#9CA3AF;">จัดการสมาชิก, โพสต์, สถานที่ และคอนฟิก</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px; height:16px; color:#9CA3AF;"></i>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Group 3: เซสชันและการออกจากระบบ -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <span style="font-size:0.75rem; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">ความปลอดภัย</span>
+
+      <button type="button" onclick="confirmLogout(event, '{% url 'accounts:logout' %}')" style="display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:12px; background:#FEF2F2; border:1px solid #FEE2E2; color:#DC2626; cursor:pointer; text-align:left; width:100%; transition:all 0.15s ease;">
+        <div style="width:34px; height:34px; border-radius:9px; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <i data-lucide="log-out" style="width:17px; height:17px;"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.9rem; font-weight:700; color:#B91C1C;">ออกจากระบบ</div>
+          <div style="font-size:0.75rem; color:#EF4444;">ออกจากบัญชีนี้บนอุปกรณ์นี้อย่างปลอดภัย</div>
+        </div>
+        <i data-lucide="log-out" style="width:16px; height:16px; color:#DC2626;"></i>
+      </button>
+    </div>
+
+    <!-- App Info Footer -->
+    <div style="text-align:center; margin-top:20px; font-size:0.75rem; color:#9CA3AF;">
+      ที่นี่มีอะไร? (What's Here?) v2.0 • ระบบเช็คอินภาพถ่าย
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes slideUpProfileSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (min-width: 640px) {
+  #profileSettingsModalBackdrop {
+    align-items: center !important;
+    padding: 20px !important;
+  }
+  #profileSettingsModalSheet {
+    border-radius: 20px !important;
+  }
+}
+</style>
+
+<script>
+function openProfileSettingsModal() {
+  const modal = document.getElementById('profileSettingsModalBackdrop');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function closeProfileSettingsModal() {
+  const modal = document.getElementById('profileSettingsModalBackdrop');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+</script>
+{% endif %}
 {% endblock %}
