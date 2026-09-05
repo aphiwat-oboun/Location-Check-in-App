@@ -8,7 +8,7 @@
 <div class="admin-card">
   <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
     <h3 class="card-title">ผู้ใช้งาน ({{ total_count }})</h3>
-    <form method="GET" style="display: flex; gap: 10px;">
+    <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 480px;">
       <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อผู้ใช้, อีเมล..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 220px;">
       <select name="status" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>สถานะทั้งหมด</option>

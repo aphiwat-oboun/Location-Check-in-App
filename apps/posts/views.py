@@ -22,60 +22,112 @@ def post_detail_view(request, pk):
     }
     return render(request, 'posts/detail.html', context)
 
+import base64
+import uuid
+from django.core.files.base import ContentFile
+
 @login_required
 def create_post_view(request):
     """Multi-step Create Post Flow matching reference screens 4-7"""
     categories = Category.objects.all()
     user = request.user
     if request.method == 'POST':
-        place_name = request.POST.get('place_name', '').strip()
-        description = request.POST.get('description', '').strip()
-        category_id = request.POST.get('category')
-        city = request.POST.get('city', 'เมืองศรีสะเกษ').strip()
-        lat = float(request.POST.get('lat', 15.1120))
-        lng = float(request.POST.get('lng', 104.3180))
-        image_file = request.FILES.get('image')
-        image_url = request.POST.get('image_url', '').strip()
+        try:
+            place_name = request.POST.get('place_name', '').strip()
+            description = request.POST.get('description', '').strip()
+            category_id = request.POST.get('category')
+            city = request.POST.get('city', 'เมืองศรีสะเกษ').strip()
+            
+            try:
+                lat = float(request.POST.get('lat') or 15.1120)
+            except (ValueError, TypeError):
+                lat = 15.1120
 
-        if not place_name:
-            place_name = 'สถานที่ท่องเที่ยว'
+            try:
+                lng = float(request.POST.get('lng') or 104.3180)
+            except (ValueError, TypeError):
+                lng = 104.3180
 
-        # Get or create location
-        category_obj = Category.objects.filter(id=category_id).first() if category_id else Category.objects.first()
-        location, created = Location.objects.get_or_create(
-            name=place_name,
-            defaults={
-                'city': city or 'เมืองศรีสะเกษ',
-                'province': 'ศรีสะเกษ',
-                'latitude': lat,
-                'longitude': lng,
-                'category': category_obj,
-                'created_by': user,
-                'description': description,
-            }
-        )
+            image_file = request.FILES.get('image')
+            image_url = request.POST.get('image_url', '').strip()
 
-        post = Post.objects.create(
-            user=user,
-            location=location,
-            category=category_obj,
-            caption=description,
-            cover_image=image_file if image_file else None,
-            cover_image_url=image_url if not image_file else None,
-            cached_likes_count=0,
-            cached_comments_count=0
-        )
-        
-        # If location didn't have cover image, update it
-        if not location.cover_image and not location.cover_image_url:
-            if image_file:
-                location.cover_image = image_file
+            # Handle Base64 data URL if sent from frontend canvas/camera
+            if not image_file and image_url and image_url.startswith('data:image'):
+                try:
+                    format_part, imgstr = image_url.split(';base64,')
+                    ext = format_part.split('/')[-1].split(';')[0]
+                    if ext.lower() == 'jpeg':
+                        ext = 'jpg'
+                    image_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
+                except Exception:
+                    image_file = None
+                image_url = ''
+
+            # Ensure image_url is an actual HTTP/HTTPS link and not an invalid or overly long string
+            if image_url and not (image_url.startswith('http://') or image_url.startswith('https://')):
+                image_url = ''
             elif image_url:
-                location.cover_image_url = image_url
-            location.save()
+                image_url = image_url[:490]
 
-        messages.success(request, 'แชร์เรื่องราวและรูปภาพของคุณเรียบร้อยแล้ว!')
-        return redirect('posts:detail', pk=post.pk)
+            if not place_name:
+                place_name = 'สถานที่ท่องเที่ยว'
+
+            # Get or create location
+            category_obj = Category.objects.filter(id=category_id).first() if category_id else Category.objects.first()
+            location, created = Location.objects.get_or_create(
+                name=place_name,
+                defaults={
+                    'city': city or 'เมืองศรีสะเกษ',
+                    'province': 'ศรีสะเกษ',
+                    'latitude': lat,
+                    'longitude': lng,
+                    'category': category_obj,
+                    'created_by': user,
+                    'description': description,
+                }
+            )
+
+            # Create post with fallback if file storage fails (e.g. read-only filesystem without Cloudinary)
+            try:
+                post = Post.objects.create(
+                    user=user,
+                    location=location,
+                    category=category_obj,
+                    caption=description,
+                    cover_image=image_file if image_file else None,
+                    cover_image_url=image_url if not image_file else None,
+                    cached_likes_count=0,
+                    cached_comments_count=0
+                )
+            except OSError:
+                post = Post.objects.create(
+                    user=user,
+                    location=location,
+                    category=category_obj,
+                    caption=description,
+                    cover_image=None,
+                    cover_image_url=image_url or "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+                    cached_likes_count=0,
+                    cached_comments_count=0
+                )
+            
+            # If location didn't have cover image, update it safely
+            try:
+                if not location.cover_image and not location.cover_image_url:
+                    if image_file and post.cover_image:
+                        location.cover_image = post.cover_image
+                    elif image_url:
+                        location.cover_image_url = image_url
+                    location.save()
+            except Exception:
+                pass
+
+            messages.success(request, 'แชร์เรื่องราวและรูปภาพของคุณเรียบร้อยแล้ว!')
+            return redirect('posts:detail', pk=post.pk)
+
+        except Exception as e:
+            messages.error(request, f'เกิดข้อผิดพลาดในการบันทึกโพสต์: {str(e)}')
+            return redirect('posts:create')
 
     context = {
         'categories': categories,

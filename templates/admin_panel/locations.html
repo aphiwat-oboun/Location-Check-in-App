@@ -8,8 +8,8 @@
 <div class="admin-card">
   <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
     <h3 class="card-title">สถานที่ทั้งหมด</h3>
-    <form method="GET" style="display: flex; gap: 10px;">
-      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อสถานที่, จังหวัด..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 240px;">
+    <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 380px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อสถานที่, จังหวัด..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; flex: 1; min-width: 160px;">
       <button type="submit" style="padding: 8px 16px; border-radius: 8px; background: #159F8C; color: white; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer;">ค้นหา</button>
     </form>
   </div>

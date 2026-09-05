@@ -31,13 +31,18 @@
   <aside class="admin-sidebar" id="adminSidebar">
     <div>
       <div class="admin-sidebar-brand">
-        <div class="brand-icon-wrapper">
-          <i data-lucide="map-pin" class="w-5 h-5"></i>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="brand-icon-wrapper">
+            <i data-lucide="map-pin" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="brand-title">ที่นี่มีอะไร?</div>
+            <div class="brand-subtitle">Admin Panel</div>
+          </div>
         </div>
-        <div>
-          <div class="brand-title">ที่นี่มีอะไร?</div>
-          <div class="brand-subtitle">Admin Panel</div>
-        </div>
+        <button type="button" class="sidebar-close-btn mobile-only-btn" onclick="toggleAdminSidebar()" aria-label="ปิดเมนู">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
       </div>
 
       <!-- Switch to Main Web App Button -->
@@ -103,17 +108,17 @@
   </aside>
 
   <!-- Mobile Menu Backdrop -->
-  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:35;display:none;" id="adminSidebarBackdrop" onclick="toggleAdminSidebar()"></div>
+  <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar()"></div>
 
   <!-- Top Header -->
   <header class="admin-header">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="toggleAdminSidebar()" class="mobile-only-btn" style="width:40px;height:40px;border-radius:10px;background:#F3F4F6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+      <button onclick="toggleAdminSidebar()" class="mobile-only-btn" style="width:38px;height:38px;border-radius:10px;background:#F3F4F6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
         <i data-lucide="menu" style="width:20px;height:20px;color:#374151;"></i>
       </button>
-      <div class="header-title-group">
+      <div class="header-title-group" style="min-width:0;">
         <h1>{% block header_title %}แดชบอร์ด{% endblock %}</h1>
-        <p>{% block header_subtitle %}ภาพรวมของระบบ{% endblock %}</p>
+        <p class="header-subtitle-text">{% block header_subtitle %}ภาพรวมของระบบ{% endblock %}</p>
       </div>
     </div>
 
@@ -125,9 +130,9 @@
       </form>
 
       <!-- View Main Site Button -->
-      <a href="{% url 'core:home' %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9999px; background: #F3F4F6; color: #374151; font-size: 12.5px; font-weight: 600; text-decoration: none; border: 1px solid #E5E7EB; transition: background 0.15s;" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='#F3F4F6'" title="เปิดดูหน้าเว็บแอปพลิเคชัน">
+      <a href="{% url 'core:home' %}" class="btn-view-site" title="เปิดดูหน้าเว็บแอปพลิเคชัน">
         <i data-lucide="globe" style="width: 14px; height: 14px; color: #159F8C;"></i>
-        <span>ดูหน้าเว็บแอป</span>
+        <span class="btn-view-site-text">ดูหน้าเว็บ</span>
       </a>
 
       <!-- Notification Bell -->
@@ -143,7 +148,7 @@
           <div class="name">{{ request.user.profile.get_display_name|default:"อารินทร์" }}</div>
           <div class="role">ผู้ดูแลระบบ</div>
         </div>
-        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 user-chevron"></i>
       </div>
     </div>
   </header>
@@ -201,15 +206,32 @@
     function toggleAdminSidebar() {
       const sidebar = document.getElementById('adminSidebar');
       const backdrop = document.getElementById('adminSidebarBackdrop');
-      if (sidebar) sidebar.classList.toggle('mobile-open');
-      if (backdrop) {
-        if (sidebar && sidebar.classList.contains('mobile-open')) {
-          backdrop.style.display = 'block';
-        } else {
-          backdrop.style.display = 'none';
+      if (sidebar) {
+        const isOpen = sidebar.classList.toggle('mobile-open');
+        if (backdrop) {
+          if (isOpen) {
+            backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          } else {
+            backdrop.classList.remove('active');
+            document.body.style.overflow = '';
+          }
         }
       }
     }
+
+    // Auto-close sidebar on menu item click on mobile
+    document.querySelectorAll('.admin-sidebar-menu .menu-item').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          const sidebar = document.getElementById('adminSidebar');
+          const backdrop = document.getElementById('adminSidebarBackdrop');
+          if (sidebar) sidebar.classList.remove('mobile-open');
+          if (backdrop) backdrop.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      });
+    });
 
     // CSRF helper
     function getCookie(name) {

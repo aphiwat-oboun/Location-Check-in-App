@@ -87,7 +87,7 @@
         </template>
 
         <input type="file" x-ref="fileInput" name="image" @change="handleImageUpload($event)" accept="image/*" style="display:none;">
-        <input type="file" x-ref="cameraInput" name="image" @change="handleCameraUpload($event)" accept="image/*" capture="environment" style="display:none;">
+        <input type="file" x-ref="cameraInput" @change="handleCameraUpload($event)" accept="image/*" capture="environment" style="display:none;">
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
