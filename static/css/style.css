@@ -2170,7 +2170,12 @@ input, textarea, select {
     overflow-y: visible;
   }
 
-  .map-section, .map-page-wrapper {
+  /* Hide home split map on mobile so feed scrolls cleanly without map at the bottom */
+  .split-content .map-section {
+    display: none !important;
+  }
+
+  .map-page-wrapper {
     width: 100%;
     height: calc(100vh - 56px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 12px));
     height: calc(100dvh - 56px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 12px));
