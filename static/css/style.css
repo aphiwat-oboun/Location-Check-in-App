@@ -479,7 +479,7 @@ input, textarea, select {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   position: relative;
-  z-index: 10000;
+  z-index: 100;
 }
 
 .search-container {
@@ -2804,9 +2804,9 @@ input, textarea, select {
 .mobile-bottom-sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 9998;
+  z-index: 100000;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -2824,14 +2824,14 @@ input, textarea, select {
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 520px;
+  max-width: 540px;
   margin: 0 auto;
   background: #FFFFFF;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   padding: 16px 20px 24px;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
-  z-index: 9999;
+  z-index: 100001;
   transform: translateY(100%);
   pointer-events: none;
   visibility: hidden;
