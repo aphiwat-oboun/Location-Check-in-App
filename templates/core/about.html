@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+
 {% block title %}เกี่ยวกับเราและทีมผู้จัดทำ - ที่นี่มีอะไร?{% endblock %}
+
+{% block title %}เกี่ยวกับเรา - ที่นี่มีอะไร? (What's Here?){% endblock %}
+
 
 {% block extra_css %}
 <style>
@@ -86,10 +90,139 @@
     gap: 24px;
     margin-bottom: 50px;
   }
+
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+
+  /* Hero Section */
+  .about-hero {
+    background: linear-gradient(135deg, rgba(21, 159, 140, 0.12) 0%, rgba(15, 94, 86, 0.05) 100%);
+    border: 1px solid rgba(21, 159, 140, 0.2);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .about-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: #E6F5F3;
+    color: #0D7A6C;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .about-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text-main, #0F172A);
+    margin-bottom: 14px;
+    line-height: 1.3;
+  }
+
+  .about-desc {
+    font-size: 1.05rem;
+    color: var(--text-muted, #64748B);
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* Section Heading */
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main, #0F172A);
+  }
+
+  /* Team Header & Toggle Button */
+  .team-section {
+    margin-bottom: 56px;
+  }
+
+  .team-header-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-surface, #FFFFFF);
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 20px;
+    padding: 24px 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    text-align: center;
+  }
+
+  .team-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: #0F5E56;
+    background: #E6F5F3;
+    border: 1px solid rgba(21, 159, 140, 0.3);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(21, 159, 140, 0.1);
+  }
+
+  .team-toggle-btn:hover {
+    background: #159F8C;
+    color: #FFFFFF;
+    border-color: #159F8C;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(21, 159, 140, 0.25);
+  }
+
+  .team-toggle-btn.active {
+    background: #0F5E56;
+    color: #FFFFFF;
+    border-color: #0F5E56;
+  }
+
+  .team-toggle-btn .toggle-icon {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .rotate-180 {
+    transform: rotate(180deg);
+  }
+
+  /* Team Grid */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 56px;
+  }
+
+
   .team-card {
     background: var(--bg-surface, #FFFFFF);
     border: 1px solid var(--border-light, #E2E8F0);
     border-radius: 20px;
+
     padding: 28px 20px;
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -114,10 +247,55 @@
     border-radius: 50%;
     object-fit: cover;
   }
+
+    padding: 30px 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .team-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(21, 159, 140, 0.12);
+  }
+
+  .team-avatar-wrapper {
+    position: relative;
+    margin-bottom: 18px;
+  }
+
+  .team-avatar {
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #E6F5F3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .team-role-badge {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #159F8C;
+    color: #FFFFFF;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    white-space: nowrap;
+  }
+
+
   .team-name {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-main, #0F172A);
+
     margin-bottom: 4px;
   }
   .team-id {
@@ -153,6 +331,44 @@
     border-bottom: none;
     padding-bottom: 0;
   }
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+
+  .team-student-id {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #159F8C;
+    background: #F0FDF9;
+    padding: 2px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .team-responsibility {
+    font-size: 0.9rem;
+    color: var(--text-muted, #64748B);
+    line-height: 1.5;
+  }
+
+  /* FAQ Section */
+  .faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .faq-item {
+    background: var(--bg-surface, #FFFFFF);
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  }
+
   .faq-question {
     font-size: 1.05rem;
     font-weight: 700;
@@ -162,13 +378,21 @@
     gap: 10px;
     margin-bottom: 8px;
   }
+
   .faq-question i {
     color: #159F8C;
     flex-shrink: 0;
   }
+
   .faq-answer {
     font-size: 0.925rem;
     color: var(--text-subtle, #475569);
+
+
+  .faq-answer {
+    font-size: 0.95rem;
+    color: var(--text-muted, #64748B);
+
     line-height: 1.6;
     padding-left: 28px;
   }
@@ -177,6 +401,7 @@
 
 {% block content %}
 <div class="about-container">
+
 
   <!-- 1. แนะนำโครงงาน "ที่นี่มีอะไร? (What's Here?)" -->
   <section class="about-hero">
@@ -230,11 +455,96 @@
         <div class="team-name">นายปุณยเทพ อารีย์รัตน์กุล</div>
         <div class="team-id">รหัสนักศึกษา: 6812732113</div>
         <div class="team-role">Frontend & Quality Assurance (QA)</div>
+
+  <!-- 1. บล็อกแนะนำโครงงาน (Project Introduction) -->
+  <section class="about-hero">
+    <div class="about-badge">
+      <i data-lucide="info" style="width:14px;height:14px;"></i>
+      <span>เกี่ยวกับโครงงาน</span>
+    </div>
+    <h1 class="about-title">ที่นี่มีอะไร? (What's Here?)</h1>
+    <p class="about-desc">
+      เว็บแอปพลิเคชันสำหรับค้นหาและแบ่งปันสถานที่น่าสนใจในรูปแบบการเช็คอินด้วยภาพถ่ายและพิกัดแผนที่ 
+      ช่วยให้นักท่องเที่ยวและผู้คนในท้องถิ่นสามารถค้นพบจุดเช็คอินใหม่ๆ ไม่ว่าจะเป็นร้านกาแฟ คาเฟ่ 
+      แหล่งท่องเที่ยวธรรมชาติ หรือสถานที่สำคัญ พร้อมทั้งแบ่งปันเรื่องราวความประทับใจร่วมกันในชุมชน
+    </p>
+  </section>
+
+  <!-- 2. การ์ดแนะนำสมาชิกทีมผู้จัดทำ (Team Members) -->
+  <section x-data="{ showTeam: false }" class="team-section">
+    <div class="team-header-wrapper">
+      <div class="section-heading" style="margin-bottom: 0;">
+        <i data-lucide="users" style="color:#159F8C;"></i>
+        <span>ทีมผู้จัดทำโครงงาน</span>
+      </div>
+      <button 
+        type="button" 
+        @click="showTeam = !showTeam" 
+        class="team-toggle-btn"
+        :class="{ 'active': showTeam }"
+        aria-label="สลับการแสดงการ์ดทีมผู้จัดทำ"
+      >
+        <span class="btn-text" x-text="showTeam ? 'ซ่อนสมาชิกทีม' : 'ดูสมาชิกทีมผู้จัดทำ'">ดูสมาชิกทีมผู้จัดทำ</span>
+        <i data-lucide="chevron-down" class="toggle-icon" :class="{ 'rotate-180': showTeam }"></i>
+      </button>
+    </div>
+
+    <!-- Dropdown / Collapsible Cards -->
+    <div 
+      x-show="showTeam" 
+      x-collapse
+      x-transition:enter="transition-all ease-out duration-300"
+      x-transition:enter-start="opacity-0 transform -translate-y-2"
+      x-transition:enter-end="opacity-100 transform translate-y-0"
+      x-transition:leave="transition-all ease-in duration-200"
+      x-transition:leave-start="opacity-100 transform translate-y-0"
+      x-transition:leave-end="opacity-0 transform -translate-y-2"
+      style="margin-top: 24px;"
+    >
+      <div class="team-grid">
+        <!-- สมาชิกคนที่ 1 -->
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Member1" alt="โปรไฟล์สมาชิก 1" class="team-avatar">
+            <span class="team-role-badge">Project Leader / Full-Stack</span>
+          </div>
+          <h3 class="team-name">นายอภิวัฒน์ อบอุ่น</h3>
+          <span class="team-student-id">รหัสนักศึกษา: 6812732127</span>
+          <p class="team-responsibility">
+            ออกแบบสถาปัตยกรรมระบบ วางโครงสร้างฐานข้อมูล Django และพัฒนาระบบ Check-in กับแผนที่พิกัด GPS
+          </p>
+        </div>
+
+        <!-- สมาชิกคนที่ 2 -->
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Member2" alt="โปรไฟล์สมาชิก 2" class="team-avatar">
+            <span class="team-role-badge">Frontend Developer / UI</span>
+          </div>
+          <h3 class="team-name">นายพิทักษ์ แสงลออย</h3>
+          <span class="team-student-id">รหัสนักศึกษา: 6812732117</span>
+          <p class="team-responsibility">
+            ออกแบบ User Interface (UI/UX), พัฒนาหน้าเว็บ Responsive ด้วย CSS และอินทิเกรต Alpine.js
+          </p>
+        </div>
+
+        <!-- สมาชิกคนที่ 3 -->
+        <div class="team-card">
+          <div class="team-avatar-wrapper">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Member3" alt="โปรไฟล์สมาชิก 3" class="team-avatar">
+            <span class="team-role-badge">Backend & QA Tester</span>
+          </div>
+          <h3 class="team-name">นายปุณยเทพ อารีย์รัตน์กุล</h3>
+          <span class="team-student-id">รหัสนักศึกษา: 6812732113</span>
+          <p class="team-responsibility">
+            พัฒนาระบบยืนยันตัวตน (Authentication), จัดการไฟล์มีเดียรูปภาพ และทดสอบความถูกต้องของระบบ
+          </p>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- 3. คำถามที่พบบ่อย (FAQ) -->
   <section class="faq-section">
     <div class="section-heading" style="text-align:left; margin-bottom:16px;">
       <h2>
@@ -271,6 +581,43 @@
       </div>
       <div class="faq-answer">
         โพสต์สาธารณะจะแสดงบนหน้ารวมเรื่องราวและบนแผนที่ เพื่อให้เพื่อนๆ และผู้ใช้งานท่านอื่นสามารถร่วมแชร์และตามรอยพิกัดสถานที่ได้ครับ
+
+  <section>
+    <div class="section-heading">
+      <i data-lucide="help-circle" style="color:#159F8C;"></i>
+      <span>คำถามที่พบบ่อย (FAQ)</span>
+    </div>
+
+    <div class="faq-container">
+      <div class="faq-item">
+        <div class="faq-question">
+          <i data-lucide="help-circle" style="width:18px;height:18px;"></i>
+          <span>การเช็คอินสถานที่จำเป็นต้องเปิด GPS หรือไม่?</span>
+        </div>
+        <div class="faq-answer">
+          แนะนำให้เปิด GPS เพื่อให้ระบบดึงพิกัดที่แม่นยำของคุณโดยอัตโนมัติ แต่หากไม่สะดวก คุณสามารถปักหมุดหรือค้นหาชื่อสถานที่บนแผนที่ด้วยตนเองได้เช่นกัน
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <i data-lucide="help-circle" style="width:18px;height:18px;"></i>
+          <span>ฉันสามารถแก้ไขหรือลบโพสต์เช็คอินย้อนหลังได้ไหม?</span>
+        </div>
+        <div class="faq-answer">
+          ได้แน่นอน คุณสามารถเข้าไปที่เมนู "โพสต์ของฉัน" (My Posts) แล้วเลือกจัดการแก้ไขข้อความ เปลี่ยนรูปภาพ หรือลบโพสต์ได้ตลอดเวลา
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <i data-lucide="help-circle" style="width:18px;height:18px;"></i>
+          <span>สามารถเพิ่มสถานที่ใหม่ที่ยังไม่มีในระบบได้หรือไม่?</span>
+        </div>
+        <div class="faq-answer">
+          ได้ ขณะสร้างโพสต์เช็คอิน หากค้นหาแล้วไม่พบสถานที่ที่ต้องการ คุณสามารถกดเลือก "สร้างสถานที่ใหม่" พร้อมระบุชื่อและพิกัดตำแหน่งได้ทันที
+        </div>
+
       </div>
     </div>
   </section>
@@ -284,4 +631,6 @@
     }
   });
 </script>
+{% endblock %}
+
 {% endblock %}
