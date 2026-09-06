@@ -594,7 +594,7 @@ def export_analytics_csv(request):
 @admin_required
 def location_edit_api(request, location_id):
     """
-    AJAX handler to edit a location's details
+    AJAX handler to edit a location's details including cover image file and URL
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -608,6 +608,7 @@ def location_edit_api(request, location_id):
         lat_val = request.POST.get('latitude')
         lng_val = request.POST.get('longitude')
         description = request.POST.get('description', '').strip()
+        cover_image_url = request.POST.get('cover_image_url', '').strip()
 
         if not name:
             return JsonResponse({'success': False, 'message': 'กรุณากรอกชื่อสถานที่'})
@@ -624,6 +625,15 @@ def location_edit_api(request, location_id):
         if lng_val:
             location.longitude = float(lng_val)
         location.description = description
+
+        # Handle uploaded image file
+        if 'cover_image' in request.FILES:
+            location.cover_image = request.FILES['cover_image']
+
+        # Handle cover image URL
+        if cover_image_url:
+            location.cover_image_url = cover_image_url
+
         location.save()
 
         log_admin_action(request.user, f"แก้ไขข้อมูลสถานที่: {name}", f"Location #{location.id}", request=request)
@@ -639,6 +649,7 @@ def location_edit_api(request, location_id):
                 'latitude': location.latitude,
                 'longitude': location.longitude,
                 'description': location.description,
+                'cover_url': location.get_cover_url(),
             }
         })
     except Exception as e:
