@@ -3270,6 +3270,7 @@ input, textarea, select {
   gap: 8px;
   font-size: 13px;
   color: var(--text-muted, #6B7280);
+  flex-wrap: wrap;
 }
 
 .tiktok-username {
@@ -3278,22 +3279,104 @@ input, textarea, select {
 }
 
 .tiktok-dot-sep {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .tiktok-city-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--bg-surface-subtle, #F3F4F6);
-  padding: 3px 9px;
+  background: var(--bg-surface-subtle, #F1F5F9);
+  padding: 3px 10px;
   border-radius: 9999px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-main, #374151);
+  color: var(--text-main, #334155);
+  border: 1px solid var(--border-light, #E2E8F0);
 }
 
-/* TikTok 3-Stats Bar: Following | Followers | Likes (Guaranteed No Overflow) */
+.user-level-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #FFFFFF !important;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.user-level-pill:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+}
+
+/* Gamification VIP Level Card */
+.gamification-level-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(241,245,249,0.9));
+  border: 1px solid rgba(21, 159, 140, 0.2);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.02);
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.gamification-level-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary, #159F8C);
+  box-shadow: 0 8px 24px rgba(21, 159, 140, 0.15);
+}
+
+.gamification-level-shield img {
+  transition: transform 0.25s ease;
+}
+.gamification-level-card:hover .gamification-level-shield img {
+  transform: scale(1.08) rotate(2deg);
+}
+
+.gamification-level-pill {
+  color: #FFFFFF !important;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  letter-spacing: 0.3px;
+}
+
+.gamification-xp-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.gamification-xp-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] .gamification-level-card {
+  background: linear-gradient(135deg, #1E293B, #0F172A);
+  border-color: rgba(20, 184, 166, 0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+:root[data-theme="dark"] .gamification-xp-bar-bg {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* TikTok 3-Stats Bar: Following | Followers | Likes */
 .tiktok-stats-row {
   display: flex;
   align-items: center;
@@ -3411,31 +3494,38 @@ input, textarea, select {
   padding: 9px 12px;
 }
 
-/* Bio Card - Compact & Clean */
+/* Bio Card - Elegant and Clean */
 .tiktok-bio-card {
   width: 100%;
-  max-width: 440px;
-  padding: 6px 14px;
-  background: var(--bg-surface-subtle, #F8FAFC);
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle, #F1F5F9);
-  margin-bottom: 2px;
+  max-width: 480px;
+  padding: 10px 16px;
+  background: rgba(21, 159, 140, 0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(21, 159, 140, 0.12);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+:root[data-theme="dark"] .tiktok-bio-card {
+  background: rgba(20, 184, 166, 0.08);
+  border-color: rgba(20, 184, 166, 0.2);
 }
 
 .tiktok-bio-text {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-main, #334155);
-  line-height: 1.45;
+  line-height: 1.5;
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  font-weight: 500;
 }
 
 .tiktok-bio-add-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 14px;
+  padding: 5px 16px;
   border-radius: 9999px;
   background: var(--bg-surface-subtle, #F8FAFC);
   border: 1px dashed var(--border-light, #CBD5E1);
@@ -3477,6 +3567,7 @@ input, textarea, select {
   color: var(--text-muted, #6B7280);
   text-decoration: none;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .tiktok-tab-item:hover {

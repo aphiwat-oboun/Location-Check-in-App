@@ -179,8 +179,10 @@ def calculate_user_gamification(user):
         elif any(w in cat_name or w in loc_name for w in ['ธรรมชาติ', 'อุทยาน', 'ผา', 'น้ำตก', 'ป่า', 'nature', 'park']):
             nature_count += 1
 
-    # XP Calculation:
-    total_xp = (total_posts * 50) + (unique_locations_count * 100) + (total_likes_received * 15) + (total_comments_received * 5) + (total_followers * 25)
+    # XP Calculation (including admin bonus XP):
+    profile = getattr(user, 'profile', None)
+    bonus_xp = profile.bonus_xp if profile else 0
+    total_xp = (total_posts * 50) + (unique_locations_count * 100) + (total_likes_received * 15) + (total_comments_received * 5) + (total_followers * 25) + bonus_xp
 
     # Level Thresholds
     LEVELS = [
@@ -191,10 +193,14 @@ def calculate_user_gamification(user):
         {'level': 5, 'min_xp': 3000, 'max_xp': 999999, 'title': 'ตำนานแห่งศรีสะเกษ (Grand Legend)', 'icon': 'crown', 'level_svg': '/static/icons/levels/level-5.svg', 'gradient': 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #EC4899 100%)'},
     ]
 
-    current_tier = LEVELS[0]
-    for lvl in LEVELS:
-        if total_xp >= lvl['min_xp']:
-            current_tier = lvl
+    custom_level = profile.custom_level if profile else 0
+    if custom_level and 1 <= custom_level <= 5:
+        current_tier = next((lvl for lvl in LEVELS if lvl['level'] == custom_level), LEVELS[0])
+    else:
+        current_tier = LEVELS[0]
+        for lvl in LEVELS:
+            if total_xp >= lvl['min_xp']:
+                current_tier = lvl
 
     current_level = current_tier['level']
     min_xp = current_tier['min_xp']
@@ -252,6 +258,7 @@ def calculate_user_gamification(user):
         'level': current_level,
         'level_title': current_tier['title'],
         'level_icon': current_tier['icon'],
+        'level_svg': f'/static/icons/levels/level-{current_level}.svg',
         'level_gradient': current_tier['gradient'],
         'level_progress_pct': level_progress_pct,
         'xp_for_next_level': xp_for_next,
