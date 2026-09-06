@@ -56,8 +56,14 @@ class Profile(models.Model):
     def get_level(self):
         return self.get_gamification().get('level', 1)
 
+    def get_level_title(self):
+        return self.get_gamification().get('level_title', 'นักเดินทางฝึกหัด')
+
     def get_level_svg(self):
         return self.get_gamification().get('level_svg', '/static/icons/levels/level-1.svg')
+
+    def get_level_gradient(self):
+        return self.get_gamification().get('level_gradient', 'linear-gradient(135deg, #159F8C, #0D7A6C)')
 
     def get_top_badge(self):
         return self.get_gamification().get('top_badge')

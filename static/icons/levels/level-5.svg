@@ -1,87 +1,112 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <!-- Platinum Gold Celestial Gradient -->
-    <linearGradient id="celestialGold" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Ultra 24K Grand Imperial Gold -->
+    <linearGradient id="grandImperialGold" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="20%" stop-color="#FEF08A" />
-      <stop offset="45%" stop-color="#38BDF8" />
-      <stop offset="70%" stop-color="#A855F7" />
-      <stop offset="100%" stop-color="#EC4899" />
-    </linearGradient>
-
-    <!-- 24K Grand Gold Bevel -->
-    <linearGradient id="grandGold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB" />
-      <stop offset="30%" stop-color="#FCD34D" />
+      <stop offset="15%" stop-color="#FFFBEB" />
+      <stop offset="35%" stop-color="#FDE047" />
       <stop offset="60%" stop-color="#F59E0B" />
-      <stop offset="90%" stop-color="#D97706" />
+      <stop offset="85%" stop-color="#D97706" />
       <stop offset="100%" stop-color="#78350F" />
     </linearGradient>
 
-    <!-- Deep Cosmic Obsidian Gradient -->
-    <linearGradient id="cosmicBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A" />
-      <stop offset="40%" stop-color="#020617" />
-      <stop offset="75%" stop-color="#1E1B4B" />
-      <stop offset="100%" stop-color="#020617" />
+    <!-- Deep Polished Royal Gold -->
+    <linearGradient id="deepRoyalGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="30%" stop-color="#F59E0B" />
+      <stop offset="70%" stop-color="#B45309" />
+      <stop offset="100%" stop-color="#451A03" />
     </linearGradient>
 
-    <!-- Holographic Diamond Core -->
-    <linearGradient id="holoDiamond" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Celestial Diamond Platinum -->
+    <linearGradient id="celestialDiamond" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="25%" stop-color="#BAE6FD" />
-      <stop offset="50%" stop-color="#E0E7FF" />
-      <stop offset="75%" stop-color="#FCE7F3" />
-      <stop offset="100%" stop-color="#FEF08A" />
+      <stop offset="30%" stop-color="#E0F2FE" />
+      <stop offset="60%" stop-color="#BAE6FD" />
+      <stop offset="90%" stop-color="#7DD3FC" />
+      <stop offset="100%" stop-color="#38BDF8" />
     </linearGradient>
 
-    <filter id="grandGlowLvl5" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0284C7" flood-opacity="0.45" />
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#7C3AED" flood-opacity="0.5" />
-    </filter>
+    <!-- Midnight Obsidian Aegis Core -->
+    <linearGradient id="midnightAegis" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="40%" stop-color="#0F172A" />
+      <stop offset="75%" stop-color="#050B14" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+
+    <!-- Specular Diamond Gloss -->
+    <linearGradient id="legendGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
   </defs>
 
-  <g filter="url(#grandGlowLvl5)">
-    <!-- Grand Master Laurel Wings -->
-    <path d="M8 42 Q26 12 52 32 L52 66 Q20 54 8 42 Z" fill="url(#grandGold)" />
-    <path d="M112 42 Q94 12 68 32 L68 66 Q100 54 112 42 Z" fill="url(#grandGold)" />
+  <g>
+    <!-- Outer Majestic Archangel Gold Wings (Double Feather Layer) -->
+    <!-- Back Wing Tier -->
+    <path d="M4 46 Q24 16 50 32 L50 68 Q18 60 4 46 Z" fill="url(#deepRoyalGold)" />
+    <path d="M116 46 Q96 16 70 32 L70 68 Q102 60 116 46 Z" fill="url(#deepRoyalGold)" />
 
-    <!-- Imperial Triple Diamond Crown Top -->
+    <!-- Front Wing Tier -->
+    <path d="M8 38 Q30 10 54 28 L54 62 Q24 50 8 38 Z" fill="url(#grandImperialGold)" />
+    <path d="M112 38 Q90 10 66 28 L66 62 Q96 50 112 38 Z" fill="url(#grandImperialGold)" />
+
+    <!-- Imperial 5-Point Diamond Crown -->
     <!-- Center Peak -->
-    <polygon points="60,0 68,14 52,14" fill="url(#grandGold)" />
-    <circle cx="60" cy="0" r="3" fill="#FFFFFF" />
+    <polygon points="60,0 68,14 52,14" fill="url(#grandImperialGold)" />
+    <circle cx="60" cy="1" r="3.5" fill="#FFFFFF" />
     
-    <!-- Left Peak -->
-    <polygon points="42,4 48,16 36,16" fill="url(#grandGold)" />
-    <circle cx="42" cy="4" r="2.5" fill="#38BDF8" />
-    
-    <!-- Right Peak -->
-    <polygon points="78,4 84,16 72,16" fill="url(#grandGold)" />
-    <circle cx="78" cy="4" r="2.5" fill="#EC4899" />
+    <!-- Mid-Left Peak -->
+    <polygon points="44,3 50,15 38,15" fill="url(#grandImperialGold)" />
+    <circle cx="44" cy="4" r="2.5" fill="url(#celestialDiamond)" />
 
-    <!-- Main Grand Legend Shield -->
-    <polygon points="60,10 106,28 106,74 60,114 14,74 14,28" fill="url(#grandGold)" />
-    <polygon points="60,18 98,34 98,70 60,104 22,70 22,34" fill="url(#cosmicBg)" />
-    <polygon points="60,18 98,34 98,70 60,104 22,70 22,34" fill="none" stroke="url(#celestialGold)" stroke-width="2.5" />
+    <!-- Mid-Right Peak -->
+    <polygon points="76,3 82,15 70,15" fill="url(#grandImperialGold)" />
+    <circle cx="76" cy="4" r="2.5" fill="url(#celestialDiamond)" />
 
-    <!-- Center Grand Crown & Diamond Heart -->
+    <!-- Outer Left Peak -->
+    <polygon points="30,8 36,18 24,18" fill="url(#deepRoyalGold)" />
+    <circle cx="30" cy="9" r="2" fill="#FDE047" />
+
+    <!-- Outer Right Peak -->
+    <polygon points="90,8 96,18 84,18" fill="url(#deepRoyalGold)" />
+    <circle cx="90" cy="9" r="2" fill="#FDE047" />
+
+    <!-- Main Grand Legend Aegis Shield -->
+    <polygon points="60,6 106,26 106,76 60,116 14,76 14,26" fill="url(#deepRoyalGold)" />
+    <polygon points="60,10 102,28 102,74 60,112 18,74 18,28" fill="url(#grandImperialGold)" />
+    <polygon points="60,16 96,33 96,70 60,104 24,70 24,33" fill="url(#midnightAegis)" />
+    <polygon points="60,16 96,33 96,70 60,104 24,70 24,33" fill="none" stroke="url(#grandImperialGold)" stroke-width="2.5" />
+
+    <!-- Gloss Highlight Arc -->
+    <path d="M24 33 L60 16 L96 33 L96 52 Q60 36 24 52 Z" fill="url(#legendGloss)" />
+
+    <!-- Center Radiant Celestial Sunburst & 3D Diamond Prism -->
     <g transform="translate(60, 56)">
-      <circle cx="0" cy="0" r="26" fill="none" stroke="url(#grandGold)" stroke-width="3" />
-      <circle cx="0" cy="0" r="21" fill="#0A0F1D" />
+      <!-- Outer 24K Beveled Halo -->
+      <circle cx="0" cy="0" r="26" fill="none" stroke="url(#deepRoyalGold)" stroke-width="3.5" />
+      <circle cx="0" cy="0" r="24" fill="none" stroke="url(#grandImperialGold)" stroke-width="1.5" />
+      <circle cx="0" cy="0" r="20" fill="#040812" />
 
-      <!-- Faceted Holographic Diamond -->
-      <polygon points="0,-16 14,-9 14,9 0,16 -14,9 -14,-9" fill="url(#holoDiamond)" />
-      
-      <!-- 4-Point Celestial Star -->
-      <path d="M0 -18 Q0 0 18 0 Q0 0 0 18 Q0 0 -18 0 Q0 0 0 -18 Z" fill="url(#grandGold)" />
-      
-      <circle cx="0" cy="0" r="5" fill="#FFFFFF" />
-      <circle cx="0" cy="0" r="2.2" fill="#0284C7" />
+      <!-- 8-Point Grand Celestial Star Burst -->
+      <polygon points="0,-21 4,-6 21,0 4,6 0,21 -4,6 -21,0 -4,-6" fill="url(#grandImperialGold)" />
+      <!-- Diagonal Flare Star -->
+      <polygon points="0,-14 3,-3 14,0 3,3 0,14 -3,3 -14,0 -3,-3" fill="url(#deepRoyalGold)" />
+
+      <!-- Faceted 3D Brilliant Diamond Heart -->
+      <polygon points="0,-10 9,-5 9,5 0,10 -9,5 -9,-5" fill="url(#celestialDiamond)" />
+      <polygon points="0,-10 9,-5 0,0 -9,-5" fill="#FFFFFF" fill-opacity="0.8" />
+      <polygon points="0,10 9,5 0,0 -9,5" fill="#38BDF8" fill-opacity="0.9" />
+
+      <!-- Central Pure Diamond Sparkle -->
+      <circle cx="0" cy="0" r="3" fill="#FFFFFF" />
     </g>
 
-    <!-- VIP Level 5 Tag Pill -->
-    <rect x="30" y="90" width="60" height="20" rx="10" fill="url(#celestialGold)" />
-    <rect x="32" y="92" width="56" height="16" rx="8" fill="#020617" />
-    <text x="60" y="104" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">★ LV.5 ★</text>
+    <!-- VIP Grand Legend LV.5 Banner Plaque -->
+    <rect x="28" y="90" width="64" height="20" rx="10" fill="url(#deepRoyalGold)" />
+    <rect x="30" y="91.5" width="60" height="17" rx="8.5" fill="url(#grandImperialGold)" />
+    <rect x="32" y="93" width="56" height="14" rx="7" fill="#0A0F1D" />
+    <text x="60" y="103.5" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="900" fill="#FFFBEB" text-anchor="middle" letter-spacing="1">★ LV.5 ★</text>
   </g>
 </svg>

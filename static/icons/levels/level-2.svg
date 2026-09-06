@@ -27,12 +27,9 @@
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
     </linearGradient>
 
-    <filter id="shadowLvl2" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#020817" flood-opacity="0.6" />
-    </filter>
   </defs>
 
-  <g filter="url(#shadowLvl2)">
+  <g>
     <!-- Winged Base Accents -->
     <path d="M12 42 Q30 32 46 44 L46 68 Q24 64 12 42 Z" fill="url(#silverGrad)" />
     <path d="M108 42 Q90 32 74 44 L74 68 Q96 64 108 42 Z" fill="url(#silverGrad)" />

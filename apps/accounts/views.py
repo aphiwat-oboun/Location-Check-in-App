@@ -417,7 +417,7 @@ def profile_view(request, username=None):
         'is_following': is_following,
         'is_own_profile': is_own_profile,
         'gamification': gamification,
-        'active_tab': request.GET.get('tab', 'posts')
+        'active_tab': request.GET.get('tab', 'posts') if (is_own_profile or request.GET.get('tab') not in ['badges', 'saved']) else 'posts'
     }
     return render(request, 'accounts/profile.html', context)
 

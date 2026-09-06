@@ -97,17 +97,22 @@
     <div style="padding:16px 18px 18px 18px;">
       <!-- Author & Location header -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;overflow:visible;">
           <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-flex;flex-shrink:0;" title="ดูโปรไฟล์ @{{ post.user.username }}">
             <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color, #FFFFFF);box-shadow:0 2px 8px rgba(0,0,0,0.08);">
           </a>
-          <div style="flex:1 1 auto;min-width:0;overflow:hidden;">
-            <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+          <div style="flex:1 1 auto;min-width:0;overflow:visible;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;overflow:visible;">
               <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;font-size:14.5px;font-weight:700;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                 {{ post.user.profile.get_display_name }}
               </a>
+              {% if post.user.profile.get_level %}
+                <a href="{% url 'accounts:user_profile' post.user.username %}" class="user-standalone-shield" title="ระดับ {{ post.user.profile.get_level }}: {{ post.user.profile.get_level_title }}">
+                  <img src="{{ post.user.profile.get_level_svg }}" alt="Level {{ post.user.profile.get_level }}">
+                </a>
+              {% endif %}
               {% if post.user.is_staff %}
-              <span style="color:#10B981;display:inline-flex;flex-shrink:0;" title="ผู้ดูแลระบบ">
+              <span style="color:#10B981;display:inline-flex;flex-shrink:0;vertical-align:middle;" title="ผู้ดูแลระบบ">
                 <i data-lucide="shield-check" style="width:13px;height:13px;"></i>
               </span>
               {% endif %}

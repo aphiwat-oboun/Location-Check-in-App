@@ -90,10 +90,22 @@
             <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-flex;flex-shrink:0;" title="ดูโปรไฟล์ @{{ post.user.username }}">
               <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar" style="transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
             </a>
-            <div class="post-user-info" style="flex:1 1 auto;min-width:0;overflow:hidden;">
-              <a href="{% url 'accounts:user_profile' post.user.username %}" class="post-user-name" style="text-decoration:none;transition:color 0.15s;">
-                {{ post.user.profile.get_display_name }}
-              </a>
+            <div class="post-user-info" style="flex:1 1 auto;min-width:0;overflow:visible;">
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;overflow:visible;">
+                <a href="{% url 'accounts:user_profile' post.user.username %}" class="post-user-name" style="text-decoration:none;transition:color 0.15s;">
+                  {{ post.user.profile.get_display_name }}
+                </a>
+                {% if post.user.profile.get_level %}
+                  <a href="{% url 'accounts:user_profile' post.user.username %}" class="user-standalone-shield" title="ระดับ {{ post.user.profile.get_level }}: {{ post.user.profile.get_level_title }}">
+                    <img src="{{ post.user.profile.get_level_svg }}" alt="Level {{ post.user.profile.get_level }}">
+                  </a>
+                {% endif %}
+                {% if post.user.is_staff %}
+                  <span class="badge-staff-verify" title="ผู้ดูแลระบบ" style="display:inline-flex;align-items:center;color:#10B981;vertical-align:middle;">
+                    <i data-lucide="shield-check" style="width:13px;height:13px;"></i>
+                  </span>
+                {% endif %}
+              </div>
               <div class="post-user-meta">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ post.location.name }}</a> • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">-.- กม.</span></div>
             </div>
           </div>

@@ -57,9 +57,14 @@
         <img src="{{ post.get_cover_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
       </div>
       <div style="padding:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
           <img src="{{ post.user.profile.get_avatar_url }}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;">
           <span style="font-size:12px;font-weight:600;color:var(--text-main);">{{ post.user.profile.get_display_name }}</span>
+          {% if post.user.profile.get_level %}
+            <span class="user-standalone-shield" title="ระดับ {{ post.user.profile.get_level }}: {{ post.user.profile.get_level_title }}">
+              <img src="{{ post.user.profile.get_level_svg }}" alt="Level {{ post.user.profile.get_level }}" style="width:18px;height:18px;">
+            </span>
+          {% endif %}
         </div>
         <p style="font-size:12.5px;color:var(--text-muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ post.caption }}</p>
       </div>

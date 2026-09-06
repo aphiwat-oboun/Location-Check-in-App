@@ -184,13 +184,13 @@ def calculate_user_gamification(user):
     bonus_xp = profile.bonus_xp if profile else 0
     total_xp = (total_posts * 50) + (unique_locations_count * 100) + (total_likes_received * 15) + (total_comments_received * 5) + (total_followers * 25) + bonus_xp
 
-    # Level Thresholds
+    # Level Thresholds (Luxury Royal Gems & 24K Imperial Gold)
     LEVELS = [
-        {'level': 1, 'min_xp': 0, 'max_xp': 200, 'title': 'นักเดินทางฝึกหัด (Rookie)', 'icon': 'compass', 'level_svg': '/static/icons/levels/level-1.svg', 'gradient': 'linear-gradient(135deg, #159F8C, #0D7A6C)'},
-        {'level': 2, 'min_xp': 200, 'max_xp': 600, 'title': 'นักสำรวจท้องถิ่น (Explorer)', 'icon': 'map-pin', 'level_svg': '/static/icons/levels/level-2.svg', 'gradient': 'linear-gradient(135deg, #3B82F6, #1D4ED8)'},
-        {'level': 3, 'min_xp': 600, 'max_xp': 1400, 'title': 'นักผจญภัยตัวยง (Adventurer)', 'icon': 'award', 'level_svg': '/static/icons/levels/level-3.svg', 'gradient': 'linear-gradient(135deg, #8B5CF6, #6D28D9)'},
-        {'level': 4, 'min_xp': 1400, 'max_xp': 3000, 'title': 'ผู้เชี่ยวชาญการเดินทาง (Master)', 'icon': 'sparkles', 'level_svg': '/static/icons/levels/level-4.svg', 'gradient': 'linear-gradient(135deg, #F59E0B, #B45309)'},
-        {'level': 5, 'min_xp': 3000, 'max_xp': 999999, 'title': 'ตำนานแห่งศรีสะเกษ (Grand Legend)', 'icon': 'crown', 'level_svg': '/static/icons/levels/level-5.svg', 'gradient': 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #EC4899 100%)'},
+        {'level': 1, 'min_xp': 0, 'max_xp': 200, 'title': 'นักเดินทางฝึกหัด (Rookie)', 'icon': 'compass', 'level_svg': '/static/icons/levels/level-1.svg', 'gradient': 'linear-gradient(135deg, #059669 0%, #047857 50%, #064E3B 100%)'},
+        {'level': 2, 'min_xp': 200, 'max_xp': 600, 'title': 'นักสำรวจท้องถิ่น (Explorer)', 'icon': 'map-pin', 'level_svg': '/static/icons/levels/level-2.svg', 'gradient': 'linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #075985 100%)'},
+        {'level': 3, 'min_xp': 600, 'max_xp': 1400, 'title': 'นักผจญภัยตัวยง (Adventurer)', 'icon': 'award', 'level_svg': '/static/icons/levels/level-3.svg', 'gradient': 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #4C1D95 100%)'},
+        {'level': 4, 'min_xp': 1400, 'max_xp': 3000, 'title': 'ผู้เชี่ยวชาญการเดินทาง (Master)', 'icon': 'sparkles', 'level_svg': '/static/icons/levels/level-4.svg', 'gradient': 'linear-gradient(135deg, #EA580C 0%, #DC2626 50%, #991B1B 100%)'},
+        {'level': 5, 'min_xp': 3000, 'max_xp': 999999, 'title': 'ตำนานแห่งศรีสะเกษ (Grand Legend)', 'icon': 'crown', 'level_svg': '/static/icons/levels/level-5.svg', 'gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 35%, #B45309 70%, #78350F 100%)'},
     ]
 
     custom_level = profile.custom_level if profile else 0
