@@ -48,26 +48,39 @@ def create_post_view(request):
             except (ValueError, TypeError):
                 lng = 104.3180
 
-            image_file = request.FILES.get('image')
-            image_url = request.POST.get('image_url', '').strip()
+            # Collect all uploaded images (supports unlimited images)
+            all_images = []
+            
+            # 1. From file inputs (multiple files)
+            files = request.FILES.getlist('images')
+            if not files:
+                files = request.FILES.getlist('image')
+            for f in files:
+                if f:
+                    all_images.append({'type': 'file', 'data': f})
 
-            # Handle Base64 data URL if sent from frontend canvas/camera
-            if not image_file and image_url and image_url.startswith('data:image'):
-                try:
-                    format_part, imgstr = image_url.split(';base64,')
-                    ext = format_part.split('/')[-1].split(';')[0]
-                    if ext.lower() == 'jpeg':
-                        ext = 'jpg'
-                    image_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
-                except Exception:
-                    image_file = None
-                image_url = ''
+            # 2. From Base64 data URLs / camera snaps
+            raw_urls = request.POST.getlist('image_urls')
+            single_url = request.POST.get('image_url', '').strip()
+            if single_url and single_url not in raw_urls:
+                raw_urls.append(single_url)
 
-            # Ensure image_url is an actual HTTP/HTTPS link and not an invalid or overly long string
-            if image_url and not (image_url.startswith('http://') or image_url.startswith('https://')):
-                image_url = ''
-            elif image_url:
-                image_url = image_url[:490]
+            for u_str in raw_urls:
+                u_str = u_str.strip()
+                if not u_str:
+                    continue
+                if u_str.startswith('data:image'):
+                    try:
+                        format_part, imgstr = u_str.split(';base64,')
+                        ext = format_part.split('/')[-1].split(';')[0]
+                        if ext.lower() == 'jpeg':
+                            ext = 'jpg'
+                        c_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
+                        all_images.append({'type': 'file', 'data': c_file})
+                    except Exception:
+                        pass
+                elif u_str.startswith('http://') or u_str.startswith('https://'):
+                    all_images.append({'type': 'url', 'data': u_str[:490]})
 
             if not place_name:
                 place_name = 'สถานที่ท่องเที่ยว'
@@ -87,15 +100,24 @@ def create_post_view(request):
                 }
             )
 
-            # Create post with fallback if file storage fails (e.g. read-only filesystem without Cloudinary)
+            # Determine first cover image
+            first_img_file = None
+            first_img_url = None
+            if all_images:
+                if all_images[0]['type'] == 'file':
+                    first_img_file = all_images[0]['data']
+                else:
+                    first_img_url = all_images[0]['data']
+
+            # Create post
             try:
                 post = Post.objects.create(
                     user=user,
                     location=location,
                     category=category_obj,
                     caption=description,
-                    cover_image=image_file if image_file else None,
-                    cover_image_url=image_url if not image_file else None,
+                    cover_image=first_img_file,
+                    cover_image_url=first_img_url if not first_img_file else None,
                     cached_likes_count=0,
                     cached_comments_count=0
                 )
@@ -106,23 +128,41 @@ def create_post_view(request):
                     category=category_obj,
                     caption=description,
                     cover_image=None,
-                    cover_image_url=image_url or "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+                    cover_image_url=first_img_url or "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
                     cached_likes_count=0,
                     cached_comments_count=0
                 )
+
+            # Save all images to PostImage records
+            for idx, item in enumerate(all_images):
+                try:
+                    if item['type'] == 'file':
+                        PostImage.objects.create(
+                            post=post,
+                            image=item['data'],
+                            order=idx
+                        )
+                    elif item['type'] == 'url':
+                        PostImage.objects.create(
+                            post=post,
+                            image_url=item['data'],
+                            order=idx
+                        )
+                except Exception as img_err:
+                    print(f"Error saving PostImage {idx}: {img_err}")
             
             # If location didn't have cover image, update it safely
             try:
                 if not location.cover_image and not location.cover_image_url:
-                    if image_file and post.cover_image:
+                    if post.cover_image:
                         location.cover_image = post.cover_image
-                    elif image_url:
-                        location.cover_image_url = image_url
+                    elif post.cover_image_url:
+                        location.cover_image_url = post.cover_image_url
                     location.save()
             except Exception:
                 pass
 
-            messages.success(request, 'แชร์เรื่องราวและรูปภาพของคุณเรียบร้อยแล้ว!')
+            messages.success(request, f'แชร์เรื่องราวและรูปภาพ ({len(all_images)} รูป) ของคุณเรียบร้อยแล้ว!')
             return redirect('posts:detail', pk=post.pk)
 
         except Exception as e:
@@ -138,12 +178,12 @@ def create_post_view(request):
 
 @login_required
 def my_posts_view(request):
-    posts = request.user.posts.select_related('location', 'category').order_by('-created_at')
+    posts = request.user.posts.select_related('location', 'category').prefetch_related('images').order_by('-created_at')
     return render(request, 'posts/my_posts.html', {'posts': posts})
 
 @login_required
 def edit_post_view(request, pk):
-    post = get_object_or_404(Post.objects.select_related('location', 'category'), pk=pk)
+    post = get_object_or_404(Post.objects.select_related('location', 'category').prefetch_related('images'), pk=pk)
     if post.user != request.user and not request.user.is_staff:
         messages.error(request, 'คุณไม่มีสิทธิ์แก้ไขโพสต์นี้')
         return redirect('posts:detail', pk=pk)
@@ -154,16 +194,38 @@ def edit_post_view(request, pk):
         caption = request.POST.get('caption', '').strip()
         category_id = request.POST.get('category')
         place_name = request.POST.get('place_name', '').strip()
-        image_file = request.FILES.get('image')
         
+        # Additional new images
+        new_files = request.FILES.getlist('images') or request.FILES.getlist('image')
+        delete_image_ids = request.POST.getlist('delete_images')
+        
+        # Delete selected images
+        if delete_image_ids:
+            PostImage.objects.filter(post=post, id__in=delete_image_ids).delete()
+            
         post.caption = caption
         if category_id:
             category_obj = Category.objects.filter(id=category_id).first()
             if category_obj:
                 post.category = category_obj
                 
-        if image_file:
-            post.cover_image = image_file
+        # Add new images
+        current_max_order = post.images.count()
+        for idx, nf in enumerate(new_files):
+            if nf:
+                PostImage.objects.create(
+                    post=post,
+                    image=nf,
+                    order=current_max_order + idx
+                )
+                
+        # Update cover image if none or requested
+        first_img = post.images.first()
+        if first_img:
+            if first_img.image:
+                post.cover_image = first_img.image
+            elif first_img.image_url:
+                post.cover_image_url = first_img.image_url
             
         if place_name and post.location:
             post.location.name = place_name

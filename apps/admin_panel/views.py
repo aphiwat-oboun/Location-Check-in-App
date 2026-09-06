@@ -164,7 +164,11 @@ def users_view(request):
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query) |
             Q(email__icontains=search_query) |
-            Q(profile__display_name__icontains=search_query)
+            Q(profile__display_name__icontains=search_query) |
+            Q(profile__signup_ip__icontains=search_query) |
+            Q(profile__signup_os__icontains=search_query) |
+            Q(profile__signup_location__icontains=search_query) |
+            Q(profile__signup_method__icontains=search_query)
         )
 
     if status_filter == 'active':

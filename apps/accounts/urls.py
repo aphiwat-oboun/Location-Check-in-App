@@ -12,6 +12,7 @@ urlpatterns = [
     path('profile/<str:username>/', views.profile_view, name='user_profile'),
     path('profile/<str:username>/follow/', views.toggle_follow_api, name='toggle_follow'),
     path('profile/<str:username>/users-list/', views.follow_list_api, name='follow_list'),
+    path('api/sync-device/', views.sync_device_api, name='sync_device_api'),
     
     # Social OAuth Login Routes
     path('google/login/', views.google_login_view, name='google_login'),

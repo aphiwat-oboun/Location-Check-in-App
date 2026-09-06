@@ -10,8 +10,8 @@
 
   <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:16px;">
     {% for item in saved_items %}
-    <div style="background:#FFFFFF;border-radius:var(--radius-md);border:1px solid var(--border-subtle);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;">
-      <a href="{% url 'posts:detail' item.post.id %}" style="width:100%;aspect-ratio:4/3;overflow:hidden;background:#f0f0f0;display:block;">
+    <div style="background:var(--bg-surface, #FFFFFF);border-radius:var(--radius-md);border:1px solid var(--border-light, #F1F5F9);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;">
+      <a href="{% url 'posts:detail' item.post.id %}" style="width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--bg-surface-subtle, #f0f0f0);display:block;">
         <img src="{{ item.post.get_cover_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
       </a>
       <div style="padding:14px;display:flex;flex-direction:column;gap:6px;">

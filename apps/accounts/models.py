@@ -11,6 +11,21 @@ class Profile(models.Model):
     cover_image = models.ImageField(upload_to='covers/', blank=True, null=True)
     cover_image_url = models.URLField(max_length=500, blank=True, null=True)
     is_suspended = models.BooleanField(default=False)
+    
+    # Device & Security / Audit tracking fields
+    signup_ip = models.CharField(max_length=50, blank=True, null=True, verbose_name="IP ตอนสมัคร")
+    signup_location = models.CharField(max_length=150, blank=True, null=True, default="ศรีสะเกษ, ประเทศไทย", verbose_name="สถานที่ตอนสมัคร")
+    signup_os = models.CharField(max_length=80, blank=True, null=True, default="Windows 10/11", verbose_name="ระบบปฏิบัติการตอนสมัคร")
+    signup_device = models.CharField(max_length=80, blank=True, null=True, default="คอมพิวเตอร์ (Desktop)", verbose_name="อุปกรณ์ตอนสมัคร")
+    signup_browser = models.CharField(max_length=80, blank=True, null=True, default="Google Chrome", verbose_name="เบราว์เซอร์ตอนสมัคร")
+    signup_method = models.CharField(max_length=50, blank=True, null=True, default="เว็บฟอร์ม", verbose_name="ช่องทางการสมัคร")
+    
+    last_login_ip = models.CharField(max_length=50, blank=True, null=True, verbose_name="IP ล่าสุด")
+    last_login_location = models.CharField(max_length=150, blank=True, null=True, verbose_name="สถานที่ล่าสุด")
+    last_login_os = models.CharField(max_length=80, blank=True, null=True, verbose_name="ระบบปฏิบัติการล่าสุด")
+    last_login_device = models.CharField(max_length=80, blank=True, null=True, verbose_name="อุปกรณ์ล่าสุด")
+    last_login_browser = models.CharField(max_length=80, blank=True, null=True, verbose_name="เบราว์เซอร์ล่าสุด")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

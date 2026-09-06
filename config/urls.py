@@ -3,7 +3,13 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from django.http import JsonResponse
+from apps.core import views as core_views
+
 urlpatterns = [
+    path('.well-known/appspecific/com.chrome.devtools.json', lambda r: JsonResponse({})),
+    path('manifest.json', core_views.manifest_view, name='manifest'),
+    path('sw.js', core_views.service_worker_view, name='service_worker'),
     path('admin/', admin.site.urls),
     path('admin-panel/', include('apps.admin_panel.urls', namespace='admin_panel')),
     path('', include('apps.core.urls', namespace='core')),

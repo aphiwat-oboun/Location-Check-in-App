@@ -14,17 +14,10 @@ from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse
 
 from .models import Profile, Follow
+from .utils import get_client_ip, get_client_device_details
 from apps.admin_panel.models import AuditLog
 from apps.interactions.models import Like, SavedPost
 from apps.posts.models import Post
-
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
 
 def log_security_event(user, action, details='', request=None):
     ip = get_client_ip(request) if request else None
@@ -69,16 +62,32 @@ def register_view(request):
             return render(request, 'accounts/register.html')
 
         try:
+            device_info = get_client_device_details(request)
             user = User.objects.create_user(username=username, email=email, password=password, first_name=display_name)
-            user.profile.display_name = display_name
-            user.profile.save()
+            
+            # Record detailed signup device, OS, IP & location
+            profile = user.profile
+            profile.display_name = display_name
+            profile.signup_ip = device_info['ip']
+            profile.signup_location = device_info['location']
+            profile.signup_os = device_info['os']
+            profile.signup_device = device_info['device']
+            profile.signup_browser = device_info['browser']
+            profile.signup_method = "เว็บฟอร์ม"
+            
+            profile.last_login_ip = device_info['ip']
+            profile.last_login_location = device_info['location']
+            profile.last_login_os = device_info['os']
+            profile.last_login_device = device_info['device']
+            profile.last_login_browser = device_info['browser']
+            profile.save()
         except Exception as e:
             messages.error(request, 'ไม่สามารถสร้างบัญชีได้ ชื่อผู้ใช้หรืออีเมลนี้มีอยู่ในระบบแล้ว')
             return render(request, 'accounts/register.html')
 
         login(request, user)
         request.session.cycle_key()
-        log_security_event(user, "สมัครสมาชิกสำเร็จ", request=request)
+        log_security_event(user, "สมัครสมาชิกสำเร็จ", f"IP: {device_info['ip']} ({device_info['os']}, {device_info['browser']})", request=request)
         messages.success(request, 'สร้างบัญชีสำเร็จ ยินดีต้อนรับสู่ ที่นี่มีอะไร?')
         return redirect('core:home')
         
@@ -112,12 +121,30 @@ def login_view(request):
                 log_security_event(user, "พยายามล็อกอินบัญชีที่ถูกระงับ", request=request)
                 return render(request, 'accounts/login.html', {'form': form})
 
-            # 3. Successful Login - Reset brute force counter & cycle session key
+            # 3. Successful Login - Update client device & IP info
+            device_info = get_client_device_details(request)
+            if hasattr(user, 'profile'):
+                profile = user.profile
+                profile.last_login_ip = device_info['ip']
+                profile.last_login_location = device_info['location']
+                profile.last_login_os = device_info['os']
+                profile.last_login_device = device_info['device']
+                profile.last_login_browser = device_info['browser']
+                # If signup_ip is empty, fill it as well
+                if not profile.signup_ip:
+                    profile.signup_ip = device_info['ip']
+                    profile.signup_location = device_info['location']
+                    profile.signup_os = device_info['os']
+                    profile.signup_device = device_info['device']
+                    profile.signup_browser = device_info['browser']
+                profile.save()
+
+            # Reset brute force counter & cycle session key
             cache.delete(cache_key)
             login(request, user)
             request.session.cycle_key()
 
-            log_security_event(user, "เข้าสู่ระบบสำเร็จ", request=request)
+            log_security_event(user, "เข้าสู่ระบบสำเร็จ", f"IP: {device_info['ip']} ({device_info['os']}, {device_info['browser']})", request=request)
             messages.success(request, f'ยินดีต้อนรับกลับ, {user.profile.get_display_name()}!')
             
             next_url = request.GET.get('next')
@@ -200,6 +227,7 @@ def google_callback_view(request):
                 google_avatar = user_info.get('picture')
 
     # Find or Create User
+    device_info = get_client_device_details(request)
     username = f"google_{google_email.split('@')[0]}"
     user, created = User.objects.get_or_create(
         username=username,
@@ -212,11 +240,24 @@ def google_callback_view(request):
     profile = user.profile
     profile.display_name = google_name
     profile.avatar_url = google_avatar
+    if created or not profile.signup_ip:
+        profile.signup_ip = device_info['ip']
+        profile.signup_location = device_info['location']
+        profile.signup_os = device_info['os']
+        profile.signup_device = device_info['device']
+        profile.signup_browser = device_info['browser']
+        profile.signup_method = "Google Account"
+    
+    profile.last_login_ip = device_info['ip']
+    profile.last_login_location = device_info['location']
+    profile.last_login_os = device_info['os']
+    profile.last_login_device = device_info['device']
+    profile.last_login_browser = device_info['browser']
     profile.save()
 
     login(request, user)
     request.session.cycle_key()
-    log_security_event(user, "เข้าสู่ระบบด้วย Google Login", request=request)
+    log_security_event(user, "เข้าสู่ระบบด้วย Google Login", f"IP: {device_info['ip']} ({device_info['os']}, {device_info['browser']})", request=request)
     messages.success(request, f'เข้าสู่ระบบด้วย Google สำเร็จ! ยินดีต้อนรับคุณ {google_name}')
     return redirect('core:home')
 
@@ -278,6 +319,7 @@ def line_callback_view(request):
                 line_avatar = profile_info.get('pictureUrl')
 
     # Find or Create User
+    device_info = get_client_device_details(request)
     username = f"line_{line_user_id[:12]}"
     user, created = User.objects.get_or_create(
         username=username,
@@ -290,11 +332,24 @@ def line_callback_view(request):
     profile = user.profile
     profile.display_name = line_name
     profile.avatar_url = line_avatar
+    if created or not profile.signup_ip:
+        profile.signup_ip = device_info['ip']
+        profile.signup_location = device_info['location']
+        profile.signup_os = device_info['os']
+        profile.signup_device = device_info['device']
+        profile.signup_browser = device_info['browser']
+        profile.signup_method = "LINE"
+    
+    profile.last_login_ip = device_info['ip']
+    profile.last_login_location = device_info['location']
+    profile.last_login_os = device_info['os']
+    profile.last_login_device = device_info['device']
+    profile.last_login_browser = device_info['browser']
     profile.save()
 
     login(request, user)
     request.session.cycle_key()
-    log_security_event(user, "เข้าสู่ระบบด้วย LINE Login", request=request)
+    log_security_event(user, "เข้าสู่ระบบด้วย LINE Login", f"IP: {device_info['ip']} ({device_info['os']}, {device_info['browser']})", request=request)
     messages.success(request, f'เข้าสู่ระบบด้วย LINE สำเร็จ! ยินดีต้อนรับคุณ {line_name}')
     return redirect('core:home')
 
@@ -460,3 +515,61 @@ def edit_profile_view(request):
         messages.success(request, 'บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว')
         return redirect('accounts:profile')
     return render(request, 'accounts/edit_profile.html', {'profile': profile})
+
+
+import json
+
+@require_POST
+def sync_device_api(request):
+    """
+    Receives 100% REAL client device data, exact OS (Windows 11 vs 10, macOS, iOS, Android), 
+    real public IP, and geolocation directly from the client's browser.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+    
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        real_ip = data.get('real_ip', '').strip()
+        real_location = data.get('real_location', '').strip()
+        real_os = data.get('real_os', '').strip()
+        real_device = data.get('real_device', '').strip()
+        real_browser = data.get('real_browser', '').strip()
+
+        profile = request.user.profile
+        
+        # Save real public IP if detected
+        if real_ip and real_ip not in ('127.0.0.1', 'localhost', '::1'):
+            profile.last_login_ip = real_ip
+            if not profile.signup_ip or profile.signup_ip in ('127.0.0.1', 'localhost'):
+                profile.signup_ip = real_ip
+
+            if not real_location or 'Localhost' in real_location:
+                from .utils import get_ip_location_real
+                real_location = get_ip_location_real(real_ip)
+
+        if real_location and 'Localhost' not in real_location:
+            profile.last_login_location = real_location
+            if not profile.signup_location or 'Localhost' in profile.signup_location:
+                profile.signup_location = real_location
+
+        if real_os:
+            profile.last_login_os = real_os
+            if not profile.signup_os or '10/11' in profile.signup_os:
+                profile.signup_os = real_os
+
+        if real_device:
+            profile.last_login_device = real_device
+            if not profile.signup_device or 'ไม่ระบุ' in profile.signup_device:
+                profile.signup_device = real_device
+
+        if real_browser:
+            profile.last_login_browser = real_browser
+            if not profile.signup_browser or 'ไม่ระบุ' in profile.signup_browser:
+                profile.signup_browser = real_browser
+
+        profile.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+

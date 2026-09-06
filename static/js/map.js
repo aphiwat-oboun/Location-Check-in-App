@@ -158,10 +158,13 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
   const post = loc.latest_post || {};
 
   // Calculate current distance if user position is available
-  let calculatedDist = `${loc.distance_km || 1.2} กม.`;
+  const isEn = (localStorage.getItem('app_lang') === 'en');
+  const unitKm = isEn ? ' km' : ' กม.';
+  const unitM = isEn ? ' m' : ' ม.';
+  let calculatedDist = `${loc.distance_km || "-.-"}${unitKm}`;
   if (window.currentUserLat && window.currentUserLng) {
     const d = calculateHaversineDistance(window.currentUserLat, window.currentUserLng, loc.lat, loc.lng);
-    calculatedDist = d < 1 ? `${Math.round(d * 1000)} ม.` : `${d.toFixed(1)} กม.`;
+    calculatedDist = d < 1 ? `${Math.round(d * 1000)}${unitM}` : `${d.toFixed(1)}${unitKm}`;
   }
 
   // If Mobile screen (width <= 1024) AND user explicitly clicked, trigger Mobile Bottom Sheet Drawer
@@ -236,6 +239,9 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
     if (window.lucide) {
       lucide.createIcons();
     }
+    if (typeof window.applyLanguageToNode === 'function') {
+      window.applyLanguageToNode(card, localStorage.getItem('app_lang') || 'th');
+    }
   }
 }
 
@@ -259,7 +265,9 @@ function mapZoomOut() {
 
 function mapCurrentLocation() {
   if (!navigator.geolocation) {
-    alert('อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง GPS');
+    if (typeof showToast === 'function') {
+      showToast('warning', 'อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง GPS');
+    }
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -279,7 +287,9 @@ function mapCurrentLocation() {
       }
     },
     err => {
-      alert('ไม่สามารถเข้าถึงตำแหน่งของคุณได้');
+      if (typeof showToast === 'function') {
+        showToast('error', 'ไม่สามารถเข้าถึงตำแหน่งของคุณได้ กรุณาเปิดอนุญาต GPS ในเบราว์เซอร์');
+      }
     }
   );
 }

@@ -4,18 +4,17 @@
 {% block title %}สมัครสมาชิก - ที่นี่มีอะไร?{% endblock %}
 
 {% block content %}
-<div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px 40px 16px; background-color: #F7F7F5; min-height: calc(100vh - 58px); box-sizing: border-box;">
-  <div style="max-width: 440px; width: 100%; background: #FFFFFF; border-radius: 20px; border: 1px solid rgba(229, 231, 235, 0.9); padding: 28px 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); margin: auto; box-sizing: border-box;">
+<div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px 40px 16px; background-color: var(--bg-canvas, #F7F7F5); min-height: calc(100vh - 58px); box-sizing: border-box;">
+  <div style="max-width: 440px; width: 100%; background: var(--bg-surface, #FFFFFF); border-radius: 20px; border: 1px solid var(--border-light, rgba(229, 231, 235, 0.9)); padding: 28px 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); margin: auto; box-sizing: border-box;">
     
     <!-- Brand Logo & Header -->
     <div style="text-align: center; margin-bottom: 24px;">
       <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #159F8C 0%, #117A70 100%); color: #FFFFFF; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(21, 159, 140, 0.25);">
         <i data-lucide="map-pin" style="width: 24px; height: 24px;"></i>
       </div>
-      <h1 style="font-size: 1.35rem; font-weight: 800; color: #1F2937; margin: 0 0 4px 0;">สร้างบัญชีใหม่</h1>
-      <p style="font-size: 0.825rem; color: #6B7280; margin: 0;">เริ่มต้นค้นพบและแชร์สถานที่น่าสนใจรอบตัวคุณ</p>
+      <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main, #1F2937); margin: 0 0 4px 0;">สร้างบัญชีใหม่</h1>
+      <p style="font-size: 0.825rem; color: var(--text-muted, #6B7280); margin: 0;">เริ่มต้นค้นพบและแชร์สถานที่น่าสนใจรอบตัวคุณ</p>
     </div>
-
 
     <!-- Inline Messages (form errors/success) -->
     {% if messages %}
@@ -50,54 +49,54 @@
 
       <!-- Display Name -->
       <div style="margin-bottom: 14px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ชื่อที่แสดง (Display Name)</label>
+        <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-main, #374151); display: block; margin-bottom: 5px;">ชื่อที่แสดง (Display Name)</label>
         <div style="position: relative;">
-          <input type="text" name="display_name" placeholder="เช่น Film หรือ ฟิล์ม" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
-          <i data-lucide="smile" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+          <input type="text" name="display_name" placeholder="เช่น Film หรือ ฟิล์ม" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid var(--border-light, #E5E7EB); background: var(--bg-surface-subtle, #F9FAFB); color: var(--text-main); font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary, #159F8C)'" onblur="this.style.borderColor='var(--border-light, #E5E7EB)'">
+          <i data-lucide="smile" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted, #9CA3AF);"></i>
         </div>
       </div>
 
       <!-- Username -->
       <div style="margin-bottom: 14px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">ชื่อผู้ใช้ (Username)</label>
+        <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-main, #374151); display: block; margin-bottom: 5px;">ชื่อผู้ใช้ (Username)</label>
         <div style="position: relative;">
-          <input type="text" name="username" id="registerUsernameInput" placeholder="เช่น film_photo" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
-          <i data-lucide="user" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+          <input type="text" name="username" id="registerUsernameInput" placeholder="เช่น film_photo" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid var(--border-light, #E5E7EB); background: var(--bg-surface-subtle, #F9FAFB); color: var(--text-main); font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary, #159F8C)'" onblur="this.style.borderColor='var(--border-light, #E5E7EB)'">
+          <i data-lucide="user" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted, #9CA3AF);"></i>
         </div>
       </div>
 
       <!-- Email -->
       <div style="margin-bottom: 14px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">อีเมล (Email)</label>
+        <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-main, #374151); display: block; margin-bottom: 5px;">อีเมล (Email)</label>
         <div style="position: relative;">
-          <input type="email" name="email" id="registerEmailInput" placeholder="name@gmail.com" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
-          <i data-lucide="mail" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+          <input type="email" name="email" id="registerEmailInput" placeholder="name@gmail.com" required autocomplete="off" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid var(--border-light, #E5E7EB); background: var(--bg-surface-subtle, #F9FAFB); color: var(--text-main); font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary, #159F8C)'" onblur="this.style.borderColor='var(--border-light, #E5E7EB)'">
+          <i data-lucide="mail" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted, #9CA3AF);"></i>
         </div>
       </div>
 
       <!-- Password -->
       <div style="margin-bottom: 14px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 5px;">รหัสผ่าน</label>
+        <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-main, #374151); display: block; margin-bottom: 5px;">รหัสผ่าน</label>
         <div style="position: relative;">
-          <input type="password" name="password" id="registerPasswordInput" placeholder="กำหนดรหัสผ่าน" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
-          <i data-lucide="lock" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+          <input type="password" name="password" id="registerPasswordInput" placeholder="กำหนดรหัสผ่าน" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid var(--border-light, #E5E7EB); background: var(--bg-surface-subtle, #F9FAFB); color: var(--text-main); font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary, #159F8C)'" onblur="this.style.borderColor='var(--border-light, #E5E7EB)'">
+          <i data-lucide="lock" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted, #9CA3AF);"></i>
         </div>
       </div>
 
       <!-- Confirm Password -->
       <div style="margin-bottom: 18px;">
-        <label style="font-size: 0.825rem; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">ยืนยันรหัสผ่าน</label>
+        <label style="font-size: 0.825rem; font-weight: 600; color: var(--text-main, #374151); display: block; margin-bottom: 6px;">ยืนยันรหัสผ่าน</label>
         <div style="position: relative;">
-          <input type="password" name="confirm_password" id="registerConfirmPasswordInput" placeholder="ยืนยันรหัสผ่านอีกครั้ง" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'" onblur="this.style.borderColor='#E5E7EB';this.style.background='#F9FAFB'">
-          <i data-lucide="check-check" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9CA3AF;"></i>
+          <input type="password" name="confirm_password" id="registerConfirmPasswordInput" placeholder="ยืนยันรหัสผ่านอีกครั้ง" required autocomplete="new-password" style="width: 100%; min-height: 46px; padding: 10px 14px 10px 40px; border-radius: 12px; border: 1px solid var(--border-light, #E5E7EB); background: var(--bg-surface-subtle, #F9FAFB); color: var(--text-main); font-size: 15px; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary, #159F8C)'" onblur="this.style.borderColor='var(--border-light, #E5E7EB)'">
+          <i data-lucide="check-check" style="position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted, #9CA3AF);"></i>
         </div>
       </div>
 
       <!-- Terms & Privacy Consent Checkbox -->
       <div style="margin-top: 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 10px;">
         <input type="checkbox" id="termsConsentCheckbox" name="terms_consent" required style="width: 18px; height: 18px; accent-color: #159F8C; margin-top: 2px; flex-shrink: 0; cursor: pointer;">
-        <label for="termsConsentCheckbox" style="font-size: 0.825rem; color: #4B5563; line-height: 1.5; cursor: pointer;">
-          ฉันได้อ่านและยินยอมตาม <a href="javascript:void(0)" onclick="alert('ข้อตกลงการใช้งาน: ผู้ใช้ตกลงที่จะใช้บริการด้วยข้อมูลที่ถูกต้องและไม่ละเมิดสิทธิของผู้ใช้อื่น')" style="color: #159F8C; font-weight: 700; text-decoration: underline;">ข้อตกลงการใช้งาน</a> และ <a href="javascript:void(0)" onclick="alert('นโยบายความเป็นส่วนตัว: ระบบจะใช้ข้อมูล GPS เพื่อคำนวณระยะทางจากสถานที่จริง และเก็บข้อมูลบัญชีเพื่อยืนยันตัวตนอย่างปลอดภัย')" style="color: #159F8C; font-weight: 700; text-decoration: underline;">นโยบายความเป็นส่วนตัว</a>
+        <label for="termsConsentCheckbox" style="font-size: 0.825rem; color: var(--text-muted, #4B5563); line-height: 1.5; cursor: pointer;">
+          ฉันได้อ่านและยินยอมตาม <a href="javascript:void(0)" onclick="openTermsModal()" style="color: var(--primary, #159F8C); font-weight: 700; text-decoration: underline;">ข้อตกลงการใช้งาน</a> และ <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color: var(--primary, #159F8C); font-weight: 700; text-decoration: underline;">นโยบายความเป็นส่วนตัว</a>
         </label>
       </div>
 
@@ -105,8 +104,8 @@
         สมัครสมาชิก
       </button>
 
-      <div style="text-align: center; margin-top: 24px; font-size: 0.825rem; color: #6B7280;">
-        มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}" style="color: #159F8C; font-weight: 700; text-decoration: none;">เข้าสู่ระบบ</a>
+      <div style="text-align: center; margin-top: 24px; font-size: 0.825rem; color: var(--text-muted, #6B7280);">
+        มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}" style="color: var(--primary, #159F8C); font-weight: 700; text-decoration: none;">เข้าสู่ระบบ</a>
       </div>
     </form>
 

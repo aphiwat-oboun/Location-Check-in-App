@@ -15,11 +15,26 @@ def toggle_like_api(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     like_obj = Like.objects.filter(user=request.user, post=post).first()
     
+    # Check if force_like is requested (e.g. Instagram double-tap like)
+    force_like = False
+    if request.body:
+        try:
+            import json
+            body_data = json.loads(request.body)
+            force_like = bool(body_data.get('force_like', False))
+        except Exception:
+            pass
+    if not force_like and request.GET.get('action') == 'like':
+        force_like = True
+
     if like_obj:
-        like_obj.delete()
-        liked = False
-        # Remove notification if exists
-        Notification.objects.filter(actor=request.user, post=post, notification_type='like').delete()
+        if force_like:
+            liked = True
+        else:
+            like_obj.delete()
+            liked = False
+            # Remove notification if exists
+            Notification.objects.filter(actor=request.user, post=post, notification_type='like').delete()
     else:
         Like.objects.create(user=request.user, post=post)
         liked = True

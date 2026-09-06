@@ -9,79 +9,76 @@
        ========================================================================= -->
   <section class="feed-section">
 
-    <!-- Hero Greeting -->
-    <div class="hero-greeting">
-      <h1 class="greeting-title">
-        {% if user.is_authenticated %}
-          สวัสดี, {{ user.profile.get_display_name }} 👋<br>
-        {% else %}
-          สวัสดี! 👋<br>
-        {% endif %}
-        วันนี้อยากไปที่ไหน?
-      </h1>
-      <p class="greeting-subtitle">
-        ค้นพบสถานที่น่าสนใจ<br>
-        ผ่านเรื่องราวและรูปภาพจากผู้คน
-      </p>
-    </div>
-
-    <!-- Filter Chips matching Reference -->
-    <div class="filter-chips-container">
-      <a href="?filter=near" class="filter-chip {% if filter_type == 'near' or not filter_type %}active{% endif %}">
-        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
-        <span>ใกล้ฉัน</span>
-      </a>
-      <a href="?filter=popular" class="filter-chip {% if filter_type == 'popular' %}active{% endif %}">
-        <i data-lucide="heart" style="width:14px;height:14px;"></i>
-        <span>ยอดนิยม</span>
-      </a>
-      <a href="?filter=new" class="filter-chip {% if filter_type == 'new' %}active{% endif %}">
-        <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
-        <span>มาใหม่</span>
-      </a>
-      <a href="{% url 'core:explore' %}" class="filter-chip">
-        <i data-lucide="grid" style="width:14px;height:14px;"></i>
-        <span>หมวดหมู่</span>
-      </a>
-    </div>
-
-    <!-- Recommended Places (สถานที่แนะนำ) -->
-    <div class="section-header">
-      <h2 class="section-title">สถานที่แนะนำ</h2>
-      <a href="{% url 'core:explore' %}" class="section-link">ดูทั้งหมด</a>
-    </div>
-
-    <!-- Desktop Grid (>1024px) & Mobile Horizontal Carousel (<1024px) -->
-    <div class="recommended-grid mobile-carousel">
-      {% for place in recommended_places %}
-      <div class="place-card mobile-carousel-item" onclick="selectLocationById({{ place.id }})">
-        <div class="place-card-img-wrapper">
-          <img src="{{ place.get_cover_url }}" alt="{{ place.name }}" class="place-card-img" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+    <!-- Compact Top Bar Greeting & Filter Chips -->
+    <div class="home-top-section">
+      <div class="hero-greeting-compact">
+        <div>
+          <h1 class="greeting-title-compact">
+            {% if user.is_authenticated %}
+              สวัสดี, {{ user.profile.get_display_name }} 👋
+            {% else %}
+              สวัสดี! ยินดีต้อนรับ 👋
+            {% endif %}
+          </h1>
         </div>
-        <div class="place-card-body">
-          <div class="place-card-title">{{ place.name }}</div>
-          <div class="place-card-meta-row">
-            <span>{{ place.city }}</span>
-            <span class="distance-badge" data-lat="{{ place.latitude }}" data-lng="{{ place.longitude }}">{{ place.distance_km }} กม.</span>
-          </div>
-          <div class="place-card-stats">
-            <span class="stat-item">
-              <i data-lucide="file-text" style="width:11px;height:11px;"></i>
-              {{ place.get_post_count }} โพสต์
-            </span>
-            <span class="stat-item">
-              <i data-lucide="image" style="width:11px;height:11px;"></i>
-              {{ place.get_photo_count }} รูป
-            </span>
-          </div>
-        </div>
+        <span class="greeting-sub-pill">
+          <i data-lucide="compass" style="width:13px;height:13px;"></i>
+          <span>วันนี้อยากไปที่ไหน?</span>
+        </span>
       </div>
-      {% endfor %}
+
+      <!-- Filter Chips -->
+      <div class="filter-chips-container">
+        <a href="?filter=near" class="filter-chip {% if filter_type == 'near' or not filter_type %}active{% endif %}">
+          <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
+          <span>ใกล้ฉัน</span>
+        </a>
+        <a href="?filter=popular" class="filter-chip {% if filter_type == 'popular' %}active{% endif %}">
+          <i data-lucide="heart" style="width:13px;height:13px;"></i>
+          <span>ยอดนิยม</span>
+        </a>
+        <a href="?filter=new" class="filter-chip {% if filter_type == 'new' %}active{% endif %}">
+          <i data-lucide="sparkles" style="width:13px;height:13px;"></i>
+          <span>มาใหม่</span>
+        </a>
+        <a href="{% url 'core:explore' %}" class="filter-chip">
+          <i data-lucide="grid" style="width:13px;height:13px;"></i>
+          <span>หมวดหมู่</span>
+        </a>
+      </div>
     </div>
 
-    <!-- Recent Posts (โพสต์ล่าสุด) -->
+    <!-- Recommended Location Stories (สถานที่แนะนำแบบ Story กะทัดรัด สวยงาม ไม่แย่งซีนโพสต์) -->
+    {% if recommended_places %}
+    <div class="location-stories-wrap">
+      <div class="location-stories-header">
+        <span class="location-stories-title">
+          <i data-lucide="sparkles" style="width:14px;height:14px;color:var(--primary);"></i>
+          <span>สถานที่แนะนำ</span>
+        </span>
+        <a href="{% url 'core:explore' %}" class="section-link">สำรวจทั้งหมด</a>
+      </div>
+
+      <div class="location-stories-container">
+        {% for place in recommended_places %}
+        <div class="location-story-item" onclick="selectLocationById({{ place.id }})" title="{{ place.name }}">
+          <div class="location-story-ring">
+            <img src="{{ place.get_cover_url }}" alt="{{ place.name }}" class="location-story-avatar" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+          </div>
+          <div class="location-story-name">{{ place.name }}</div>
+          <div class="location-story-dist distance-badge" data-lat="{{ place.latitude }}" data-lng="{{ place.longitude }}">-.- กม.</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Posts Section Header (พระเอกหลักของหน้า) -->
     <div class="section-header">
-      <h2 class="section-title">โพสต์ล่าสุด</h2>
+      <h2 class="section-title">
+        <i data-lucide="flame" style="width:17px;height:17px;color:#EF4444;display:inline;vertical-align:-2px;margin-right:4px;"></i>
+        <span>โพสต์ล่าสุด</span>
+      </h2>
       <a href="{% url 'core:explore' %}" class="section-link">ดูทั้งหมด</a>
     </div>
 
@@ -90,24 +87,99 @@
       <article class="post-card" data-post-card-id="{{ post.id }}">
         <div class="post-header">
           <div class="post-user">
-            <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-block;" title="ดูโปรไฟล์ @{{ post.user.username }}">
+            <a href="{% url 'accounts:user_profile' post.user.username %}" style="text-decoration:none;display:inline-flex;flex-shrink:0;" title="ดูโปรไฟล์ @{{ post.user.username }}">
               <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar" style="transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
             </a>
-            <div>
+            <div class="post-user-info" style="flex:1 1 auto;min-width:0;overflow:hidden;">
               <a href="{% url 'accounts:user_profile' post.user.username %}" class="post-user-name" style="text-decoration:none;transition:color 0.15s;">
                 {{ post.user.profile.get_display_name }}
               </a>
-              <div class="post-user-meta">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ post.location.name }}</a> • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">{{ post.location.distance_km }} กม.</span></div>
+              <div class="post-user-meta">{{ post.get_time_ago_str }} • <a href="{% url 'locations:detail' post.location.id %}" style="color:var(--primary);text-decoration:none;font-weight:600;">{{ post.location.name }}</a> • <span class="distance-badge" data-lat="{{ post.location.latitude }}" data-lng="{{ post.location.longitude }}">-.- กม.</span></div>
             </div>
           </div>
-          <button class="btn-icon-circle" style="width:34px;height:34px;" title="ตัวเลือกโพสต์" onclick="openPostOptionsMenu({{ post.id }}, {% if user.is_authenticated and user.id == post.user.id or user.is_staff %}true{% else %}false{% endif %}, '{{ post.location.name|escapejs }}')">
+          <button class="btn-icon-circle" style="width:34px;height:34px;flex-shrink:0;margin-left:6px;" title="ตัวเลือกโพสต์" onclick="openPostOptionsMenu({{ post.id }}, {% if user.is_authenticated and user.id == post.user.id or user.is_staff %}true{% else %}false{% endif %}, '{{ post.location.name|escapejs }}')">
             <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
           </button>
         </div>
 
-        <a href="{% url 'posts:detail' post.id %}" class="post-photo-wrapper">
-          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="post-photo" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
-        </a>
+        {% with images_list=post.get_images_list %}
+        {% if images_list|length > 1 %}
+        <!-- Multi-Photo Interactive Feed Carousel with Ambient Blur & Natural Fit -->
+        <div x-data="{ 
+          currentSlide: 0, 
+          totalSlides: {{ images_list|length }},
+          touchStartX: 0,
+          touchEndX: 0,
+          handleTouchStart(e) { this.touchStartX = e.changedTouches[0].screenX; },
+          handleTouchEnd(e) { 
+            this.touchEndX = e.changedTouches[0].screenX; 
+            if (this.touchStartX - this.touchEndX > 40 && this.currentSlide < this.totalSlides - 1) this.currentSlide++;
+            if (this.touchEndX - this.touchStartX > 40 && this.currentSlide > 0) this.currentSlide--;
+          }
+        }" 
+        @touchstart="handleTouchStart($event)"
+        @touchend="handleTouchEnd($event)"
+        class="carousel-container"
+        style="position:relative;width:100%;aspect-ratio:4/3;max-height:520px;overflow:hidden;background:#0B0F17;border-radius:var(--radius-sm);user-select:none;-webkit-user-select:none;display:block;">
+          
+          <!-- Slide Track -->
+          <div class="carousel-track" 
+               :style="{ transform: 'translateX(-' + (currentSlide * 100) + '%)' }"
+               style="display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;width:100% !important;height:100% !important;margin:0 !important;padding:0 !important;transition:transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);will-change:transform;">
+            {% for img_url in images_list %}
+            <div class="carousel-slide js-dblclick-like" data-post-id="{{ post.id }}" data-detail-url="{% url 'posts:detail' post.id %}" 
+                 title="ดับเบิ้ลคลิกเพื่อกดถูกใจ หรือคลิกเพื่อดูรายละเอียด"
+                 style="flex:0 0 100% !important;min-width:100% !important;max-width:100% !important;width:100% !important;height:100% !important;position:relative !important;overflow:hidden !important;display:flex !important;align-items:center !important;justify-content:center !important;margin:0 !important;padding:0 !important;background:#0B0F17;">
+              <!-- Ambient Blur Background -->
+              <img src="{{ img_url }}" alt="" class="carousel-blur-bg" loading="lazy" style="position:absolute !important;inset:-15px !important;width:calc(100% + 30px) !important;height:calc(100% + 30px) !important;object-fit:cover !important;filter:blur(24px) brightness(0.45) saturate(1.2) !important;transform:scale(1.12) !important;opacity:0.85 !important;pointer-events:none !important;z-index:1 !important;">
+              <!-- Crisp Centered Foreground Photo (Zero Cropping) -->
+              <img src="{{ img_url }}" alt="{{ post.location.name }}" class="carousel-main-img" 
+                   style="position:relative !important;z-index:2 !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:contain !important;display:block !important;margin:auto !important;pointer-events:none !important;"
+                   onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Slide Counter Badge -->
+          <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.72);color:#FFFFFF;padding:3px 10px;border-radius:9999px;font-size:11.5px;font-weight:700;backdrop-filter:blur(8px);pointer-events:none;z-index:20;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);">
+            <i data-lucide="layers" style="width:12px;height:12px;"></i>
+            <span x-text="(currentSlide + 1) + ' / ' + totalSlides"></span>
+          </div>
+
+          <!-- Left Navigation Arrow -->
+          <button type="button" x-show="currentSlide > 0" @click.stop.prevent="currentSlide--" 
+                  style="position:absolute;top:50%;left:10px;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.7);color:#FFFFFF;border:1.5px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px);z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.45);transition:all 0.15s;" 
+                  onmouseover="this.style.transform='translateY(-50%) scale(1.1)';this.style.background='rgba(0,0,0,0.9)'" 
+                  onmouseout="this.style.transform='translateY(-50%) scale(1)';this.style.background='rgba(0,0,0,0.7)'"
+                  aria-label="รูปก่อนหน้า">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+
+          <!-- Right Navigation Arrow -->
+          <button type="button" x-show="currentSlide < totalSlides - 1" @click.stop.prevent="currentSlide++" 
+                  style="position:absolute;top:50%;right:10px;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.7);color:#FFFFFF;border:1.5px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px);z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.45);transition:all 0.15s;" 
+                  onmouseover="this.style.transform='translateY(-50%) scale(1.1)';this.style.background='rgba(0,0,0,0.9)'" 
+                  onmouseout="this.style.transform='translateY(-50%) scale(1)';this.style.background='rgba(0,0,0,0.7)'"
+                  aria-label="รูปถัดไป">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+
+          <!-- Bottom Indicator Dots -->
+          <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;z-index:20;pointer-events:none;">
+            <template x-for="i in totalSlides" :key="i">
+              <div style="height:5px;border-radius:9999px;transition:all 0.25s;" 
+                   :style="currentSlide === (i - 1) ? 'background:#FFFFFF;width:16px;box-shadow:0 1px 4px rgba(0,0,0,0.5);' : 'background:rgba(255,255,255,0.45);width:5px;'"></div>
+            </template>
+          </div>
+        </div>
+        {% else %}
+        <!-- Single Photo with Ambient Blur & Natural Fit -->
+        <div class="carousel-container js-dblclick-like" data-post-id="{{ post.id }}" data-detail-url="{% url 'posts:detail' post.id %}" style="position:relative;width:100%;aspect-ratio:4/3;max-height:520px;overflow:hidden;background:#0B0F17;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;" title="ดับเบิ้ลคลิกเพื่อถูกใจ หรือคลิกเพื่อดูรายละเอียด">
+          <img src="{{ post.get_cover_url }}" alt="" class="carousel-blur-bg" style="position:absolute !important;inset:-15px !important;width:calc(100% + 30px) !important;height:calc(100% + 30px) !important;object-fit:cover !important;filter:blur(24px) brightness(0.45) saturate(1.2) !important;transform:scale(1.12) !important;opacity:0.85 !important;pointer-events:none !important;z-index:1 !important;">
+          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="carousel-main-img" style="position:relative !important;z-index:2 !important;width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;object-fit:contain !important;display:block !important;margin:auto !important;pointer-events:none !important;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
+        </div>
+        {% endif %}
+        {% endwith %}
 
         {% if post.caption %}
         <p class="post-caption">{{ post.caption }}</p>
@@ -116,13 +188,17 @@
         <!-- Interactive Action Bar -->
         <div class="post-action-bar">
           <div class="post-action-group">
-            <button class="action-btn btn-like-action like-btn-{{ post.id }} {% if post.is_liked %}liked{% endif %}" data-post-id="{{ post.id }}" onclick="toggleLike(event, {{ post.id }})">
+            <button class="action-btn btn-like-action like-btn-{{ post.id }} {% if post.is_liked %}liked{% endif %}" data-post-id="{{ post.id }}" onclick="toggleLike(event, {{ post.id }})" title="ถูกใจ">
               <i data-lucide="heart" style="width:16px;height:16px;{% if post.is_liked %}fill:#EF4444;stroke:#EF4444;{% endif %}"></i>
               <span class="like-count like-count-{{ post.id }}">{{ post.get_likes_count }}</span>
             </button>
-            <button class="action-btn btn-comment-action" onclick="openCommentModal({{ post.id }})">
+            <button class="action-btn btn-comment-action" onclick="openCommentModal({{ post.id }})" title="ความคิดเห็น">
               <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
               <span class="comment-count comment-count-{{ post.id }}">{{ post.get_comments_count }}</span>
+            </button>
+            <button class="action-btn btn-share-action" onclick="openShareModal({ id: {{ post.id }}, title: '{{ post.location.name|escapejs }}', author: '{{ post.user.profile.get_display_name|escapejs }}', coverUrl: '{{ post.get_cover_url|escapejs }}' })" title="แชร์จุดเช็คอินนี้">
+              <i data-lucide="share-2" style="width:15px;height:15px;"></i>
+              <span>แชร์</span>
             </button>
           </div>
           <div class="post-action-group">
@@ -130,7 +206,7 @@
               <i data-lucide="navigation" style="width:16px;height:16px;"></i>
               <span>นำทาง</span>
             </button>
-            <button class="action-btn btn-save-action save-btn-{{ post.id }} {% if post.is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" onclick="toggleSave(event, {{ post.id }})">
+            <button class="action-btn btn-save-action save-btn-{{ post.id }} {% if post.is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" onclick="toggleSave(event, {{ post.id }})" title="บันทึก">
               <i data-lucide="bookmark" style="width:16px;height:16px;{% if post.is_saved %}fill:#159F8C;stroke:#159F8C;{% endif %}"></i>
             </button>
           </div>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="50%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#0F766E" />
+    </linearGradient>
+    <filter id="shadow512" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="rgba(15, 23, 42, 0.3)" />
+    </filter>
+  </defs>
+  
+  <!-- App Icon Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)" />
+  
+  <!-- Subtle Inner Glow Border -->
+  <rect x="20" y="20" width="472" height="472" rx="96" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="4" />
+  
+  <!-- Map Pin Graphic with Heart Check-in -->
+  <g filter="url(#shadow512)" transform="translate(106, 86)">
+    <!-- Pin Body -->
+    <path d="M150 0C67.157 0 0 67.157 0 150c0 103 130 203.5 140.3 211.5a15.5 15.5 0 0 0 19.4 0C170 353.5 300 253 300 150 300 67.157 232.843 0 150 0z" fill="#FFFFFF" />
+    
+    <!-- Inner Heart -->
+    <path d="M150 182l-6.4-5.8C120.5 156 102.8 140 102.8 121c0-15.5 12.3-27.8 27.8-27.8 8.8 0 17.2 4.1 22.6 10.5 5.4-6.4 13.8-10.5 22.6-10.5 15.5 0 27.8 12.3 27.8 27.8 0 19-17.7 35-40.8 55.2L150 182z" fill="#0D9488" />
+  </g>
+</svg>

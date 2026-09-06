@@ -13,7 +13,7 @@
     <h1 style="font-size:20px;font-weight:700;color:var(--text-main);">แก้ไขข้อมูลส่วนตัว</h1>
   </div>
 
-  <div style="background:#FFFFFF;border-radius:var(--radius-xl);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
+  <div style="background:var(--bg-surface, #FFFFFF);border-radius:var(--radius-xl);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
     <form method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:18px;">
       {% csrf_token %}
 
@@ -38,13 +38,13 @@
       <!-- Display Name -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">ชื่อที่แสดง (Display Name)</label>
-        <input type="text" name="display_name" value="{{ profile.get_display_name }}" required style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'">
+        <input type="text" name="display_name" value="{{ profile.get_display_name }}" required style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">
       </div>
 
       <!-- City / Location -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">จังหวัดที่อยู่</label>
-        <select name="city" style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;cursor:pointer;" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'" onblur="this.style.background='var(--bg-surface-subtle)';this.style.borderColor='var(--border-light)'">
+        <select name="city" style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;cursor:pointer;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">
           <option value="กรุงเทพมหานคร" {% if profile.city == 'กรุงเทพมหานคร' %}selected{% endif %}>กรุงเทพมหานคร</option>
           <option value="กระบี่" {% if profile.city == 'กระบี่' %}selected{% endif %}>กระบี่</option>
           <option value="กาญจนบุรี" {% if profile.city == 'กาญจนบุรี' %}selected{% endif %}>กาญจนบุรี</option>
@@ -125,7 +125,7 @@
       <!-- Bio -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">คำแนะนำตัว (Bio)</label>
-        <textarea name="bio" rows="3" placeholder="เขียนสั้นๆ เกี่ยวกับตัวคุณ..." style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);resize:vertical;" onfocus="this.style.background='#FFF';this.style.borderColor='var(--primary)'">{{ profile.bio|default:'' }}</textarea>
+        <textarea name="bio" rows="3" placeholder="เขียนสั้นๆ เกี่ยวกับตัวคุณ..." style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);resize:vertical;outline:none;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">{{ profile.bio|default:'' }}</textarea>
       </div>
 
       <!-- Submit Buttons -->

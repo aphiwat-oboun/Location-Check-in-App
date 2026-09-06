@@ -16,23 +16,44 @@
   </div>
 
   <!-- Edit Card -->
-  <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
+  <div style="background:var(--bg-surface, #FFFFFF);border-radius:var(--radius-lg);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
     <form method="POST" action="{% url 'posts:edit' post.id %}" enctype="multipart/form-data">
       {% csrf_token %}
 
-      <!-- Photo Preview & Replace Option -->
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:8px;">
-          รูปภาพโพสต์
+      <!-- Photos Section (Existing Images + Add More) -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:13.5px;font-weight:700;color:var(--text-main);margin-bottom:8px;">
+          รูปภาพโพสต์ ({% with count=post.get_photo_count %}{{ count }} รูป{% endwith %})
         </label>
-        <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#F3F4F6;margin-bottom:10px;">
+
+        <!-- Existing Photos Grid -->
+        {% if post.images.all %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-bottom:12px;">
+          {% for img in post.images.all %}
+          <div style="position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--bg-surface-subtle, #F3F4F6);border:1px solid var(--border-subtle);" id="imgCard_{{ img.id }}">
+            <img src="{{ img.get_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+            <label style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.85);color:#FFF;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;backdrop-filter:blur(4px);" title="ทำเครื่องหมายเพื่อลบรูปนี้">
+              <input type="checkbox" name="delete_images" value="{{ img.id }}" onchange="toggleDeleteImageCard({{ img.id }}, this.checked)">
+              <span>ลบ</span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        {% elif post.get_cover_url %}
+        <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:var(--bg-surface-subtle, #F3F4F6);margin-bottom:10px;">
           <img id="editImagePreview" src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" style="width:100%;height:100%;object-fit:cover;">
         </div>
+        {% endif %}
+
+        <!-- Add More Photos Button -->
         <label for="editPhotoInput" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9999px;background:var(--bg-surface-subtle);border:1px solid var(--border-light);font-size:13px;font-weight:600;color:var(--text-main);cursor:pointer;">
-          <i data-lucide="camera" style="width:15px;height:15px;color:var(--primary);"></i>
-          <span>เปลี่ยนรูปภาพใหม่</span>
+          <i data-lucide="plus" style="width:15px;height:15px;color:var(--primary);"></i>
+          <span>เพิ่มรูปภาพอีก (เลือกได้หลายรูป)</span>
         </label>
-        <input type="file" id="editPhotoInput" name="image" accept="image/*" style="display:none;" onchange="previewEditImage(event)">
+        <input type="file" id="editPhotoInput" name="images" accept="image/*" multiple style="display:none;" onchange="previewNewEditImages(event)">
+
+        <!-- New Images Preview Container -->
+        <div id="newImagesPreviewContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-top:10px;"></div>
       </div>
 
       <!-- Place Name -->
@@ -40,7 +61,7 @@
         <label for="placeNameInput" style="display:block;font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:8px;">
           ชื่อสถานที่
         </label>
-        <input type="text" id="placeNameInput" name="place_name" value="{{ post.location.name }}" required class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;">
+        <input type="text" id="placeNameInput" name="place_name" value="{{ post.location.name }}" required class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
       </div>
 
       <!-- Category -->
@@ -48,7 +69,7 @@
         <label for="categorySelect" style="display:block;font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:8px;">
           หมวดหมู่
         </label>
-        <select id="categorySelect" name="category" class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:#FFF;">
+        <select id="categorySelect" name="category" class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
           {% for cat in categories %}
           <option value="{{ cat.id }}" {% if post.category_id == cat.id %}selected{% endif %}>
             {{ cat.name }}
@@ -62,7 +83,7 @@
         <label for="captionInput" style="display:block;font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:8px;">
           คำบรรยาย / เล่าเรื่องราว
         </label>
-        <textarea id="captionInput" name="caption" rows="4" class="form-input" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;resize:vertical;" placeholder="เล่าเรื่องราวหรือบรรยากาศของสถานที่นี้...">{{ post.caption }}</textarea>
+        <textarea id="captionInput" name="caption" rows="4" class="form-input" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;resize:vertical;background:var(--bg-surface-subtle);color:var(--text-main);" placeholder="เล่าเรื่องราวหรือบรรยากาศของสถานที่นี้...">{{ post.caption }}</textarea>
       </div>
 
       <!-- Action Buttons -->
@@ -73,10 +94,10 @@
         </button>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <a href="{% url 'posts:detail' post.id %}" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:9999px;border:1px solid var(--border-light);background:#F9FAFB;color:#4B5563;font-size:13.5px;font-weight:600;text-decoration:none;">
+          <a href="{% url 'posts:detail' post.id %}" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:9999px;border:1px solid var(--border-light);background:var(--bg-surface-subtle, #F9FAFB);color:var(--text-main);font-size:13.5px;font-weight:600;text-decoration:none;">
             ยกเลิก
           </a>
-          <button type="button" onclick="confirmDeletePost({{ post.id }})" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:9999px;border:1px solid #FCA5A5;background:#FEF2F2;color:#EF4444;font-size:13.5px;font-weight:600;cursor:pointer;">
+          <button type="button" onclick="confirmDeletePost({{ post.id }})" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:9999px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#EF4444;font-size:13.5px;font-weight:600;cursor:pointer;">
             <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
             <span>ลบโพสต์นี้</span>
           </button>
@@ -88,16 +109,34 @@
 </div>
 
 <script>
-  function previewEditImage(event) {
-    const input = event.target;
-    if (input.files && input.files[0]) {
+  function toggleDeleteImageCard(imgId, isChecked) {
+    const card = document.getElementById('imgCard_' + imgId);
+    if (card) {
+      if (isChecked) {
+        card.style.opacity = '0.35';
+        card.style.filter = 'grayscale(100%)';
+      } else {
+        card.style.opacity = '1';
+        card.style.filter = 'none';
+      }
+    }
+  }
+
+  function previewNewEditImages(event) {
+    const container = document.getElementById('newImagesPreviewContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    const files = Array.from(event.target.files || []);
+    files.forEach(f => {
       const reader = new FileReader();
       reader.onload = function(e) {
-        const preview = document.getElementById('editImagePreview');
-        if (preview) preview.src = e.target.result;
+        const div = document.createElement('div');
+        div.style.cssText = 'position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#F3F4F6;border:2px solid var(--primary);';
+        div.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:4px;left:4px;background:var(--primary);color:#FFF;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;">รูปใหม่</div>`;
+        container.appendChild(div);
       };
-      reader.readAsDataURL(input.files[0]);
-    }
+      reader.readAsDataURL(f);
+    });
   }
 </script>
 {% endblock %}

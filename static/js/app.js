@@ -12,6 +12,8 @@ window.DEFAULT_PLACEHOLDER_AVATAR = "data:image/svg+xml,%3Csvg xmlns=%22http://w
 // Global Window Bindings (Ensures inline onclick handlers are available immediately)
 window.toggleLike = toggleLike;
 window.toggleSave = toggleSave;
+window.triggerInstagramHeart = triggerInstagramHeart;
+window.initInstagramDoubleTap = initInstagramDoubleTap;
 window.openCommentModal = openCommentModal;
 window.submitComment = submitComment;
 window.setCommentReply = setCommentReply;
@@ -26,6 +28,13 @@ window.acceptGPSPermission = acceptGPSPermission;
 window.declineGPSPermission = declineGPSPermission;
 window.handleGPSBadgeClick = handleGPSBadgeClick;
 window.calculateHaversineDistance = calculateHaversineDistance;
+window.recalculateAllDistances = recalculateAllDistances;
+window.openShareModal = openShareModal;
+window.sharePost = sharePost;
+window.shareProfile = shareProfile;
+window.closeShareModal = closeShareModal;
+window.copyShareLink = copyShareLink;
+window.triggerNativeShare = triggerNativeShare;
 window.getCookie = getCookie;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,6 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Initialize / Refresh GPS Tracking in background
   initRealTimeGPSDistance();
+
+  // 3. Initialize Instagram Double-Tap Like Handler
+  initInstagramDoubleTap();
 
   // Check notifications count
   fetchNotifications();
@@ -196,17 +208,32 @@ function updateDistanceElements(pos) {
 }
 
 function recalculateAllDistances() {
-  if (!window.currentUserLat || !window.currentUserLng) return;
-
+  const permStatus = localStorage.getItem('gps_permission_status');
   const distanceBadges = document.querySelectorAll('.distance-badge, [data-lat][data-lng]');
+  const isEn = (localStorage.getItem('app_lang') === 'en');
+  const unitKm = isEn ? ' km' : ' กม.';
+  const unitM = isEn ? ' m' : ' ม.';
+  const defaultDist = `-.-${unitKm}`;
+  
+  if (permStatus !== 'granted' || !window.currentUserLat || !window.currentUserLng) {
+    distanceBadges.forEach(el => {
+      if (!el.classList.contains('user-gps-location-text')) {
+        el.textContent = defaultDist;
+      }
+    });
+    return;
+  }
+
   distanceBadges.forEach(el => {
     const destLat = parseFloat(el.getAttribute('data-lat'));
     const destLng = parseFloat(el.getAttribute('data-lng'));
     if (!isNaN(destLat) && !isNaN(destLng)) {
       const dist = calculateHaversineDistance(window.currentUserLat, window.currentUserLng, destLat, destLng);
-      const text = dist < 1 ? `${Math.round(dist * 1000)} ม.` : `${dist.toFixed(1)} กม.`;
+      const text = dist < 1 ? `${Math.round(dist * 1000)}${unitM}` : `${dist.toFixed(1)}${unitKm}`;
       el.textContent = text;
-      el.setAttribute('title', `คำนวณจาก GPS ตำแหน่งจริงของคุณ (${text})`);
+      el.setAttribute('title', isEn ? `Calculated from your real GPS (${text})` : `คำนวณจาก GPS ตำแหน่งจริงของคุณ (${text})`);
+    } else {
+      el.textContent = defaultDist;
     }
   });
 }
@@ -244,22 +271,32 @@ function handleGPSError(err) {
   if (err && err.code === 1) {
     localStorage.setItem('gps_permission_status', 'declined');
     showDefaultGPSBadge();
+    recalculateAllDistances();
     return;
   }
 
   // If we already have a saved location from previous page, KEEP IT!
   const savedLat = localStorage.getItem('user_lat');
   const savedLng = localStorage.getItem('user_lng');
-  if (savedLat && savedLng) {
-    // Keep GPS active with saved location, do not revert to "Click to open GPS"
+  const permStatus = localStorage.getItem('gps_permission_status');
+  if (savedLat && savedLng && permStatus === 'granted') {
+    // Keep GPS active with saved location
     return;
   }
 
-  detectLocationViaIP();
+  showDefaultGPSBadge();
+  recalculateAllDistances();
 }
 
 function detectLocationViaIP() {
-  // Automatic fallback to user's network location so location is accurate even without GPS antenna
+  const permStatus = localStorage.getItem('gps_permission_status');
+  if (permStatus !== 'granted') {
+    showDefaultGPSBadge();
+    recalculateAllDistances();
+    return;
+  }
+
+  // Automatic fallback to user's network location when granted
   fetch('https://ipapi.co/json/')
     .then(res => res.json())
     .then(data => {
@@ -271,13 +308,13 @@ function detectLocationViaIP() {
         recalculateAllDistances();
         fetchReverseGeocodeAddress(window.currentUserLat, window.currentUserLng);
       } else {
-        const savedLat = localStorage.getItem('user_lat');
-        if (!savedLat) showDefaultGPSBadge();
+        showDefaultGPSBadge();
+        recalculateAllDistances();
       }
     })
     .catch(() => {
-      const savedLat = localStorage.getItem('user_lat');
-      if (!savedLat) showDefaultGPSBadge();
+      showDefaultGPSBadge();
+      recalculateAllDistances();
     });
 }
 
@@ -302,8 +339,9 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 /**
  * Toggle Like via AJAX API
+ * Supports normal toggle or forceLike (for Instagram double-tap)
  */
-async function toggleLike(arg1, arg2) {
+async function toggleLike(arg1, arg2, forceLike = false) {
   let e = null;
   let postId = null;
   if (typeof arg1 === 'number' || (typeof arg1 === 'string' && !isNaN(arg1))) {
@@ -319,13 +357,24 @@ async function toggleLike(arg1, arg2) {
 
   if (!postId) return;
 
+  // Visual pop bounce on all matching like buttons
+  const btns = document.querySelectorAll(`[data-post-id="${postId}"].btn-like-action, [data-post-id="${postId}"].btn-like, .like-btn-${postId}`);
+  btns.forEach(btn => {
+    btn.classList.remove('btn-like-bounce');
+    // Force reflow for re-triggering animation
+    void btn.offsetWidth;
+    btn.classList.add('btn-like-bounce');
+    setTimeout(() => btn.classList.remove('btn-like-bounce'), 500);
+  });
+
   try {
     const res = await fetch(`/interactions/like/${postId}/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': getCookie('csrftoken'),
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ force_like: Boolean(forceLike) })
     });
 
     if (res.status === 401) {
@@ -335,7 +384,6 @@ async function toggleLike(arg1, arg2) {
 
     if (res.ok) {
       const data = await res.json();
-      const btns = document.querySelectorAll(`[data-post-id="${postId}"].btn-like-action, [data-post-id="${postId}"].btn-like, .like-btn-${postId}`);
       btns.forEach(btn => {
         const countSpan = btn.querySelector('.like-count') || btn.querySelector('.like-num');
         const icon = btn.querySelector('svg');
@@ -363,6 +411,153 @@ async function toggleLike(arg1, arg2) {
   } catch (err) {
     console.error('Like toggle error:', err);
   }
+}
+
+/**
+ * Triggers the Instagram-Style Heart Burst Animation with Gradient Heart & Particle Confetti
+ */
+function triggerInstagramHeart(container) {
+  if (!container) return;
+
+  // Haptic feedback on mobile if supported
+  if (window.navigator && window.navigator.vibrate) {
+    try { window.navigator.vibrate(30); } catch (err) {}
+  }
+
+  // Remove existing overlays in this container to prevent stacking clutter
+  const existingOverlays = container.querySelectorAll('.ig-heart-overlay');
+  existingOverlays.forEach(el => el.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'ig-heart-overlay';
+
+  const gradId = 'igHeartGrad_' + Math.random().toString(36).substring(2, 9);
+
+  // Big Central Glowing Gradient Heart SVG
+  overlay.innerHTML = `
+    <svg class="ig-heart-main" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FF385C" />
+          <stop offset="50%" stop-color="#FF1E56" />
+          <stop offset="100%" stop-color="#E11D48" />
+        </linearGradient>
+      </defs>
+      <path fill="url(#${gradId})" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"
+        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  `;
+
+  // 8 Burst particles surrounding the heart
+  const particleColors = ['#FF2E63', '#FF4B72', '#FF758C', '#FFD166', '#FFFFFF'];
+  const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+
+  angles.forEach((angle, idx) => {
+    const dist = 52 + (idx % 2 === 0 ? 28 : 14);
+    const rad = (angle * Math.PI) / 180;
+    const dx = Math.cos(rad) * dist;
+    const dy = Math.sin(rad) * dist;
+    const rot = (idx * 40) % 180 - 90;
+    const color = particleColors[idx % particleColors.length];
+
+    const particle = document.createElement('div');
+    particle.className = 'ig-heart-particle';
+    particle.style.setProperty('--dx', `${dx}px`);
+    particle.style.setProperty('--dy', `${dy}px`);
+    particle.style.setProperty('--rot', `${rot}deg`);
+    particle.style.animationDelay = `${idx * 0.015}s`;
+
+    if (idx % 3 === 0) {
+      // Star / Sparkle
+      particle.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="${color}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    } else {
+      // Little floating heart
+      particle.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="${color}"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+    }
+
+    overlay.appendChild(particle);
+  });
+
+  container.appendChild(overlay);
+
+  // Auto clean up after animation finishes
+  setTimeout(() => {
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+  }, 950);
+}
+
+/**
+ * Initialize Instagram Double-Tap / Double-Click Listeners
+ */
+function initInstagramDoubleTap() {
+  // Use event delegation on document so dynamic posts also work seamlessly
+  document.addEventListener('click', (e) => {
+    // Ignore clicks on buttons, links, or controls
+    if (e.target.closest('button, a, input, textarea, select, .btn-icon-circle, [role="button"]')) {
+      return;
+    }
+
+    const target = e.target.closest('.js-dblclick-like, .post-photo-wrapper');
+    if (!target) return;
+
+    const postId = target.getAttribute('data-post-id');
+    const detailUrl = target.getAttribute('data-detail-url');
+
+    if (!postId) return;
+
+    const now = Date.now();
+    const lastTap = target._lastTapTime || 0;
+    const timeDiff = now - lastTap;
+
+    // Double-tap detected (< 320ms interval)
+    if (timeDiff > 0 && timeDiff < 320) {
+      if (target._singleClickTimer) {
+        clearTimeout(target._singleClickTimer);
+        target._singleClickTimer = null;
+      }
+      target._lastTapTime = 0;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Trigger Instagram Heart Animation & force like
+      triggerInstagramHeart(target);
+      toggleLike(postId, null, true);
+    } else {
+      // Single tap / first tap
+      target._lastTapTime = now;
+
+      if (detailUrl) {
+        e.preventDefault();
+        target._singleClickTimer = setTimeout(() => {
+          window.location.href = detailUrl;
+          target._singleClickTimer = null;
+        }, 300);
+      }
+    }
+  });
+
+  // Native dblclick event fallback for desktop mouse double-clicks
+  document.addEventListener('dblclick', (e) => {
+    const target = e.target.closest('.js-dblclick-like, .post-photo-wrapper');
+    if (!target) return;
+
+    const postId = target.getAttribute('data-post-id');
+    if (!postId) return;
+
+    if (target._singleClickTimer) {
+      clearTimeout(target._singleClickTimer);
+      target._singleClickTimer = null;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    triggerInstagramHeart(target);
+    toggleLike(postId, null, true);
+  });
 }
 
 /**
@@ -437,7 +632,7 @@ async function openCommentModal(postId) {
 
     const modalHtml = `
       <div class="comment-modal-content" style="display:flex;flex-direction:column;max-height:75vh;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid #E5E7EB;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border-light, #E5E7EB);margin-bottom:12px;">
           <h3 style="font-size:17px;font-weight:700;color:var(--text-main);margin:0;">ความคิดเห็น (<span class="modal-comment-count">${data.comments_count}</span>)</h3>
           <button onclick="closeMobileBottomSheet()" class="btn-icon-circle" style="width:32px;height:32px;">
             <i data-lucide="x" style="width:16px;height:16px;"></i>
@@ -449,14 +644,14 @@ async function openCommentModal(postId) {
         </div>
 
         <!-- Reply Tag Bar -->
-        <div id="replyingPillBar" style="display:none;align-items:center;justify-content:space-between;background:#E6F5F3;padding:6px 12px;border-radius:8px;font-size:12.5px;color:#117A70;margin-bottom:8px;">
+        <div id="replyingPillBar" style="display:none;align-items:center;justify-content:space-between;background:var(--primary-light, #E6F5F3);padding:6px 12px;border-radius:8px;font-size:12.5px;color:var(--primary, #117A70);margin-bottom:8px;">
           <span>กำลังตอบกลับ <b id="replyingAuthorName"></b></span>
-          <button onclick="cancelCommentReply()" style="border:none;background:none;color:#991B1B;font-weight:700;cursor:pointer;">✕</button>
+          <button onclick="cancelCommentReply()" style="border:none;background:none;color:#EF4444;font-weight:700;cursor:pointer;">✕</button>
         </div>
 
         <!-- Comment Input Bar -->
         <form onsubmit="submitComment(event, ${postId})" style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="commentTextInput" placeholder="เขียนความคิดเห็น..." required style="flex:1;min-height:44px;padding:10px 14px;border-radius:9999px;border:1px solid #E5E7EB;background:#F9FAFB;font-size:14px;outline:none;" onfocus="this.style.borderColor='#159F8C';this.style.background='#FFFFFF'">
+          <input type="text" id="commentTextInput" placeholder="เขียนความคิดเห็น..." required style="flex:1;min-height:44px;padding:10px 14px;border-radius:9999px;border:1px solid var(--border-light, #E5E7EB);background:var(--bg-surface-subtle, #F9FAFB);color:var(--text-main);font-size:14px;outline:none;" onfocus="this.style.borderColor='var(--primary, #159F8C)'">
           <button type="submit" style="width:44px;height:44px;border-radius:50%;background:#159F8C;color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
             <i data-lucide="send" style="width:18px;height:18px;"></i>
           </button>
@@ -482,7 +677,7 @@ function renderCommentListHtml(comments, postId) {
         <img src="${c.author_avatar || DEFAULT_PLACEHOLDER_AVATAR}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;">
       </a>
       <div style="flex:1;">
-        <div style="background:#F3F4F6;padding:10px 14px;border-radius:14px;display:inline-block;max-width:100%;">
+        <div style="background:var(--bg-surface-subtle, #F3F4F6);padding:10px 14px;border-radius:14px;display:inline-block;max-width:100%;border:1px solid var(--border-subtle, transparent);">
           <a href="/accounts/profile/${c.author_username || ''}/" style="font-weight:700;color:var(--text-main);font-size:13px;margin-bottom:2px;text-decoration:none;display:block;">${c.author_name}</a>
           <div style="color:var(--text-main);line-height:1.4;word-break:break-word;">${c.content}</div>
         </div>
@@ -497,14 +692,14 @@ function renderCommentListHtml(comments, postId) {
         </div>
 
         ${c.replies && c.replies.length > 0 ? `
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;padding-left:12px;border-left:2px solid #E5E7EB;">
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;padding-left:12px;border-left:2px solid var(--border-light, #E5E7EB);">
             ${c.replies.map(r => `
               <div id="comment-item-${r.id}" style="display:flex;gap:8px;font-size:13px;">
                 <a href="/accounts/profile/${r.author_username || ''}/" style="text-decoration:none;flex-shrink:0;">
                   <img src="${r.author_avatar || DEFAULT_PLACEHOLDER_AVATAR}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                 </a>
                 <div>
-                  <div style="background:#F9FAFB;padding:8px 12px;border-radius:12px;display:inline-block;">
+                  <div style="background:var(--bg-surface-subtle, #F9FAFB);padding:8px 12px;border-radius:12px;display:inline-block;border:1px solid var(--border-subtle, transparent);">
                     <a href="/accounts/profile/${r.author_username || ''}/" style="font-weight:700;color:var(--text-main);font-size:12.5px;text-decoration:none;display:block;">${r.author_name}</a>
                     <div style="color:var(--text-main);line-height:1.4;">${r.content}</div>
                   </div>
@@ -638,15 +833,44 @@ function openNotificationDrawer(e) {
     e.preventDefault();
     e.stopPropagation();
   }
+  // Dismiss any open map preview card
+  if (typeof closeMapCard === 'function') {
+    closeMapCard();
+  }
+
+  // 1. Immediately hide and remove notification badges on the bell icon
+  document.querySelectorAll('.notification-badge, .nav-notification-badge, #navNotiBadge, .badge-count').forEach(badge => {
+    badge.remove();
+  });
+
   const drawer = document.getElementById('socialNotiDrawer');
   const backdrop = document.getElementById('socialNotiBackdrop');
   if (drawer && backdrop) {
     drawer.classList.add('show');
     backdrop.classList.add('show');
+    if (window.innerWidth <= 1024) {
+      document.body.style.overflow = 'hidden';
+    }
     renderSocialNotifications(window._currentNotiFilter || 'all');
   }
 
-  // Refresh latest notifications in background
+  // 2. Mark all as read on the backend automatically upon viewing
+  fetch('/interactions/notifications/read/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  }).then(() => {
+    if (window._cachedNotifications && Array.isArray(window._cachedNotifications)) {
+      window._cachedNotifications.forEach(n => {
+        n.is_read = true;
+        n.is_new = false;
+      });
+      renderSocialNotifications(window._currentNotiFilter || 'all');
+    }
+  }).catch(err => {
+    console.warn('Auto mark read error:', err);
+  });
+
+  // 3. Refresh latest notifications in background
   fetch('/interactions/notifications/').then(r => r.json()).then(data => {
     if (data && data.notifications) {
       window._cachedNotifications = data.notifications;
@@ -660,6 +884,7 @@ function closeNotificationDrawer() {
   const backdrop = document.getElementById('socialNotiBackdrop');
   if (drawer) drawer.classList.remove('show');
   if (backdrop) backdrop.classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function switchNotiFilter(filter) {
@@ -706,7 +931,7 @@ function renderSocialNotifications(filter = 'all') {
   const earlierItems = filtered.filter(n => !n.is_new);
 
   function renderNotiItemHtml(n) {
-    let badgeBg = '#2563EB';
+    let badgeBg = '#0D9488';
     let badgeSvg = '<i data-lucide="user-plus" style="width:11px;height:11px;color:#FFF;"></i>';
 
     if (n.notification_type === 'like') {
@@ -857,6 +1082,187 @@ function navigateToLocation(destLat, destLng, placeName) {
 }
 
 /**
+ * Social Sharing System (LINE, Facebook, X/Twitter, Native, 1-Click Copy Link)
+ */
+function openShareModal(options = {}) {
+  let shareUrl = window.location.href;
+  if (options.id) {
+    shareUrl = `${window.location.origin}/posts/${options.id}/`;
+  } else if (options.url) {
+    shareUrl = options.url.startsWith('http') ? options.url : `${window.location.origin}${options.url}`;
+  }
+
+  const title = options.title || document.title || 'ที่นี่มีอะไร? - จุดเช็กอินน่าสนใจ';
+  const author = options.author || 'สมาชิก';
+  const coverUrl = options.coverUrl || '';
+  const text = `ดูจุดเช็กอิน "${title}" บน ที่นี่มีอะไร? 📍✨`;
+
+  const encUrl = encodeURIComponent(shareUrl);
+  const encText = encodeURIComponent(`${text}\n${shareUrl}`);
+
+  const lineShareUrl = `https://social-plugins.line.me/lineit/share?url=${encUrl}`;
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encUrl}`;
+  const twShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encUrl}`;
+
+  const existing = document.getElementById('globalShareModal');
+  if (existing) existing.remove();
+
+  const modalHtml = `
+    <div id="globalShareModal" style="position:fixed;inset:0;background:rgba(15,23,42,0.68);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;">
+      <div style="background:#FFFFFF;border-radius:24px;width:100%;max-width:440px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;">
+        
+        <!-- Close Button -->
+        <button type="button" onclick="closeShareModal()" style="position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:none;background:#F1F5F9;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;transition:all 0.15s;">
+          ✕
+        </button>
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="width:46px;height:46px;border-radius:14px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(21,159,140,0.2);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </div>
+          <div>
+            <h3 style="font-size:17.5px;font-weight:800;color:#0F172A;margin:0;">แชร์จุดเช็คอิน</h3>
+            <p style="font-size:12.5px;color:#64748B;margin:2px 0 0 0;">แชร์ไปยังโซเชียลมีเดียหรือคัดลอกลิงก์</p>
+          </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          ${coverUrl ? `<img src="${coverUrl}" style="width:52px;height:52px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid #E2E8F0;">` : ''}
+          <div style="overflow:hidden;flex:1;">
+            <div style="font-size:14px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+            <div style="font-size:12px;color:#64748B;margin-top:2px;">โพสต์โดย ${author}</div>
+          </div>
+        </div>
+
+        <!-- Social Share Grid (LINE, Facebook, X, Native) -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:20px;text-align:center;">
+          <!-- LINE -->
+          <a href="${lineShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
+            <div style="width:50px;height:50px;border-radius:16px;background:#06C755;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,199,85,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.066.495.235l2.457 3.332V8.108c0-.345.281-.63.63-.63.348 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;color:#334155;">LINE</span>
+          </a>
+
+          <!-- Facebook -->
+          <a href="${fbShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
+            <div style="width:50px;height:50px;border-radius:16px;background:#1877F2;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(24,119,242,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;color:#334155;">Facebook</span>
+          </a>
+
+          <!-- Twitter / X -->
+          <a href="${twShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
+            <div style="width:50px;height:50px;border-radius:16px;background:#0F172A;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(15,23,42,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;color:#334155;">X</span>
+          </a>
+
+          <!-- Native Share -->
+          <div onclick="triggerNativeShare('${encUrl}', '${title.replace(/'/g, "\\'")}', '${text.replace(/'/g, "\\'")}')" style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;">
+            <div style="width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg, #159F8C, #0D7A6B);color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(21,159,140,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+            </div>
+            <span style="font-size:11.5px;font-weight:700;color:#334155;">เพิ่มเติม</span>
+          </div>
+        </div>
+
+        <!-- Copy Link Input Bar -->
+        <div style="display:flex;align-items:center;gap:8px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:14px;padding:4px 4px 4px 12px;">
+          <input type="text" id="shareUrlInputField" value="${shareUrl}" readonly style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#334155;font-weight:500;">
+          <button id="btnCopyShareLink" type="button" onclick="copyShareLink('${shareUrl}')" style="padding:9px 16px;border-radius:10px;border:none;background:#159F8C;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>คัดลอก</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  document.getElementById('globalShareModal').addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+  });
+}
+
+function closeShareModal() {
+  const modal = document.getElementById('globalShareModal');
+  if (modal) modal.remove();
+}
+
+function copyShareLink(url) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      onCopySuccess();
+    }).catch(() => {
+      fallbackCopy(url);
+    });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text) {
+  const el = document.getElementById('shareUrlInputField');
+  if (el) {
+    el.select();
+    document.execCommand('copy');
+    onCopySuccess();
+  }
+}
+
+function onCopySuccess() {
+  const btn = document.getElementById('btnCopyShareLink');
+  if (btn) {
+    btn.style.background = '#059669';
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>คัดลอกแล้ว!</span>`;
+    setTimeout(() => {
+      if (btn) {
+        btn.style.background = '#159F8C';
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> <span>คัดลอก</span>`;
+      }
+    }, 2500);
+  }
+  if (typeof showToast === 'function') {
+    showToast('คัดลอกลิงก์ไปยังคลิปบอร์ดแล้ว! 📋', 'success');
+  }
+}
+
+function triggerNativeShare(url, title, text) {
+  if (navigator.share) {
+    navigator.share({
+      title: title,
+      text: text,
+      url: decodeURIComponent(url)
+    }).catch(() => {});
+  } else {
+    copyShareLink(decodeURIComponent(url));
+  }
+}
+
+function sharePost(postId, postTitle) {
+  openShareModal({
+    id: postId,
+    title: postTitle || 'โพสต์เช็คอิน',
+    author: 'สมาชิก'
+  });
+}
+
+function shareProfile(username, displayName) {
+  openShareModal({
+    url: `/accounts/profile/${username}/`,
+    title: `โปรไฟล์ของ ${displayName}`,
+    author: displayName
+  });
+}
+
+/**
  * Helper function to retrieve CSRF token from cookies
  */
 function getCookie(name) {
@@ -895,10 +1301,25 @@ function initCookieConsent() {
     setTimeout(() => {
       banner.style.display = 'flex';
       banner.classList.add('show');
-    }, 800);
+      if (window.lucide) lucide.createIcons();
+    }, 600);
   } else {
     banner.style.display = 'none';
   }
+}
+
+function openCookieConsentBanner() {
+  const banner = document.getElementById('cookieConsentBanner');
+  if (banner) {
+    banner.style.display = 'flex';
+    banner.classList.add('show');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function resetCookieConsent() {
+  localStorage.removeItem('cookie_consent_status');
+  initCookieConsent();
 }
 
 function acceptCookieConsent() {
@@ -906,7 +1327,10 @@ function acceptCookieConsent() {
   const banner = document.getElementById('cookieConsentBanner');
   if (banner) {
     banner.classList.remove('show');
-    setTimeout(() => { banner.style.display = 'none'; }, 300);
+    setTimeout(() => { banner.style.display = 'none'; }, 250);
+  }
+  if (typeof showToast === 'function') {
+    showToast('success', 'บันทึกการตั้งค่าคุกกี้เรียบร้อยแล้ว');
   }
 }
 
@@ -915,7 +1339,10 @@ function declineCookieConsent() {
   const banner = document.getElementById('cookieConsentBanner');
   if (banner) {
     banner.classList.remove('show');
-    setTimeout(() => { banner.style.display = 'none'; }, 300);
+    setTimeout(() => { banner.style.display = 'none'; }, 250);
+  }
+  if (typeof showToast === 'function') {
+    showToast('info', 'คุณได้ปฏิเสธคุกกี้ที่ไม่จำเป็น');
   }
 }
 
@@ -923,37 +1350,18 @@ function confirmLogout(e, logoutUrl) {
   if (e) e.preventDefault();
   const url = logoutUrl || '/accounts/logout/';
   
-  const modalHtml = `
-    <div style="text-align:center;padding:16px 8px 8px;">
-      <div style="width:54px;height:54px;border-radius:50%;background:#FEE2E2;color:#EF4444;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 4px 14px rgba(239,68,68,0.2);">
-        <i data-lucide="log-out" style="width:26px;height:26px;"></i>
-      </div>
-      <h3 style="font-size:18px;font-weight:700;color:var(--text-main);margin-bottom:6px;">ยืนยันการออกจากระบบ</h3>
-      <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:22px;line-height:1.45;">
-        คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบบัญชีของคุณ?
-      </p>
+  // Close any open popovers, sheets, or settings modals
+  if (typeof closeProfileSettingsModal === 'function') closeProfileSettingsModal();
+  if (typeof closeUserDropdownMenu === 'function') closeUserDropdownMenu();
+  if (typeof closeNotificationDrawer === 'function') closeNotificationDrawer();
+  if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <button onclick="closeMobileBottomSheet()" style="padding:11px 16px;border-radius:9999px;border:1px solid #E5E7EB;background:#F9FAFB;color:#4B5563;font-size:14px;font-weight:600;cursor:pointer;">
-          ยกเลิก
-        </button>
-        <a href="${url}" style="padding:11px 16px;border-radius:9999px;border:none;background:#EF4444;color:#FFFFFF;font-size:14px;font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(239,68,68,0.3);">
-          ออกจากระบบ
-        </a>
-      </div>
-    </div>
-  `;
-
-  if (typeof openMobileBottomSheet === 'function') {
-    openMobileBottomSheet(modalHtml);
-  } else {
-    showCustomConfirm(
-      'ออกจากระบบ',
-      'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบบัญชีของคุณ?',
-      () => { window.location.href = url; },
-      { type: 'danger', confirmText: 'ออกจากระบบ', cancelText: 'ยกเลิก', icon: '🚪' }
-    );
-  }
+  showCustomConfirm(
+    'ยืนยันการออกจากระบบ',
+    'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบบัญชีของคุณ?',
+    () => { window.location.href = url; },
+    { type: 'danger', confirmText: 'ออกจากระบบ', cancelText: 'ยกเลิก', icon: '🚪' }
+  );
 }
 
 /**
@@ -1214,109 +1622,144 @@ function copyPostLink(postId) {
   copyToClipboard(url);
 }
 
-async function sharePost(postId, title = 'ที่นี่มีอะไร?') {
-  const url = `${window.location.origin}/posts/${postId}/`;
-  const shareTitle = title || 'ที่นี่มีอะไร? - ค้นพบสถานที่น่าสนใจ';
-  const shareText = `เช็กอินและดูเรื่องราว "${shareTitle}" บน ที่นี่มีอะไร?`;
+// World-Class Share Check-in Modal Engine
+window._currentShareData = { url: '', title: '', text: '' };
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: shareTitle,
-        text: shareText,
-        url: url
-      });
-      return;
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-    }
+function openShareModal(options = {}) {
+  const postId = options.id || options.postId;
+  const title = options.title || options.placeName || 'ที่นี่มีอะไร?';
+  const author = options.author || options.user || 'ผู้ใช้งาน';
+  const coverUrl = options.coverUrl || options.imgUrl || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';
+  const url = options.url || (postId ? `${window.location.origin}/posts/${postId}/` : window.location.href);
+  const shareText = `เช็กอินและดูเรื่องราว "${title}" บน ที่นี่มีอะไร?`;
+
+  window._currentShareData = { url, title, text: shareText };
+
+  const modal = document.getElementById('globalShareModalBackdrop');
+  if (!modal) return;
+
+  // Populate Preview
+  const coverImg = document.getElementById('shareModalCoverImg');
+  const titleEl = document.getElementById('shareModalTitle');
+  const authorEl = document.getElementById('shareModalAuthor');
+  const urlInput = document.getElementById('shareModalUrlInput');
+
+  if (coverImg) coverImg.src = coverUrl;
+  if (titleEl) titleEl.textContent = title;
+  if (authorEl) authorEl.textContent = `โดย ${author}`;
+  if (urlInput) urlInput.value = url;
+
+  // Reset Copy button state
+  const copyBtn = document.getElementById('shareModalCopyBtn');
+  const copyBtnText = document.getElementById('shareModalCopyBtnText');
+  if (copyBtn) {
+    copyBtn.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
   }
+  if (copyBtnText) copyBtnText.textContent = 'คัดลอก';
 
-  openShareBottomSheet(url, shareTitle);
-}
-
-async function shareProfile(username, displayName = '') {
-  const url = `${window.location.origin}/accounts/profile/${username}/`;
-  const shareTitle = `โปรไฟล์ ${displayName || username} (@${username})`;
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: shareTitle,
-        text: `ดูโปรไฟล์และการเช็กอินของ ${displayName || username} บน ที่นี่มีอะไร?`,
-        url: url
-      });
-      return;
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-    }
-  }
-
-  openShareBottomSheet(url, shareTitle);
-}
-
-function openShareBottomSheet(url, title = 'แชร์เรื่องราว') {
+  // Encode for social links
   const encodedUrl = encodeURIComponent(url);
+  const encodedText = encodeURIComponent(`${shareText}\n${url}`);
   const encodedTitle = encodeURIComponent(title);
 
-  const modalHtml = `
-    <div style="padding: 10px 4px 18px;">
-      <div style="text-align: center; padding-bottom: 14px; border-bottom: 1px solid #E5E7EB; margin-bottom: 16px;">
-        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0 0 4px 0;">แชร์ไปยัง</h3>
-        <p style="font-size: 12.5px; color: var(--text-muted); margin: 0;">${title}</p>
-      </div>
+  const lineBtn = document.getElementById('shareLineBtn');
+  if (lineBtn) lineBtn.href = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`;
 
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; text-align: center;">
-        <!-- Copy Link -->
-        <button onclick="copyToClipboard('${url}')" style="display: flex; flex-direction: column; align-items: center; gap: 8px; border: none; background: none; cursor: pointer; padding: 4px;">
-          <div style="width: 48px; height: 48px; border-radius: 50%; background: #F3F4F6; color: #374151; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-            <i data-lucide="link" style="width: 20px; height: 20px;"></i>
-          </div>
-          <span style="font-size: 11.5px; font-weight: 600; color: var(--text-main);">คัดลอกลิงก์</span>
-        </button>
+  const fbBtn = document.getElementById('shareFacebookBtn');
+  if (fbBtn) fbBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
-        <!-- LINE -->
-        <a href="https://social-plugins.line.me/lineit/share?url=${encodedUrl}" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; padding: 4px;">
-          <div style="width: 48px; height: 48px; border-radius: 50%; background: #06C755; color: #FFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(6,199,85,0.3);">
-            <i data-lucide="message-circle" style="width: 20px; height: 20px;"></i>
-          </div>
-          <span style="font-size: 11.5px; font-weight: 600; color: var(--text-main);">LINE</span>
-        </a>
+  const msgBtn = document.getElementById('shareMessengerBtn');
+  if (msgBtn) msgBtn.href = `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`;
 
-        <!-- Facebook -->
-        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; padding: 4px;">
-          <div style="width: 48px; height: 48px; border-radius: 50%; background: #1877F2; color: #FFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(24,119,242,0.3);">
-            <i data-lucide="facebook" style="width: 20px; height: 20px;"></i>
-          </div>
-          <span style="font-size: 11.5px; font-weight: 600; color: var(--text-main);">Facebook</span>
-        </a>
+  const xBtn = document.getElementById('shareXBtn');
+  if (xBtn) xBtn.href = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodeURIComponent(shareText)}`;
 
-        <!-- X (Twitter) -->
-        <a href="https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; padding: 4px;">
-          <div style="width: 48px; height: 48px; border-radius: 50%; background: #000000; color: #FFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-            <i data-lucide="twitter" style="width: 20px; height: 20px;"></i>
-          </div>
-          <span style="font-size: 11.5px; font-weight: 600; color: var(--text-main);">X (Twitter)</span>
-        </a>
-      </div>
+  const waBtn = document.getElementById('shareWhatsappBtn');
+  if (waBtn) waBtn.href = `https://api.whatsapp.com/send?text=${encodedText}`;
 
-      <button onclick="closeMobileBottomSheet()" style="width: 100%; padding: 11px; border-radius: 9999px; border: 1px solid #E5E7EB; background: #F9FAFB; color: var(--text-muted); font-size: 13.5px; font-weight: 600; cursor: pointer;">
-        ยกเลิก
-      </button>
-    </div>
-  `;
+  const tgBtn = document.getElementById('shareTelegramBtn');
+  if (tgBtn) tgBtn.href = `https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(shareText)}`;
 
-  openMobileBottomSheet(modalHtml);
+  const emBtn = document.getElementById('shareEmailBtn');
+  if (emBtn) emBtn.href = `mailto:?subject=${encodedTitle}&body=${encodedText}`;
+
+  modal.style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
 }
 
-function copyToClipboard(url) {
+function closeGlobalShareModal() {
+  const modal = document.getElementById('globalShareModalBackdrop');
+  if (modal) modal.style.display = 'none';
+}
+
+function copyShareModalLink() {
+  const url = window._currentShareData.url || window.location.href;
   navigator.clipboard.writeText(url).then(() => {
-    if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
-    alert('📋 คัดลอกลิงก์เรียบร้อยแล้ว!');
+    const copyBtn = document.getElementById('shareModalCopyBtn');
+    const copyBtnText = document.getElementById('shareModalCopyBtnText');
+    if (copyBtn) {
+      copyBtn.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+    }
+    if (copyBtnText) {
+      copyBtnText.textContent = 'คัดลอกแล้ว! ✓';
+    }
+    showCustomToast('📋 คัดลอกลิงก์จุดเช็คอินเรียบร้อยแล้ว!', 'success');
+    setTimeout(() => {
+      if (copyBtn) copyBtn.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
+      if (copyBtnText) copyBtnText.textContent = 'คัดลอก';
+    }, 2500);
   }).catch(() => {
     prompt('คัดลอกลิงก์ได้ที่นี่:', url);
   });
 }
+
+async function triggerNativeShareModal() {
+  const { url, title, text } = window._currentShareData;
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: title || 'ที่นี่มีอะไร?',
+        text: text || 'ดูจุดเช็คอินนี้บน ที่นี่มีอะไร?',
+        url: url || window.location.href
+      });
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+  copyShareModalLink();
+}
+
+async function sharePost(postId, title = 'ที่นี่มีอะไร?', coverUrl = '', author = '') {
+  openShareModal({
+    id: postId,
+    title: title,
+    author: author || 'ผู้ใช้งาน',
+    coverUrl: coverUrl,
+    url: `${window.location.origin}/posts/${postId}/`
+  });
+}
+
+async function shareProfile(username, displayName = '') {
+  openShareModal({
+    title: `โปรไฟล์ ${displayName || username} (@${username})`,
+    author: displayName || username,
+    url: `${window.location.origin}/accounts/profile/${username}/`
+  });
+}
+
+function copyToClipboard(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    showCustomToast('📋 คัดลอกลิงก์เรียบร้อยแล้ว!', 'success');
+  }).catch(() => {
+    prompt('คัดลอกลิงก์ได้ที่นี่:', url);
+  });
+}
+
+window.openShareModal = openShareModal;
+window.closeGlobalShareModal = closeGlobalShareModal;
+window.copyShareModalLink = copyShareModalLink;
+window.triggerNativeShareModal = triggerNativeShareModal;
 
 async function toggleFollow(username, btnEl) {
   try {
@@ -1351,7 +1794,9 @@ async function toggleFollow(username, btnEl) {
         followerCountEl.innerText = data.followers_count;
       }
     } else {
-      alert(data.message || 'ไม่สามารถดำเนินการได้');
+      if (typeof showToast === 'function') {
+        showToast('error', data.message || 'ไม่สามารถดำเนินการได้');
+      }
     }
   } catch (err) {
     console.error('Toggle follow error:', err);
@@ -1428,6 +1873,8 @@ function closeFollowListModal() {
 // Explicitly expose functions to window object
 window.toggleLike = toggleLike;
 window.toggleSave = toggleSave;
+window.triggerInstagramHeart = triggerInstagramHeart;
+window.initInstagramDoubleTap = initInstagramDoubleTap;
 window.openCommentModal = openCommentModal;
 window.submitComment = submitComment;
 window.deleteComment = deleteComment;
@@ -1436,7 +1883,146 @@ window.confirmDeletePost = confirmDeletePost;
 window.copyPostLink = copyPostLink;
 window.sharePost = sharePost;
 window.shareProfile = shareProfile;
-window.openShareBottomSheet = openShareBottomSheet;
+window.openShareModal = openShareModal;
+window.openShareBottomSheet = openShareModal;
+window.openGlobalShareModal = openShareModal;
+window.closeGlobalShareModal = closeGlobalShareModal;
+// ==========================================================================
+// User Dropdown Menu, Language Switcher, About Modal & PWA
+// ==========================================================================
+function toggleUserDropdownMenu(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const popover = document.getElementById('userMenuPopover');
+  if (!popover) return;
+  popover.classList.toggle('show');
+}
+
+function closeUserDropdownMenu() {
+  const popover = document.getElementById('userMenuPopover');
+  if (popover) popover.classList.remove('show');
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = e.target.closest('.user-menu-dropdown-wrapper');
+  if (!wrapper) {
+    closeUserDropdownMenu();
+  }
+});
+
+function toggleAppLanguage() {
+  if (typeof window.applyAppLanguage === 'function') {
+    const current = localStorage.getItem('app_lang') || 'th';
+    const next = (current === 'th') ? 'en' : 'th';
+    window.applyAppLanguage(next);
+    const toastMsg = (next === 'en') ? 'Switched language to English' : 'เปลี่ยนภาษาเป็น ภาษาไทย เรียบร้อยแล้ว';
+    showCustomToast(toastMsg, 'info');
+  } else {
+    const current = localStorage.getItem('app_lang') || 'th';
+    const next = current === 'th' ? 'en' : 'th';
+    localStorage.setItem('app_lang', next);
+    
+    const thOpt = document.getElementById('langOptTh');
+    const enOpt = document.getElementById('langOptEn');
+    if (thOpt && enOpt) {
+      if (next === 'en') {
+        thOpt.classList.remove('active');
+        enOpt.classList.add('active');
+      } else {
+        thOpt.classList.add('active');
+        enOpt.classList.remove('active');
+      }
+    }
+    showCustomToast(next === 'en' ? 'Switched language to English' : 'เปลี่ยนภาษาเป็น ภาษาไทย', 'info');
+  }
+}
+
+function openAboutAppModal() {
+  const modal = document.getElementById('aboutAppModalBackdrop');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function closeAboutAppModal() {
+  const modal = document.getElementById('aboutAppModalBackdrop');
+  if (modal) modal.style.display = 'none';
+}
+
+// Progressive Web App (PWA) Registration & Install Prompt
+window._deferredPWAInstallPrompt = null;
+
+function initPWA() {
+  // 1. Register Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(reg => {
+          console.log('PWA Service Worker registered with scope:', reg.scope);
+        })
+        .catch(err => {
+          console.warn('PWA Service Worker registration failed:', err);
+        });
+    });
+  }
+
+  // 2. Handle beforeinstallprompt event
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window._deferredPWAInstallPrompt = e;
+    
+    // Show PWA install button in user dropdown and floating banner
+    const pwaMenuItem = document.getElementById('pwaInstallMenuItem');
+    if (pwaMenuItem) pwaMenuItem.style.display = 'flex';
+
+    const pwaFloatingBtn = document.getElementById('pwaFloatingInstallBanner');
+    if (pwaFloatingBtn && !localStorage.getItem('pwa_banner_dismissed')) {
+      pwaFloatingBtn.style.display = 'flex';
+    }
+    if (window.lucide) lucide.createIcons();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    window._deferredPWAInstallPrompt = null;
+    showCustomToast('ติดตั้งแอปพลิเคชัน "ที่นี่มีอะไร?" เรียบร้อยแล้ว!', 'success');
+    const pwaMenuItem = document.getElementById('pwaInstallMenuItem');
+    if (pwaMenuItem) pwaMenuItem.style.display = 'none';
+    const pwaFloatingBtn = document.getElementById('pwaFloatingInstallBanner');
+    if (pwaFloatingBtn) pwaFloatingBtn.style.display = 'none';
+  });
+}
+
+function triggerPWAInstall() {
+  if (window._deferredPWAInstallPrompt) {
+    window._deferredPWAInstallPrompt.prompt();
+    window._deferredPWAInstallPrompt.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') {
+        showCustomToast('กำลังติดตั้งแอปพลิเคชัน...', 'success');
+      }
+      window._deferredPWAInstallPrompt = null;
+    });
+  } else {
+    showCustomToast('สำหรับอุปกรณ์มือถือ สามารถกด "เพิ่มลงในหน้าจอหลัก" (Add to Home Screen) ในเมนูของเบราว์เซอร์ได้ทันที', 'info');
+  }
+}
+
+function dismissPWABanner() {
+  const pwaFloatingBtn = document.getElementById('pwaFloatingInstallBanner');
+  if (pwaFloatingBtn) pwaFloatingBtn.style.display = 'none';
+  localStorage.setItem('pwa_banner_dismissed', 'true');
+}
+
+// Window Global Exports
+window.toggleUserDropdownMenu = toggleUserDropdownMenu;
+window.closeUserDropdownMenu = closeUserDropdownMenu;
+window.toggleAppLanguage = toggleAppLanguage;
+window.openAboutAppModal = openAboutAppModal;
+window.closeAboutAppModal = closeAboutAppModal;
+window.triggerPWAInstall = triggerPWAInstall;
+window.dismissPWABanner = dismissPWABanner;
 window.copyToClipboard = copyToClipboard;
 window.toggleFollow = toggleFollow;
 window.openFollowListModal = openFollowListModal;
@@ -1456,11 +2042,188 @@ window.getCookie = getCookie;
 window.acceptCookieConsent = acceptCookieConsent;
 window.declineCookieConsent = declineCookieConsent;
 window.initCookieConsent = initCookieConsent;
+window.openCookieConsentBanner = openCookieConsentBanner;
+window.resetCookieConsent = resetCookieConsent;
 window.confirmLogout = confirmLogout;
 window.showCustomConfirm = showCustomConfirm;
 window.showCustomToast = showCustomToast;
 
+// Real-Time High-Entropy Client Device & Public IP Synchronization
+async function syncClientRealDeviceAndIP() {
+  try {
+    let exactOS = 'Windows 10';
+    let exactDevice = 'คอมพิวเตอร์ (Desktop)';
+    let exactBrowser = 'Google Chrome';
+    const ua = navigator.userAgent || '';
+    const uaLower = ua.toLowerCase();
+
+    // 1. High-Entropy Client Hints: Distinguish Windows 11 from Windows 10 precisely
+    if (navigator.userAgentData) {
+      try {
+        const hints = await navigator.userAgentData.getHighEntropyValues(['platformVersion', 'model', 'architecture']);
+        const plat = (navigator.userAgentData.platform || '').toLowerCase();
+        if (plat.includes('win')) {
+          const major = parseInt((hints.platformVersion || '').split('.')[0], 10);
+          // Chromium platformVersion >= 13 is Windows 11 (build >= 22000)
+          if (major >= 13) {
+            exactOS = 'Windows 11';
+          } else {
+            exactOS = 'Windows 10';
+          }
+        } else if (plat.includes('mac')) {
+          exactOS = 'macOS';
+          exactDevice = 'Mac (คอมพิวเตอร์)';
+        } else if (plat.includes('android')) {
+          exactOS = hints.model ? `Android (${hints.model})` : 'Android';
+          exactDevice = hints.model ? `${hints.model} (มือถือ)` : 'Android (มือถือ)';
+        } else if (plat.includes('linux')) {
+          exactOS = 'Linux';
+        }
+      } catch(e) {}
+    } else {
+      // Fallback for Safari, Firefox, iOS
+      if (uaLower.includes('iphone')) {
+        const match = ua.match(/OS (\d+[_\.]\d+)/);
+        const ver = match ? match[1].replace('_', '.') : '';
+        exactOS = ver ? `iOS ${ver} (iPhone)` : 'iOS (iPhone)';
+        exactDevice = 'iPhone (มือถือ)';
+      } else if (uaLower.includes('ipad')) {
+        const match = ua.match(/OS (\d+[_\.]\d+)/);
+        const ver = match ? match[1].replace('_', '.') : '';
+        exactOS = ver ? `iPadOS ${ver} (iPad)` : 'iPadOS (iPad)';
+        exactDevice = 'iPad (แท็บเล็ต)';
+      } else if (uaLower.includes('macintosh') || uaLower.includes('mac os x')) {
+        exactOS = 'macOS';
+        exactDevice = 'Mac (คอมพิวเตอร์)';
+      } else if (uaLower.includes('android')) {
+        exactOS = 'Android';
+        exactDevice = 'Android (มือถือ)';
+      } else if (uaLower.includes('windows nt 10.0')) {
+        exactOS = 'Windows 10/11';
+      }
+    }
+
+    // Detect browser
+    if (uaLower.includes('line/')) exactBrowser = 'LINE In-App';
+    else if (uaLower.includes('edg/')) exactBrowser = 'Microsoft Edge';
+    else if (uaLower.includes('samsungbrowser')) exactBrowser = 'Samsung Internet';
+    else if (uaLower.includes('chrome') && uaLower.includes('safari')) exactBrowser = 'Google Chrome';
+    else if (uaLower.includes('safari') && !uaLower.includes('chrome')) exactBrowser = 'Apple Safari';
+    else if (uaLower.includes('firefox')) exactBrowser = 'Mozilla Firefox';
+
+    // 2. Only sync once per browser session to prevent redundant calls
+    if (sessionStorage.getItem('device_info_synced')) {
+      return;
+    }
+
+    // 3. Send client OS, Device and Browser to server
+    const csrfToken = (typeof getCookie === 'function') ? getCookie('csrftoken') : '';
+    if (csrfToken) {
+      fetch('/accounts/api/sync-device/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          real_ip: '',
+          real_location: '',
+          real_os: exactOS,
+          real_device: exactDevice,
+          real_browser: exactBrowser
+        })
+      }).then(() => {
+        sessionStorage.setItem('device_info_synced', 'true');
+      }).catch(() => {});
+    }
+  } catch(err) {
+    // Graceful silent fallback
+  }
+}
+
+window.syncClientRealDeviceAndIP = syncClientRealDeviceAndIP;
+
 document.addEventListener('DOMContentLoaded', () => {
   initCookieConsent();
+  initPWA();
   fetchNotifications();
+  syncClientRealDeviceAndIP();
+
+  // Restore saved language toggle state
+  const savedLang = localStorage.getItem('app_lang') || 'th';
+  const thOpt = document.getElementById('langOptTh');
+  const enOpt = document.getElementById('langOptEn');
+  if (thOpt && enOpt) {
+    if (savedLang === 'en') {
+      thOpt.classList.remove('active');
+      enOpt.classList.add('active');
+    } else {
+      thOpt.classList.add('active');
+      enOpt.classList.remove('active');
+    }
+  }
+
+  // Restore saved theme state
+  const savedTheme = localStorage.getItem('app_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeUIElements(savedTheme);
 });
+
+/* ============================================================
+   Dark Theme Toggle Engine
+   ============================================================ */
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = (current === 'dark') ? 'light' : 'dark';
+  setAppTheme(next);
+}
+
+function setAppTheme(theme) {
+  const targetTheme = (theme === 'dark') ? 'dark' : 'light';
+  localStorage.setItem('app_theme', targetTheme);
+  document.documentElement.setAttribute('data-theme', targetTheme);
+  updateThemeUIElements(targetTheme);
+
+  const isEn = (localStorage.getItem('app_lang') === 'en');
+  const msg = targetTheme === 'dark' 
+    ? (isEn ? 'Switched to Dark Mode 🌙' : 'เปลี่ยนเป็น โหมดมืด 🌙 เรียบร้อยแล้ว')
+    : (isEn ? 'Switched to Light Mode ☀️' : 'เปลี่ยนเป็น โหมดสว่าง ☀️ เรียบร้อยแล้ว');
+  
+  if (typeof showCustomToast === 'function') {
+    showCustomToast(msg, 'info');
+  } else if (typeof showToast === 'function') {
+    showToast(msg, 'info');
+  }
+}
+
+function updateThemeUIElements(theme) {
+  const isDark = (theme === 'dark');
+  const themeToggles = document.querySelectorAll('.theme-toggle-btn, .theme-toggle-switch, .theme-toggle-pill, .theme-switch-toggle');
+  themeToggles.forEach(el => {
+    if (isDark) {
+      el.classList.add('dark-active');
+      el.setAttribute('aria-checked', 'true');
+    } else {
+      el.classList.remove('dark-active');
+      el.setAttribute('aria-checked', 'false');
+    }
+  });
+
+  const textIndicators = document.querySelectorAll('.theme-text-indicator');
+  textIndicators.forEach(el => {
+    el.textContent = isDark ? 'โหมดมืด' : 'โหมดสว่าง';
+  });
+
+  const themeIcons = document.querySelectorAll('.theme-icon-indicator');
+  themeIcons.forEach(el => {
+    el.setAttribute('data-lucide', isDark ? 'moon' : 'sun');
+  });
+
+  if (window.lucide) {
+    try { lucide.createIcons(); } catch(e) {}
+  }
+}
+
+window.toggleTheme = toggleTheme;
+window.setAppTheme = setAppTheme;
+

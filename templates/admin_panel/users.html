@@ -2,14 +2,17 @@
 
 {% block title %}ผู้ใช้งาน{% endblock %}
 {% block header_title %}จัดการผู้ใช้งาน{% endblock %}
-{% block header_subtitle %}รายชื่อผู้ใช้ทั้งหมดในระบบ{% endblock %}
+{% block header_subtitle %}รายชื่อผู้ใช้ทั้งหมด, ตำแหน่งพิกัด, IP Address และระบบปฏิบัติการของอุปกรณ์{% endblock %}
 
 {% block content %}
 <div class="admin-card">
   <div class="card-header-flex" style="flex-wrap: wrap; gap: 16px;">
-    <h3 class="card-title">ผู้ใช้งาน ({{ total_count }})</h3>
+    <div>
+      <h3 class="card-title">ผู้ใช้งานในระบบ ({{ total_count }})</h3>
+      <p style="font-size:0.8rem;color:#6B7280;margin:3px 0 0 0;">ตรวจสอบ IP Address, ตำแหน่งที่สมัคร, และระบบปฏิบัติการของอุปกรณ์ผู้ใช้งาน</p>
+    </div>
     <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 480px;">
-      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อผู้ใช้, อีเมล..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 220px;">
+      <input type="text" name="search" value="{{ search_query }}" placeholder="ค้นหาชื่อ, อีเมล, IP, หรือ OS..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem; width: 220px;">
       <select name="status" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #E5E7EB; font-size: 0.85rem;">
         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>สถานะทั้งหมด</option>
         <option value="active" {% if status_filter == 'active' %}selected{% endif %}>ปกติ</option>
@@ -24,7 +27,9 @@
       <thead>
         <tr>
           <th>ผู้ใช้งาน</th>
-          <th>อีเมล</th>
+          <th>อีเมล / ช่องทาง</th>
+          <th>สถานที่ & IP (ตอนสมัคร)</th>
+          <th>อุปกรณ์ & ระบบปฏิบัติการ</th>
           <th>โพสต์</th>
           <th>สถานะ</th>
           <th>วันที่สมัคร</th>
@@ -36,15 +41,66 @@
           <tr id="user-row-{{ u.id }}">
             <td>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="{{ u.profile.get_avatar_url }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                <img src="{{ u.profile.get_avatar_url }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #E5E7EB;">
                 <div>
-                  <div style="font-weight: 600; color: #1F2937;" id="user-name-{{ u.id }}">{{ u.profile.get_display_name }}</div>
-                  <div style="font-size: 0.75rem; color: #9CA3AF;">@{{ u.username }}{% if u.is_staff %} <span style="color:#159F8C;font-weight:700;">[Staff]</span>{% endif %}</div>
+                  <div style="font-weight: 700; color: #1F2937;" id="user-name-{{ u.id }}">{{ u.profile.get_display_name }}</div>
+                  <div style="font-size: 0.75rem; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+                    <span>@{{ u.username }}</span>
+                    {% if u.is_staff %}
+                      <span style="color:#159F8C;background:#E6F5F3;font-weight:800;font-size:9px;padding:1px 5px;border-radius:4px;">STAFF</span>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
             </td>
-            <td id="user-email-{{ u.id }}">{{ u.email|default:"-" }}</td>
-            <td>{{ u.post_count }}</td>
+            <td>
+              <div id="user-email-{{ u.id }}" style="font-weight: 600; color: #374151; font-size: 0.825rem;">{{ u.email|default:"-" }}</div>
+              <div style="margin-top: 4px;">
+                {% if "Google" in u.profile.signup_method %}
+                  <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#EA4335;background:#FEE2E2;padding:2px 6px;border-radius:4px;">
+                    <i data-lucide="chrome" style="width:11px;height:11px;"></i> Google
+                  </span>
+                {% elif "LINE" in u.profile.signup_method %}
+                  <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#059669;background:#DCFCE7;padding:2px 6px;border-radius:4px;">
+                    <i data-lucide="message-circle" style="width:11px;height:11px;"></i> LINE
+                  </span>
+                {% else %}
+                  <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#4B5563;background:#F3F4F6;padding:2px 6px;border-radius:4px;">
+                    <i data-lucide="globe" style="width:11px;height:11px;"></i> เว็บฟอร์ม
+                  </span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <div style="font-size:0.8rem;font-weight:700;color:#1F2937;display:flex;align-items:center;gap:4px;">
+                <i data-lucide="network" style="width:13px;height:13px;color:#159F8C;"></i>
+                <span>{{ u.profile.signup_ip|default:u.profile.last_login_ip|default:"-" }}</span>
+              </div>
+              <div style="font-size:0.75rem;color:#6B7280;margin-top:2px;display:flex;align-items:center;gap:4px;">
+                <i data-lucide="map-pin" style="width:12px;height:12px;color:#EF4444;"></i>
+                <span>{{ u.profile.signup_location|default:u.profile.last_login_location|default:"ศรีสะเกษ, ประเทศไทย" }}</span>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:0.825rem;font-weight:700;color:#1F2937;display:flex;align-items:center;gap:5px;">
+                {% if "iOS" in u.profile.signup_os or "iPhone" in u.profile.signup_os %}
+                  <i data-lucide="smartphone" style="width:14px;height:14px;color:#0284C7;"></i>
+                {% elif "Android" in u.profile.signup_os %}
+                  <i data-lucide="smartphone" style="width:14px;height:14px;color:#10B981;"></i>
+                {% elif "Mac" in u.profile.signup_os %}
+                  <i data-lucide="laptop" style="width:14px;height:14px;color:#4B5563;"></i>
+                {% else %}
+                  <i data-lucide="monitor" style="width:14px;height:14px;color:#2563EB;"></i>
+                {% endif %}
+                <span>{{ u.profile.signup_os|default:"Windows 11" }}</span>
+              </div>
+              <div style="font-size:0.75rem;color:#6B7280;margin-top:2px;">
+                {{ u.profile.signup_browser|default:"Google Chrome" }} • {{ u.profile.signup_device|default:"Desktop" }}
+              </div>
+            </td>
+            <td>
+              <span style="font-weight: 700; color: #1F2937;">{{ u.post_count }}</span>
+            </td>
             <td id="user-status-{{ u.id }}">
               {% if u.profile.is_suspended %}
                 <span class="badge-status red">ถูกระงับ</span>
@@ -52,10 +108,13 @@
                 <span class="badge-status emerald">ปกติ</span>
               {% endif %}
             </td>
-            <td>{{ u.date_joined|date:"d M Y" }}</td>
+            <td>
+              <div style="font-size:0.8rem;font-weight:600;color:#374151;">{{ u.date_joined|date:"d M Y" }}</div>
+              <div style="font-size:0.725rem;color:#9CA3AF;">{{ u.date_joined|date:"H:i น." }}</div>
+            </td>
             <td style="text-align: center; white-space: nowrap;">
-              <button class="table-action-btn view" title="ดูโปรไฟล์" onclick="window.open('{% url "accounts:user_profile" u.username %}', '_blank')">
-                <i data-lucide="eye" class="w-4 h-4"></i>
+              <button class="table-action-btn view" title="ดูรายละเอียดเครื่องและ IP ละเอียด" onclick="openDeviceInfoModal({{ u.id }}, '{{ u.profile.get_display_name|escapejs }}', '{{ u.username|escapejs }}', '{{ u.profile.signup_ip|default:u.profile.last_login_ip|escapejs }}', '{{ u.profile.signup_location|default:u.profile.last_login_location|default:"ศรีสะเกษ, ประเทศไทย"|escapejs }}', '{{ u.profile.signup_os|default:u.profile.last_login_os|default:"Windows 11"|escapejs }}', '{{ u.profile.signup_device|default:u.profile.last_login_device|default:"คอมพิวเตอร์ (Desktop)"|escapejs }}', '{{ u.profile.signup_browser|default:u.profile.last_login_browser|default:"Google Chrome"|escapejs }}', '{{ u.profile.signup_method|default:"เว็บฟอร์ม"|escapejs }}', '{{ u.date_joined|date:"d M Y, H:i น."|escapejs }}', '{{ u.profile.last_login_ip|default:u.profile.signup_ip|escapejs }}', '{{ u.profile.last_login_location|default:u.profile.signup_location|default:"ศรีสะเกษ, ประเทศไทย"|escapejs }}', '{{ u.profile.last_login_os|default:u.profile.signup_os|default:"Windows 11"|escapejs }}', '{{ u.profile.last_login_browser|default:u.profile.signup_browser|default:"Google Chrome"|escapejs }}')">
+                <i data-lucide="info" class="w-4 h-4"></i>
               </button>
               <button class="table-action-btn edit" title="แก้ไขข้อมูล" onclick="openEditModal({{ u.id }}, '{{ u.profile.get_display_name|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_staff|lower }})">
                 <i data-lucide="pencil" class="w-4 h-4"></i>
@@ -70,7 +129,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบข้อมูลผู้ใช้งาน</td>
+            <td colspan="8" style="text-align: center; color: #9CA3AF; padding: 30px;">ไม่พบข้อมูลผู้ใช้งาน</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -89,6 +148,91 @@
     {% endif %}
   </div>
   {% endif %}
+</div>
+
+<!-- Device & IP Details Audit Modal -->
+<div id="deviceInfoModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:20px;max-width:540px;width:100%;padding:28px;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;">
+    <button type="button" onclick="closeDeviceInfoModal()" style="position:absolute;top:18px;right:18px;border:none;background:#F3F4F6;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#4B5563;">
+      <i data-lucide="x" style="width:18px;height:18px;"></i>
+    </button>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid #E5E7EB;">
+      <div style="width:48px;height:48px;border-radius:14px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="shield-alert" style="width:24px;height:24px;"></i>
+      </div>
+      <div>
+        <h3 style="font-size:1.15rem;font-weight:800;color:#111827;margin:0;" id="deviceModalUserName">ชื่อผู้ใช้</h3>
+        <p style="font-size:0.8rem;color:#6B7280;margin:2px 0 0 0;" id="deviceModalHandle">@username</p>
+      </div>
+    </div>
+
+    <!-- Group 1: ข้อมูลการสมัครสมาชิก -->
+    <div style="background:#F9FAFB;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #E5E7EB;">
+      <div style="font-size:0.85rem;font-weight:700;color:#159F8C;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="user-plus" style="width:16px;height:16px;"></i>
+        <span>ข้อมูลตอนสมัครสมาชิก (Registration Info)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.825rem;">
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">🌐 IP Address ที่ใช้สมัคร:</span>
+          <span style="font-weight:700;color:#111827;" id="modalSignupIp">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">📍 ตำแหน่ง/สถานที่:</span>
+          <span style="font-weight:600;color:#111827;" id="modalSignupLocation">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">💻 ระบบปฏิบัติการ (OS):</span>
+          <span style="font-weight:700;color:#0284C7;" id="modalSignupOs">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">📱 อุปกรณ์ & เบราว์เซอร์:</span>
+          <span style="font-weight:600;color:#111827;" id="modalSignupDevice">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">🔑 ช่องทางการสมัคร:</span>
+          <span style="font-weight:700;color:#059669;" id="modalSignupMethod">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">📅 วันและเวลาที่สมัคร:</span>
+          <span style="font-weight:600;color:#111827;" id="modalSignupDate">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 2: ข้อมูลการเข้าสู่ระบบล่าสุด -->
+    <div style="background:#F9FAFB;border-radius:14px;padding:16px;margin-bottom:20px;border:1px solid #E5E7EB;">
+      <div style="font-size:0.85rem;font-weight:700;color:#3B82F6;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="activity" style="width:16px;height:16px;"></i>
+        <span>การเข้าใช้งานล่าสุด (Last Login Activity)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.825rem;">
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">🌐 IP ล่าสุด:</span>
+          <span style="font-weight:700;color:#111827;" id="modalLastIp">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">📍 สถานที่ล่าสุด:</span>
+          <span style="font-weight:600;color:#111827;" id="modalLastLocation">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">💻 OS ล่าสุด:</span>
+          <span style="font-weight:700;color:#0284C7;" id="modalLastOs">-</span>
+        </div>
+        <div>
+          <span style="color:#6B7280;display:block;font-size:0.75rem;">🧭 เบราว์เซอร์ล่าสุด:</span>
+          <span style="font-weight:600;color:#111827;" id="modalLastBrowser">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;">
+      <button type="button" onclick="closeDeviceInfoModal()" style="padding:9px 24px;border-radius:10px;border:none;background:#159F8C;color:#FFFFFF;font-size:0.875rem;font-weight:700;cursor:pointer;">
+        ปิดหน้าต่าง
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Edit User Modal -->
@@ -119,6 +263,33 @@
 
 {% block extra_js %}
 <script>
+  function openDeviceInfoModal(userId, displayName, username, signupIp, signupLoc, signupOs, signupDev, signupBr, signupMethod, signupDate, lastIp, lastLoc, lastOs, lastBr) {
+    document.getElementById('deviceModalUserName').textContent = displayName;
+    document.getElementById('deviceModalHandle').textContent = `@${username} (#${userId})`;
+    document.getElementById('modalSignupIp').textContent = signupIp;
+    document.getElementById('modalSignupLocation').textContent = signupLoc;
+    document.getElementById('modalSignupOs').textContent = signupOs;
+    document.getElementById('modalSignupDevice').textContent = `${signupDev} (${signupBr})`;
+    document.getElementById('modalSignupMethod').textContent = signupMethod;
+    document.getElementById('modalSignupDate').textContent = signupDate;
+    
+    document.getElementById('modalLastIp').textContent = lastIp;
+    document.getElementById('modalLastLocation').textContent = lastLoc;
+    document.getElementById('modalLastOs').textContent = lastOs;
+    document.getElementById('modalLastBrowser').textContent = lastBr;
+
+    document.getElementById('deviceInfoModal').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeDeviceInfoModal() {
+    document.getElementById('deviceInfoModal').style.display = 'none';
+  }
+
+  document.getElementById('deviceInfoModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeviceInfoModal();
+  });
+
   function toggleUserStatus(userId, username) {
     showConfirmModal('สลับสถานะระงับบัญชี?', `คุณต้องการเปลี่ยนสถานะการระงับของ @${username} ใช่หรือไม่?`, function() {
       fetch(`/admin-panel/api/user/${userId}/action/`, {

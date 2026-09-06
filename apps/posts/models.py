@@ -34,6 +34,17 @@ class Post(models.Model):
             return first_img.get_image_url()
         return "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80"
 
+    def get_images_list(self):
+        imgs = list(self.images.all())
+        if imgs:
+            return [img.get_image_url() for img in imgs if img.get_image_url()]
+        cover = self.get_cover_url()
+        return [cover] if cover else []
+
+    def get_photo_count(self):
+        count = self.images.count()
+        return count if count > 0 else (1 if (self.cover_image or self.cover_image_url) else 0)
+
     def get_likes_count(self):
         return self.cached_likes_count
 

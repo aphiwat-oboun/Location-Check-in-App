@@ -55,45 +55,99 @@
     {% csrf_token %}
     <input type="hidden" name="lat" :value="lat">
     <input type="hidden" name="lng" :value="lng">
-    <input type="hidden" name="image_url" :value="imageUrl">
+    
+    <!-- Hidden container for camera data URLs -->
+    <template x-for="(img, idx) in images" :key="img.id">
+      <input type="hidden" name="image_urls" :value="img.url">
+    </template>
+    <input type="file" x-ref="allFilesInput" name="images" multiple style="display:none;">
 
     <!-- =======================================================================
-         STEP 1: IMAGE (รูปภาพ)
+         STEP 1: MULTI-IMAGE UPLOAD (รูปภาพ - อัปโหลดได้ไม่จำกัด)
          ======================================================================= -->
     <div x-show="step === 1">
-      <div class="image-upload-box" @click="$refs.fileInput.click()" style="margin-bottom:16px;height:280px;border-radius:18px;position:relative;background:#F9FAFB;border:2px dashed #CBD5E1;overflow:hidden;">
-        
-        <!-- Empty Upload Placeholder -->
-        <template x-if="!imageUrl">
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;padding:20px;text-align:center;">
-            <div style="width:60px;height:60px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(21,159,140,0.15);">
-              <i data-lucide="image-plus" style="width:28px;height:28px;"></i>
+      
+      <!-- Empty Upload Placeholder -->
+      <template x-if="images.length === 0">
+        <div class="image-upload-box" @click="$refs.fileInput.click()" style="margin-bottom:16px;height:280px;border-radius:18px;position:relative;background:#F9FAFB;border:2px dashed #CBD5E1;overflow:hidden;cursor:pointer;">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;padding:20px;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(21,159,140,0.18);">
+              <i data-lucide="image-plus" style="width:32px;height:32px;"></i>
             </div>
             <div>
-              <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;">แตะเพื่อเลือกรูปภาพ หรือ ถ่ายรูป</div>
-              <div style="font-size:12.5px;color:var(--text-muted);">รองรับไฟล์ภาพ JPG, PNG, WEBP</div>
+              <div style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:6px;">แตะเพื่อเลือกรูปภาพ หรือ ถ่ายรูป</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">เลือกได้หลายรูปพร้อมกัน <b>(ไม่จำกัดจำนวนรูป)</b></div>
+              <div style="font-size:11.5px;color:var(--text-subtle);">รองรับไฟล์ JPG, PNG, WEBP</div>
             </div>
           </div>
-        </template>
+        </div>
+      </template>
 
-        <!-- Selected Image Preview -->
-        <template x-if="imageUrl">
-          <div style="width:100%;height:100%;position:relative;">
-            <img :src="imageUrl" alt="Preview" class="image-upload-preview" style="width:100%;height:100%;object-fit:cover;">
-            <button type="button" @click.stop="clearImage()" class="btn-icon-circle" style="position:absolute;top:10px;right:10px;width:34px;height:34px;background:rgba(0,0,0,0.6);color:#FFFFFF;border:none;">
-              <i data-lucide="x" style="width:16px;height:16px;"></i>
+      <!-- Selected Images Gallery Grid -->
+      <template x-if="images.length > 0">
+        <div style="margin-bottom:18px;">
+          <!-- Gallery Header Info -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:14.5px;font-weight:700;color:var(--text-main);">รูปภาพที่เลือก</span>
+              <span style="background:var(--primary);color:#FFFFFF;font-size:12px;font-weight:700;padding:2px 10px;border-radius:9999px;" x-text="images.length + ' รูป'"></span>
+            </div>
+            <button type="button" @click="clearAllImages()" style="background:none;border:none;color:#EF4444;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;">
+              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+              <span>ลบทั้งหมด</span>
             </button>
           </div>
-        </template>
 
-        <input type="file" x-ref="fileInput" name="image" @change="handleImageUpload($event)" accept="image/*" style="display:none;">
-        <input type="file" x-ref="cameraInput" @change="handleCameraUpload($event)" accept="image/*" capture="environment" style="display:none;">
-      </div>
+          <!-- Thumbnails Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;">
+            <template x-for="(img, idx) in images" :key="img.id">
+              <div style="position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#F3F4F6;border:2px solid var(--border-subtle);box-shadow:var(--shadow-sm);transition:transform 0.15s;" :style="idx === 0 ? 'border-color:var(--primary);box-shadow:0 0 0 2px rgba(21,159,140,0.3);' : ''">
+                
+                <!-- Thumbnail Image -->
+                <img :src="img.url" alt="Preview" style="width:100%;height:100%;object-fit:cover;">
 
+                <!-- Cover Photo Badge for 1st Image -->
+                <template x-if="idx === 0">
+                  <div style="position:absolute;top:6px;left:6px;background:rgba(21,159,140,0.92);color:#FFFFFF;padding:2px 8px;border-radius:9999px;font-size:10.5px;font-weight:700;display:flex;align-items:center;gap:3px;backdrop-filter:blur(4px);box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                    <i data-lucide="star" style="width:10px;height:10px;fill:#FFF;"></i>
+                    <span>หน้าปก</span>
+                  </div>
+                </template>
+
+                <!-- Set As Cover Button (if not cover) -->
+                <template x-if="idx > 0">
+                  <button type="button" @click.stop="setAsCover(idx)" title="ตั้งเป็นรูปหน้าปก" style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.65);color:#FFFFFF;padding:3px 7px;border-radius:9999px;font-size:10px;font-weight:600;border:none;cursor:pointer;backdrop-filter:blur(4px);">
+                    ตั้งเป็นหน้าปก
+                  </button>
+                </template>
+
+                <!-- Remove Button -->
+                <button type="button" @click.stop="removeImage(idx)" title="ลบรูปนี้" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.7);color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);transition:transform 0.1s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                  <i data-lucide="x" style="width:14px;height:14px;"></i>
+                </button>
+              </div>
+            </template>
+
+            <!-- Add More Card in Grid -->
+            <div @click="$refs.fileInput.click()" style="aspect-ratio:1/1;border-radius:14px;border:2px dashed #CBD5E1;background:#F8FAFC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--text-muted);transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)';" onmouseout="this.style.borderColor='#CBD5E1';this.style.color='var(--text-muted)';">
+              <div style="width:36px;height:36px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="plus" style="width:20px;height:20px;"></i>
+              </div>
+              <span style="font-size:12px;font-weight:600;">เพิ่มรูปอีก</span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Hidden Inputs for picking files & camera -->
+      <input type="file" x-ref="fileInput" @change="handleMultipleImagesUpload($event)" accept="image/*" multiple style="display:none;">
+      <input type="file" x-ref="cameraInput" @change="handleCameraUpload($event)" accept="image/*" capture="environment" style="display:none;">
+
+      <!-- Action Buttons -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
         <button type="button" @click="$refs.fileInput.click()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
           <i data-lucide="image" style="width:18px;height:18px;flex-shrink:0;"></i>
-          <span>เลือกรูป</span>
+          <span x-text="images.length > 0 ? 'เลือกรูปเพิ่ม' : 'เลือกรูปภาพ'"></span>
         </button>
         <button type="button" @click="openCamera()" class="btn-secondary" style="border-radius:9999px;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:600;">
           <i data-lucide="camera" style="width:18px;height:18px;flex-shrink:0;"></i>
@@ -169,18 +223,44 @@
     <div x-show="step === 4">
       
       <!-- Preview Card -->
-      <div style="background:#FFFFFF;border-radius:var(--radius-lg);border:1px solid var(--border-light);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:24px;">
-        <div style="width:100%;height:220px;overflow:hidden;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
-          <template x-if="imageUrl">
-            <img :src="imageUrl" alt="Preview" style="width:100%;height:100%;object-fit:cover;">
+      <div style="background:var(--bg-surface, #FFFFFF);border-radius:var(--radius-lg);border:1px solid var(--border-light);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:24px;">
+        
+        <!-- Preview Photo Area (Carousel if multiple images) -->
+        <div style="width:100%;height:240px;overflow:hidden;background:var(--bg-surface-subtle, #f0f0f0);position:relative;display:flex;align-items:center;justify-content:center;">
+          <template x-if="images.length > 0">
+            <div style="width:100%;height:100%;position:relative;">
+              <img :src="images[previewIndex] ? images[previewIndex].url : images[0].url" alt="Preview" style="width:100%;height:100%;object-fit:cover;">
+              
+              <!-- Multi-photo indicator badge -->
+              <template x-if="images.length > 1">
+                <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.65);color:#FFFFFF;padding:3px 10px;border-radius:9999px;font-size:11.5px;font-weight:700;backdrop-filter:blur(4px);display:flex;align-items:center;gap:4px;">
+                  <i data-lucide="layers" style="width:12px;height:12px;"></i>
+                  <span x-text="(previewIndex + 1) + ' / ' + images.length"></span>
+                </div>
+              </template>
+
+              <!-- Carousel Left/Right Controls -->
+              <template x-if="images.length > 1">
+                <div>
+                  <button type="button" @click.stop="prevPreview()" style="position:absolute;top:50%;left:8px;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,0.5);color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                    <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+                  </button>
+                  <button type="button" @click.stop="nextPreview()" style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,0.5);color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                    <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+                  </button>
+                </div>
+              </template>
+            </div>
           </template>
-          <template x-if="!imageUrl">
+
+          <template x-if="images.length === 0">
             <div style="text-align:center;color:var(--text-muted);font-size:13.5px;">
               <i data-lucide="image" style="width:32px;height:32px;stroke-width:1.5;margin-bottom:6px;"></i>
               <div>ไม่ได้แนบรูปภาพ</div>
             </div>
           </template>
         </div>
+
         <div style="padding:16px;">
           <h3 style="font-size:17px;font-weight:700;color:var(--text-main);" x-text="placeName || 'ระบุชื่อสถานที่'"></h3>
           <span style="font-size:12.5px;color:var(--text-muted);display:block;margin-bottom:8px;">อ.เมืองศรีสะเกษ • ศรีสะเกษ</span>
@@ -248,7 +328,8 @@
   function createPostApp() {
     return {
       step: 1,
-      imageUrl: '',
+      images: [], // List of { id, url, file }
+      previewIndex: 0,
       placeName: '',
       description: '',
       selectedCategory: '{% if categories %}{{ categories.first.id }}{% endif %}',
@@ -310,15 +391,18 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-        this.imageUrl = dataUrl;
-
+        
         canvas.toBlob((blob) => {
-          if (blob && this.$refs.fileInput) {
-            const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            this.$refs.fileInput.files = dt.files;
-          }
+          const file = blob ? new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' }) : null;
+          this.images.push({
+            id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            url: dataUrl,
+            file: file
+          });
+          this.syncFileInput();
+          this.$nextTick(() => {
+            if (window.lucide) lucide.createIcons();
+          });
         }, 'image/jpeg', 0.92);
 
         this.closeCameraModal();
@@ -327,14 +411,14 @@
       handleCameraUpload(event) {
         const file = event.target.files[0];
         if (file) {
-          if (this.$refs.fileInput) {
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            this.$refs.fileInput.files = dt.files;
-          }
           const reader = new FileReader();
           reader.onload = (e) => {
-            this.imageUrl = e.target.result;
+            this.images.push({
+              id: 'cam_file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              url: e.target.result,
+              file: file
+            });
+            this.syncFileInput();
             this.$nextTick(() => {
               if (window.lucide) lucide.createIcons();
             });
@@ -343,10 +427,90 @@
         }
       },
 
-      goToStep(n) {
-        if (n === 2 && !this.imageUrl && this.step === 1) {
-          // Allow step 2 or prompt
+      handleMultipleImagesUpload(event) {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        files.forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.images.push({
+              id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              url: e.target.result,
+              file: file
+            });
+            this.syncFileInput();
+            this.$nextTick(() => {
+              if (window.lucide) lucide.createIcons();
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+
+        // Reset input value so same files can be re-selected if desired
+        event.target.value = '';
+      },
+
+      removeImage(index) {
+        this.images.splice(index, 1);
+        if (this.previewIndex >= this.images.length) {
+          this.previewIndex = Math.max(0, this.images.length - 1);
         }
+        this.syncFileInput();
+        this.$nextTick(() => {
+          if (window.lucide) lucide.createIcons();
+        });
+      },
+
+      setAsCover(index) {
+        if (index > 0 && index < this.images.length) {
+          const chosen = this.images.splice(index, 1)[0];
+          this.images.unshift(chosen);
+          this.syncFileInput();
+          this.$nextTick(() => {
+            if (window.lucide) lucide.createIcons();
+          });
+        }
+      },
+
+      clearAllImages() {
+        this.images = [];
+        this.previewIndex = 0;
+        this.syncFileInput();
+        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+        if (this.$refs.cameraInput) this.$refs.cameraInput.value = '';
+      },
+
+      syncFileInput() {
+        if (!this.$refs.allFilesInput) return;
+        try {
+          const dt = new DataTransfer();
+          this.images.forEach(img => {
+            if (img.file) {
+              dt.items.add(img.file);
+            }
+          });
+          this.$refs.allFilesInput.files = dt.files;
+        } catch (e) {
+          console.warn('DataTransfer sync error:', e);
+        }
+      },
+
+      prevPreview() {
+        if (this.images.length > 1) {
+          this.previewIndex = (this.previewIndex - 1 + this.images.length) % this.images.length;
+          this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        }
+      },
+
+      nextPreview() {
+        if (this.images.length > 1) {
+          this.previewIndex = (this.previewIndex + 1) % this.images.length;
+          this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        }
+      },
+
+      goToStep(n) {
         this.step = n;
         if (this.step === 2) {
           setTimeout(() => {
@@ -367,26 +531,6 @@
       prevStep() {
         if (this.step > 1) {
           this.goToStep(this.step - 1);
-        }
-      },
-
-      clearImage() {
-        this.imageUrl = '';
-        if (this.$refs.fileInput) this.$refs.fileInput.value = '';
-        if (this.$refs.cameraInput) this.$refs.cameraInput.value = '';
-      },
-
-      handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.imageUrl = e.target.result;
-            this.$nextTick(() => {
-              if (window.lucide) lucide.createIcons();
-            });
-          };
-          reader.readAsDataURL(file);
         }
       },
 

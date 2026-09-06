@@ -110,3 +110,118 @@ def saved_places_view(request):
     else:
         saved_items = []
     return render(request, 'core/saved.html', {'saved_items': saved_items, 'active_nav': 'saved'})
+
+from django.http import HttpResponse, JsonResponse
+
+def manifest_view(request):
+    """Serve PWA Web App Manifest"""
+    manifest_data = {
+        "name": "ที่นี่มีอะไร? - Sisaket Check-in",
+        "short_name": "ที่นี่มีอะไร?",
+        "description": "แอปพลิเคชันค้นหาและเช็คอินสถานที่ท่องเที่ยวในจังหวัดศรีสะเกษ",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#FFFFFF",
+        "theme_color": "#159F8C",
+        "orientation": "portrait-primary",
+        "icons": [
+            {
+                "src": "/static/icons/icon-192.svg",
+                "sizes": "192x192",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/static/icons/icon-512.svg",
+                "sizes": "512x512",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return JsonResponse(manifest_data, content_type='application/manifest+json')
+
+def service_worker_view(request):
+    """Serve PWA Service Worker with Root Scope"""
+    sw_code = """
+const CACHE_NAME = 'sisaket-checkin-v3';
+const STATIC_ASSETS = [
+  '/',
+  '/static/css/style.css',
+  '/static/js/app.js',
+  '/static/js/map.js',
+  '/static/icons/icon-192.svg',
+  '/static/icons/icon-512.svg'
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS).catch(() => {});
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
+  const url = e.request.url || '';
+  
+  // Ignore chrome-extension, dev tools, and non-http(s) schemes
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+  if (url.includes('chrome-extension') || url.includes('moz-extension')) return;
+
+  // Let external APIs and cross-origin requests bypass Service Worker caching
+  if (!url.startsWith(self.location.origin)) {
+    return;
+  }
+  
+  // For navigation requests (HTML pages)
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(() => {
+        return caches.match(e.request).then((res) => {
+          return res || caches.match('/');
+        });
+      })
+    );
+    return;
+  }
+
+  // For same-origin static assets: Cache First, then Network
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      return fetch(e.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(e.request, responseToCache);
+        }).catch(() => {});
+        return networkResponse;
+      }).catch(() => {
+        return new Response('', { status: 408, statusText: 'Request Timeout' });
+      });
+    })
+  );
+});
+"""
+    response = HttpResponse(sw_code, content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    return response

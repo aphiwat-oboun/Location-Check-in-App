@@ -3,11 +3,23 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>{% block title %}ที่นี่มีอะไร? - What's Here? ค้นพบสถานที่น่าสนใจผ่านรูปภาพ{% endblock %}</title>
   
-  <!-- Favicon -->
+  <!-- Favicon & PWA App Icons -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#159F8C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ที่นี่มีอะไร?">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.svg">
+
+  <!-- Google Fonts: Plus Jakarta Sans & Noto Sans Thai -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -23,7 +35,15 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <!-- Custom CSS & App Scripts -->
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1788641000">
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('app_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1788780000">
   <style>
     .leaflet-container {
       background-color: #cbd5e1 !important; /* Soft neutral blue-grey background for zoomed-out map bounds */
@@ -56,7 +76,6 @@
       border: none !important;
     }
   </style>
-  <script src="{% static 'js/app.js' %}?v=1788641000"></script>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -134,12 +153,12 @@
       <!-- Admin Panel Shortcut for Staff Users -->
       {% if user.is_authenticated and user.is_staff %}
       <div style="padding: 6px 14px 10px 14px;">
-        <a href="{% url 'admin_panel:dashboard' %}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; background: linear-gradient(135deg, #111827 0%, #1F2937 100%); color: #10B981; text-decoration: none; font-weight: 700; font-size: 13px; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 4px 14px rgba(0,0,0,0.18); transition: all 0.2s ease;">
-          <div style="width: 26px; height: 26px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="shield" style="width: 15px; height: 15px; color: #10B981;"></i>
+        <a href="{% url 'admin_panel:dashboard' %}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; background: #E6F5F3; color: #0D7A6C; text-decoration: none; font-weight: 700; font-size: 13px; border: 1px solid rgba(21, 159, 140, 0.3); box-shadow: 0 2px 8px rgba(21, 159, 140, 0.12); transition: all 0.2s ease;">
+          <div style="width: 26px; height: 26px; border-radius: 8px; background: #159F8C; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #FFFFFF;">
+            <i data-lucide="shield" style="width: 15px; height: 15px;"></i>
           </div>
-          <span style="color: #F9FAFB; white-space: nowrap;">แผงควบคุม</span>
-          <span style="margin-left: auto; font-size: 9.5px; background: #10B981; color: #000; padding: 2px 6px; border-radius: 9999px; font-weight: 800; letter-spacing: 0.5px;">ADMIN</span>
+          <span style="color: #0F172A; white-space: nowrap;">แผงควบคุม</span>
+          <span style="margin-left: auto; font-size: 9.5px; background: #159F8C; color: #FFFFFF; padding: 2px 7px; border-radius: 9999px; font-weight: 800; letter-spacing: 0.5px;">ADMIN</span>
         </a>
       </div>
       {% endif %}
@@ -210,9 +229,9 @@
 
           {% if user.is_authenticated and user.is_staff %}
           <!-- Admin Panel Button in Header -->
-          <a href="{% url 'admin_panel:dashboard' %}" class="header-admin-pill" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:#111827;color:#10B981;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(16, 185, 129, 0.4);transition:all 0.15s ease;" title="ไปยังแผงควบคุมระบบ">
-            <i data-lucide="shield" style="width:13px;height:13px;color:#10B981;"></i>
-            <span style="color:#F9FAFB;">แผงควบคุม</span>
+          <a href="{% url 'admin_panel:dashboard' %}" class="header-admin-pill" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;background:#E6F5F3;color:#0D7A6C;font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(21, 159, 140, 0.35);transition:all 0.15s ease;" title="ไปยังแผงควบคุมระบบ">
+            <i data-lucide="shield" style="width:13px;height:13px;color:#159F8C;"></i>
+            <span style="color:#0F172A;">แผงควบคุม</span>
           </a>
           {% endif %}
 
@@ -220,9 +239,107 @@
           <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="openNotificationDrawer(event)">
             <i data-lucide="bell" style="width:18px;height:18px;"></i>
           </button>
-          <a href="{% url 'accounts:profile' %}">
-            <img src="{{ user.profile.get_avatar_url }}" alt="" class="header-avatar">
-          </a>
+          
+          <!-- User Menu Dropdown Popover -->
+          <div class="user-menu-dropdown-wrapper">
+            <button type="button" class="header-avatar-btn" onclick="toggleUserDropdownMenu(event)" title="เมนูผู้ใช้งาน" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;">
+              <img src="{{ user.profile.get_avatar_url }}" alt="" class="header-avatar" style="transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+            </button>
+            
+            <div class="user-menu-popover" id="userMenuPopover" onclick="event.stopPropagation()">
+              <div class="user-menu-header">
+                <img src="{{ user.profile.get_avatar_url }}" alt="" class="user-menu-avatar">
+                <div class="user-menu-user-info">
+                  <div class="user-menu-name">{{ user.profile.get_display_name }}</div>
+                  <div class="user-menu-handle">@{{ user.username }}</div>
+                </div>
+              </div>
+
+              <div class="user-menu-divider"></div>
+
+              <div class="user-menu-links">
+                <a href="{% url 'accounts:profile' %}" class="user-menu-item" onclick="closeUserDropdownMenu()">
+                  <div class="user-menu-icon-circle user-icon">
+                    <i data-lucide="user" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>โปรไฟล์ของฉัน</span>
+                </a>
+
+                <a href="{% url 'accounts:edit_profile' %}" class="user-menu-item" onclick="closeUserDropdownMenu()">
+                  <div class="user-menu-icon-circle settings-icon">
+                    <i data-lucide="settings" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>ตั้งค่าโปรไฟล์</span>
+                </a>
+
+                {% if user.is_staff %}
+                <a href="{% url 'admin_panel:dashboard' %}" class="user-menu-item" onclick="closeUserDropdownMenu()">
+                  <div class="user-menu-icon-circle admin-icon">
+                    <i data-lucide="shield" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>แผงควบคุมระบบ</span>
+                  <span class="user-menu-badge-admin">ADMIN</span>
+                </a>
+                {% endif %}
+
+                <button type="button" class="user-menu-item" id="pwaInstallMenuItem" onclick="triggerPWAInstall(); closeUserDropdownMenu();" style="display:none;">
+                  <div class="user-menu-icon-circle pwa-icon">
+                    <i data-lucide="download" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>ติดตั้งแอปพลิเคชัน</span>
+                  <span class="user-menu-badge-pwa">PWA</span>
+                </button>
+
+                <button type="button" class="user-menu-item" onclick="openAboutAppModal(); closeUserDropdownMenu();">
+                  <div class="user-menu-icon-circle info-icon">
+                    <i data-lucide="info" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>เกี่ยวกับแอปพลิเคชัน</span>
+                </button>
+
+                <button type="button" class="user-menu-item" onclick="openCookieConsentBanner(); closeUserDropdownMenu();">
+                  <div class="user-menu-icon-circle" style="background:var(--bg-tag, #FEF3C7);color:#D97706;">
+                    <i data-lucide="cookie" style="width:16px;height:16px;"></i>
+                  </div>
+                  <span>ตั้งค่าคุกกี้และ GPS</span>
+                </button>
+              </div>
+
+              <!-- Theme Toggle -->
+              <div class="user-menu-theme-row" onclick="toggleTheme()">
+                <div class="user-menu-theme-left">
+                  <i data-lucide="moon" class="theme-icon-indicator" style="width:16px;height:16px;color:var(--primary);"></i>
+                  <span class="theme-text-indicator">โหมดมืด</span>
+                </div>
+                <div class="theme-switch-toggle" id="userMenuThemeToggle">
+                  <div class="theme-switch-slider"></div>
+                </div>
+              </div>
+
+              <div class="user-menu-divider"></div>
+
+              <!-- Language Switch -->
+              <div class="user-menu-lang-row">
+                <div class="user-menu-lang-left">
+                  <i data-lucide="globe" style="width:16px;height:16px;color:var(--primary);"></i>
+                  <span>เปลี่ยนภาษา</span>
+                </div>
+                <div class="lang-switch-pill" onclick="toggleAppLanguage()">
+                  <span class="lang-opt active" id="langOptTh">TH</span>
+                  <span class="lang-opt" id="langOptEn">EN</span>
+                </div>
+              </div>
+
+              <div class="user-menu-divider"></div>
+
+              <div style="padding: 4px 2px 2px 2px;">
+                <button type="button" class="user-menu-logout-btn" onclick="closeUserDropdownMenu(); confirmLogout(event, '{% url 'accounts:logout' %}');">
+                  <i data-lucide="log-out" style="width:15px;height:15px;"></i>
+                  <span>ออกจากระบบ</span>
+                </button>
+              </div>
+            </div>
+          </div>
           {% else %}
           <a href="{% url 'accounts:login' %}" style="padding: 8px 18px; border-radius: 9999px; background: #159F8C; color: white; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(21, 159, 140, 0.2); white-space: nowrap;">
             <i data-lucide="log-in" style="width:16px;height:16px;"></i>
@@ -362,15 +479,13 @@
 
     <!-- Notifications List Body -->
     <div class="social-noti-body" id="socialNotiBody">
-      <div style="text-align:center;padding:36px 20px;color:#9CA3AF;">
-        <i data-lucide="loader-2" class="spin-icon" style="width:26px;height:26px;color:#3B82F6;"></i>
+      <div style="text-align:center;padding:36px 20px;color:var(--text-muted);">
+        <i data-lucide="loader-2" class="spin-icon" style="width:26px;height:26px;color:var(--primary);"></i>
         <div style="margin-top:10px;font-size:13.5px;">กำลังโหลดการแจ้งเตือน...</div>
       </div>
     </div>
   </div>
 
-  <!-- Global Scripts -->
-  <script src="{% static 'js/map.js' %}?v=1788641000"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {
@@ -388,7 +503,67 @@
           }
         });
       });
+
+      // Initialize Cookie Banner
+      initCookieConsent();
     });
+
+    function initCookieConsent() {
+      const consent = localStorage.getItem('cookie_consent_status');
+      const banner = document.getElementById('cookieConsentBanner');
+      if (!banner) return;
+
+      if (!consent) {
+        setTimeout(() => {
+          banner.style.display = 'flex';
+          banner.classList.add('show');
+          if (window.lucide) lucide.createIcons();
+        }, 500);
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function openCookieConsentBanner() {
+      const banner = document.getElementById('cookieConsentBanner');
+      if (banner) {
+        banner.style.display = 'flex';
+        banner.classList.add('show');
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function resetCookieConsent() {
+      localStorage.removeItem('cookie_consent_status');
+      initCookieConsent();
+      if (typeof showToast === 'function') {
+        showToast('info', 'รีเซ็ตสถานะคุกกี้แล้ว แถบแจ้งเตือนจะแสดงขึ้นมา');
+      }
+    }
+
+    function acceptCookieConsent() {
+      localStorage.setItem('cookie_consent_status', 'accepted');
+      const banner = document.getElementById('cookieConsentBanner');
+      if (banner) {
+        banner.classList.remove('show');
+        setTimeout(() => { banner.style.display = 'none'; }, 250);
+      }
+      if (typeof showToast === 'function') {
+        showToast('success', 'บันทึกการตั้งค่าคุกกี้เรียบร้อยแล้ว');
+      }
+    }
+
+    function declineCookieConsent() {
+      localStorage.setItem('cookie_consent_status', 'declined');
+      const banner = document.getElementById('cookieConsentBanner');
+      if (banner) {
+        banner.classList.remove('show');
+        setTimeout(() => { banner.style.display = 'none'; }, 250);
+      }
+      if (typeof showToast === 'function') {
+        showToast('info', 'คุณได้ปฏิเสธคุกกี้ที่ไม่จำเป็น');
+      }
+    }
 
     function openMobileBottomSheet(htmlContent) {
       const backdrop = document.getElementById('mobileBottomSheetBackdrop');
@@ -411,28 +586,390 @@
       }
     }
   </script>
-  <!-- Floating Cookie Consent Banner -->
-  <div id="cookieConsentBanner" class="cookie-consent-banner" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;max-width:560px;margin:0 auto;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);border:1px solid rgba(21, 159, 140, 0.3);border-radius:20px;padding:18px 20px;box-shadow:0 12px 36px rgba(0,0,0,0.15);z-index:9999;flex-direction:column;gap:12px;transition:all 0.3s ease;">
-    <div style="display:flex;align-items:flex-start;gap:12px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i data-lucide="cookie" style="width:22px;height:22px;"></i>
+  <!-- Floating Cookie Consent Banner (Mobile & Desktop Optimized with Dark Mode) -->
+  <div id="cookieConsentBanner" class="cookie-consent-banner" style="display:none;position:fixed;bottom:24px;left:20px;right:20px;max-width:540px;margin:0 auto;background:var(--bg-surface, #FFFFFF);backdrop-filter:blur(16px);border:1.5px solid var(--border-color, rgba(21, 159, 140, 0.35));border-radius:22px;padding:18px 20px;box-shadow:0 16px 48px rgba(0,0,0,0.22);z-index:99999;flex-direction:column;gap:14px;transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);animation:slideUp 0.3s ease;">
+    <div style="display:flex;align-items:flex-start;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg, #159F8C 0%, #0D6B5E 100%);color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
+        <i data-lucide="cookie" style="width:24px;height:24px;"></i>
       </div>
-      <div style="flex:1;">
-        <h4 style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:3px;">🍪 นโยบายการใช้คุกกี้ และตำแหน่ง GPS</h4>
-        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.45;margin:0;">
-          เว็บไซต์นี้ใช้คุกกี้ที่จำเป็นและประมวลผลตำแหน่ง <b>GPS</b> จากอุปกรณ์ของคุณ เพื่อคำนวณระยะทางจากสถานที่จริงแบบเรียลไทม์ และมอบประสบการณ์การใช้งานที่ดีที่สุด
+      <div style="flex:1;min-width:0;">
+        <h4 style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;letter-spacing:-0.01em;">🍪 การตั้งค่าคุกกี้ และตำแหน่ง GPS</h4>
+        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin:0;">
+          เว็บไซต์นี้ใช้คุกกี้เพื่อจดจำการตั้งค่า (เช่น โหมดมืด ภาษา) และประมวลผลพิกัด <b>GPS</b> จากอุปกรณ์ของคุณเพื่อคำนวณระยะทางจากสถานที่จริงแบบเรียลไทม์
         </p>
       </div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:4px;">
-      <button onclick="declineCookieConsent()" style="padding:8px 16px;border-radius:9999px;border:1px solid #E5E7EB;background:#F9FAFB;color:#4B5563;font-size:13px;font-weight:600;cursor:pointer;">
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding-top:2px;">
+      <button type="button" onclick="declineCookieConsent()" style="padding:9px 18px;border-radius:9999px;border:1px solid var(--border-color, #E5E7EB);background:var(--bg-tag, #F9FAFB);color:var(--text-muted, #4B5563);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">
         ปฏิเสธ
       </button>
-      <button onclick="acceptCookieConsent()" style="padding:8px 20px;border-radius:9999px;border:none;background:#159F8C;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
+      <button type="button" onclick="acceptCookieConsent()" style="padding:9px 22px;border-radius:9999px;border:none;background:linear-gradient(135deg, #159F8C 0%, #0D9488 100%);color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(21, 159, 140, 0.35);transition:all 0.15s;">
         ยอมรับทั้งหมด
       </button>
     </div>
   </div>
+
+  <!-- About App Modal -->
+  <div class="about-app-modal-backdrop" id="aboutAppModalBackdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this) closeAboutAppModal();">
+    <div class="about-app-card" style="background:#FFFFFF;border-radius:24px;max-width:440px;width:100%;padding:28px 24px;box-shadow:0 20px 48px rgba(0,0,0,0.25);position:relative;animation:modalZoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+      <button type="button" onclick="closeAboutAppModal()" style="position:absolute;top:16px;right:16px;border:none;background:#F3F4F6;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#4B5563;transition:all 0.15s ease;">
+        <i data-lucide="x" style="width:18px;height:18px;"></i>
+      </button>
+
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg, #159F8C 0%, #0D6B5E 100%);color:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(21, 159, 140, 0.35);margin-bottom:12px;">
+          <i data-lucide="map-pin" style="width:32px;height:32px;"></i>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#111827;margin:0 0 4px 0;">ที่นี่มีอะไร?</h3>
+        <p style="font-size:13px;color:#159F8C;font-weight:600;margin:0;">Location Check-in & Lifestyle Community</p>
+      </div>
+
+      <div style="background:#F9FAFB;border-radius:16px;padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:#4B5563;">
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E5E7EB;padding-bottom:8px;">
+          <span>เวอร์ชันแอปพลิเคชัน</span>
+          <span style="font-weight:700;color:#111827;background:#E6F5F3;color:#159F8C;padding:2px 8px;border-radius:6px;">v1.0 PWA</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E5E7EB;padding-bottom:8px;">
+          <span>ความพร้อมใช้งานแบบออฟไลน์</span>
+          <span style="font-weight:600;color:#059669;display:flex;align-items:center;gap:4px;">
+            <i data-lucide="check-circle-2" style="width:14px;height:14px;"></i> รองรับ
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span>ระบบพิกัดเรียลไทม์</span>
+          <span style="font-weight:600;color:#059669;display:flex;align-items:center;gap:4px;">
+            <i data-lucide="crosshair" style="width:14px;height:14px;"></i> GPS แม่นยำสูง
+          </span>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:#6B7280;line-height:1.6;margin:0 0 20px 0;text-align:center;">
+        แพลตฟอร์มเช็กอินและแชร์เรื่องราวการเดินทาง แบ่งปันสถานที่ท่องเที่ยว ร้านอาหาร คาเฟ่ และบรรยากาศสุดประทับใจรอบตัวคุณ
+      </p>
+
+      <div style="display:flex;gap:10px;">
+        <button type="button" onclick="triggerPWAInstall(); closeAboutAppModal();" style="flex:1;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg, #159F8C 0%, #0D6B5E 100%);color:#FFFFFF;font-size:13.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
+          <i data-lucide="download" style="width:16px;height:16px;"></i>
+          <span>ติดตั้งแอปลงเครื่อง</span>
+        </button>
+        <button type="button" onclick="closeAboutAppModal()" style="padding:11px 18px;border-radius:12px;border:1px solid #E5E7EB;background:#FFFFFF;color:#4B5563;font-size:13.5px;font-weight:600;cursor:pointer;">
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms of Service & Privacy Policy Modal -->
+  <div id="legalTermsModalBackdrop" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.72);backdrop-filter:blur(12px);z-index:999999;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.25s ease;" onclick="if(event.target === this) closeLegalModal();">
+    <div class="modal-content" style="max-width:520px;width:100%;max-height:85vh;background:var(--bg-surface, #FFFFFF);border-radius:24px;box-shadow:0 30px 70px -15px rgba(0,0,0,0.35), 0 0 0 1px var(--border-color, rgba(255,255,255,0.8)) inset;overflow:hidden;padding:0;display:flex;flex-direction:column;animation:modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+      
+      <!-- Modal Header -->
+      <div style="padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-light, #F1F5F9);background:var(--bg-surface, #FFFFFF);flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="legalModalIconWrap" style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg, #159F8C 0%, #0D9488 100%);color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(21, 159, 140, 0.35);flex-shrink:0;">
+            <i data-lucide="shield-check" id="legalModalIcon" style="width:20px;height:20px;"></i>
+          </div>
+          <div>
+            <h3 id="legalModalTitle" style="font-size:17px;font-weight:800;color:var(--text-main, #0F172A);margin:0 0 2px 0;letter-spacing:-0.01em;">ข้อตกลงและเงื่อนไขการใช้งาน</h3>
+            <p id="legalModalSubtitle" style="font-size:12px;color:var(--text-muted, #64748B);margin:0;font-weight:500;">แอปพลิเคชัน ที่นี่มีอะไร? (Location Check-in)</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeLegalModal()" style="border:none;background:var(--bg-tag, #F1F5F9);color:var(--text-muted, #64748B);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;" title="ปิด">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div id="legalModalBody" style="padding:20px 22px;overflow-y:auto;flex:1;font-size:13.5px;color:var(--text-main, #334155);line-height:1.65;">
+        <!-- Dynamic content filled by JS -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding:14px 22px;border-top:1px solid var(--border-light, #F1F5F9);background:var(--bg-surface, #FFFFFF);display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0;">
+        <button type="button" onclick="closeLegalModal()" style="padding:10px 24px;border-radius:9999px;border:none;background:linear-gradient(135deg, #159F8C 0%, #0D9488 100%);color:#FFFFFF;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(21, 159, 140, 0.35);transition:all 0.15s;">
+          เข้าใจและยอมรับ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openTermsModal() {
+      const backdrop = document.getElementById('legalTermsModalBackdrop');
+      const title = document.getElementById('legalModalTitle');
+      const subtitle = document.getElementById('legalModalSubtitle');
+      const body = document.getElementById('legalModalBody');
+      const icon = document.getElementById('legalModalIcon');
+      
+      if (!backdrop || !body) return;
+      title.innerText = 'ข้อตกลงและเงื่อนไขการใช้งาน';
+      subtitle.innerText = 'เงื่อนไขการใช้งานแพลตฟอร์ม ที่นี่มีอะไร?';
+      if (icon) icon.setAttribute('data-lucide', 'file-text');
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="check-circle" style="width:16px;height:16px;"></i> 1. การใช้งานบัญชีผู้ใช้
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              ผู้ใช้งานตกลงที่จะลงทะเบียนและใช้บริการด้วยข้อมูลที่ถูกต้อง เป็นจริง และไม่แอบอ้างสร้างบัญชีปลอมเพื่อจุดประสงค์ที่ก่อให้เกิดความเสียหายแก่ผู้อื่น
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="message-square" style="width:16px;height:16px;"></i> 2. การแบ่งปันเนื้อหาและคอมมูนิตี้
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              ห้ามโพสต์รูปภาพ ความคิดเห็น หรือเนื้อหาที่ผิดกฎหมาย ลามกอนาจาร ละเมิดลิขสิทธิ์ หมิ่นประมาท หรือคุกคามสิทธิและเสรีภาพของสมาชิกท่านอื่น
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="map-pin" style="width:16px;height:16px;"></i> 3. ข้อมูลสถานที่และการเช็กอิน
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              การเพิ่มสถานที่และการเช็กอินจะต้องอ้างอิงจากสถานที่จริง เพื่อประโยชน์สูงสุดต่อชุมชนนักท่องเที่ยวและผู้ใช้งานทั่วไป
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="lock" style="width:16px;height:16px;"></i> 4. การรักษาความปลอดภัย
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              ผู้ใช้มีหน้าที่ดูแลรักษาความปลอดภัยของรหัสผ่านตนเอง และแจ้งให้ทีมงานทราบทันทีหากพบการเข้าถึงบัญชีโดยไม่ได้รับอนุญาต
+            </p>
+          </div>
+        </div>
+      `;
+
+      backdrop.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openPrivacyModal() {
+      const backdrop = document.getElementById('legalTermsModalBackdrop');
+      const title = document.getElementById('legalModalTitle');
+      const subtitle = document.getElementById('legalModalSubtitle');
+      const body = document.getElementById('legalModalBody');
+      const icon = document.getElementById('legalModalIcon');
+      
+      if (!backdrop || !body) return;
+      title.innerText = 'นโยบายความเป็นส่วนตัว';
+      subtitle.innerText = 'การคุ้มครองข้อมูลส่วนบุคคล (PDPA Compliant)';
+      if (icon) icon.setAttribute('data-lucide', 'shield');
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="navigation" style="width:16px;height:16px;"></i> 1. การเข้าถึงพิกัด GPS
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              ระบบจะขออนุญาตเข้าถึงพิกัดตำแหน่งจากเบราว์เซอร์ เพื่อคำนวณระยะทางจากสถานที่ที่คุณอยู่ไปยังสถานที่เช็กอินแบบเรียลไทม์ และไม่มีการนำพิกัดส่วนตัวไปเผยแพร่หรือขายแก่บุคคลภายนอกเด็ดขาด
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="user" style="width:16px;height:16px;"></i> 2. ข้อมูลโปรไฟล์และบัญชี
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              ชื่อที่แสดง (@username), รูปโปรไฟล์ และประวัติส่วนตัวที่คุณกรอก จะแสดงต่อสาธารณะเพื่อให้เพื่อนๆ ในชุมชนสามารถติดตามและร่วมแสดงความคิดเห็นได้
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="shield-alert" style="width:16px;height:16px;"></i> 3. มาตรฐานการเข้ารหัสความปลอดภัย
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              รหัสผ่านของคุณถูกจัดเก็บด้วยการแฮชระดับสูง (One-way Hash) ซึ่งแม้แต่ผู้ดูแลระบบก็ไม่สามารถมองเห็นรหัสผ่านดั้งเดิมของคุณได้
+            </p>
+          </div>
+
+          <div style="background:var(--bg-tag, #F8FAFC);border:1px solid var(--border-light, #E2E8F0);border-radius:14px;padding:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--primary, #159F8C);margin:0 0 6px 0;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="trash-2" style="width:16px;height:16px;"></i> 4. สิทธิในการจัดการข้อมูลของคุณ
+            </h4>
+            <p style="margin:0;font-size:13px;color:var(--text-muted, #475569);line-height:1.55;">
+              คุณมีสิทธิในการแก้ไข ลบโพสต์ รูปภาพ หรืออัปเดตข้อมูลโปรไฟล์ของตนเองได้อย่างอิสระตลอดเวลาผ่านหน้าแก้ไขโปรไฟล์
+            </p>
+          </div>
+        </div>
+      `;
+
+      backdrop.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeLegalModal() {
+      const backdrop = document.getElementById('legalTermsModalBackdrop');
+      if (backdrop) backdrop.style.display = 'none';
+    }
+
+    // Intercept native browser alert() to use beautiful showToast
+    window.alert = function(msg) {
+      if (typeof showToast === 'function') {
+        showToast('info', msg);
+      } else {
+        console.info('App alert:', msg);
+      }
+    };
+  </script>
+
+  <!-- =========================================================================
+       WORLD-CLASS "แชร์จุดเช็คอิน" (SHARE CHECK-IN) MODAL
+       ========================================================================= -->
+  <div id="globalShareModalBackdrop" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.68);backdrop-filter:blur(14px);z-index:9999;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.25s ease;" onclick="if(event.target === this) closeGlobalShareModal();">
+    <div class="modal-content" style="max-width:440px;width:100%;background:#FFFFFF;border-radius:26px;box-shadow:0 30px 70px -15px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.8) inset;overflow:hidden;padding:0;animation:modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+      
+      <!-- Modal Header -->
+      <div style="padding:20px 22px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F1F5F9;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg, #159F8C 0%, #0D9488 100%);color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(21, 159, 140, 0.35);flex-shrink:0;">
+            <i data-lucide="share-2" style="width:20px;height:20px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size:18px;font-weight:800;color:#0F172A;margin:0 0 2px 0;letter-spacing:-0.01em;">แชร์จุดเช็คอิน</h3>
+            <p style="font-size:12.5px;color:#64748B;margin:0;font-weight:500;">ส่งต่อสถานที่สวยๆ ไปยังเพื่อนและโซเชียลมีเดีย</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeGlobalShareModal()" style="border:none;background:#F1F5F9;color:#64748B;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#E2E8F0';this.style.color='#0F172A';" onmouseout="this.style.background='#F1F5F9';this.style.color='#64748B';">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div style="padding:20px 22px 24px;">
+        <!-- Live Post Snippet Preview Box -->
+        <div id="shareModalPostPreview" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <img id="shareModalCoverImg" src="" alt="" style="width:54px;height:54px;border-radius:12px;object-fit:cover;flex-shrink:0;background:#E2E8F0;">
+          <div style="min-width:0;flex:1;">
+            <h4 id="shareModalTitle" style="font-size:14.5px;font-weight:700;color:#0F172A;margin:0 0 3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">สถานที่</h4>
+            <div id="shareModalAuthor" style="font-size:12px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">โดย ผู้ใช้งาน</div>
+          </div>
+        </div>
+
+        <!-- Copy Link Section -->
+        <div style="margin-bottom:22px;">
+          <label style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">ลิงก์สำหรับแชร์</label>
+          <div style="position:relative;display:flex;align-items:center;background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:14px;padding:4px 4px 4px 12px;transition:border-color 0.15s;" id="shareUrlBoxWrapper">
+            <i data-lucide="link-2" style="width:16px;height:16px;color:#64748B;flex-shrink:0;margin-right:8px;"></i>
+            <input type="text" id="shareModalUrlInput" readonly style="flex:1;border:none;background:none;font-size:13px;font-weight:500;color:#334155;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">
+            <button type="button" id="shareModalCopyBtn" onclick="copyShareModalLink()" style="background:linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);color:#FFFFFF;border:none;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(37,99,235,0.3);transition:all 0.15s;flex-shrink:0;">
+              <i data-lucide="copy" style="width:14px;height:14px;"></i>
+              <span id="shareModalCopyBtnText">คัดลอก</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Title: Share to Social Apps -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+          <span style="font-size:12px;font-weight:700;color:#64748B;letter-spacing:0.02em;">แชร์ไปยังแอปพลิเคชัน</span>
+          <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+        </div>
+
+        <!-- 8 Social Icons Grid -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:14px 10px;text-align:center;">
+          <!-- 1. LINE -->
+          <a href="#" id="shareLineBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:#06C755;box-shadow:0 6px 18px rgba(6,199,85,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M22 10.5C22 5.805 17.523 2 12 2S2 5.805 2 10.5c0 4.2 3.567 7.73 8.39 8.358.327.07.77.216.882.496.1.256.066.657.032 1.026l-.145.875c-.044.267-.208 1.045.916.57 1.124-.475 6.068-3.574 8.283-6.115C21.464 14.398 22 12.548 22 10.5z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">LINE</span>
+          </a>
+
+          <!-- 2. Facebook -->
+          <a href="#" id="shareFacebookBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:#1877F2;box-shadow:0 6px 18px rgba(24,119,242,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">Facebook</span>
+          </a>
+
+          <!-- 3. Messenger -->
+          <a href="#" id="shareMessengerBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:linear-gradient(135deg, #00B2FE 0%, #006AFF 50%, #A824FF 100%);box-shadow:0 6px 18px rgba(0,106,255,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.455 5.513 3.735 7.197V22l3.435-1.886c.905.251 1.86.386 2.83.386 5.523 0 10-4.145 10-9.258C22 6.145 17.523 2 12 2zm1.066 12.443l-2.585-2.756-5.045 2.756 5.545-5.887 2.651 2.756 4.979-2.756-5.545 5.887z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">Messenger</span>
+          </a>
+
+          <!-- 4. X (Twitter) -->
+          <a href="#" id="shareXBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:#0F172A;box-shadow:0 6px 18px rgba(15,23,42,0.35);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">X</span>
+          </a>
+
+          <!-- 5. WhatsApp -->
+          <a href="#" id="shareWhatsappBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:#25D366;box-shadow:0 6px 18px rgba(37,211,102,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.79 14.07c-.24.68-1.4 1.25-1.92 1.33-.49.07-1.12.1-3.23-.78-2.69-1.12-4.42-3.86-4.55-4.04-.13-.18-1.07-1.43-1.07-2.73 0-1.3.68-1.94.92-2.2.24-.26.53-.33.71-.33.18 0 .36 0 .51.01.17.01.39-.06.61.47.23.54.78 1.9.85 2.04.07.14.12.31.02.5-.1.19-.15.31-.3.48-.15.17-.31.38-.45.51-.15.14-.3.3-.13.6.17.3.77 1.27 1.65 2.05 1.13 1.01 2.08 1.32 2.38 1.47.3.15.47.13.65-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.83.86 2.14 1.02.31.15.52.23.6.36.08.13.08.77-.16 1.45z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">WhatsApp</span>
+          </a>
+
+          <!-- 6. Telegram -->
+          <a href="#" id="shareTelegramBtn" target="_blank" rel="noopener noreferrer" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:#2AABEE;box-shadow:0 6px 18px rgba(42,171,238,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">Telegram</span>
+          </a>
+
+          <!-- 7. Email -->
+          <a href="#" id="shareEmailBtn" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <div class="share-icon-circle" style="background:linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);box-shadow:0 6px 18px rgba(99,102,241,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">Email</span>
+          </a>
+
+          <!-- 8. แชร์อื่นๆ (Native Share) -->
+          <button type="button" onclick="triggerNativeShareModal()" class="share-social-pill" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:0;">
+            <div class="share-icon-circle" style="background:linear-gradient(135deg, #334155 0%, #0F172A 100%);box-shadow:0 6px 18px rgba(15,23,42,0.35);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:#1E293B;">แชร์อื่นๆ</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating PWA Install Prompt Banner -->
+  <div id="pwaFloatingInstallBanner" style="display:none;position:fixed;bottom:85px;right:20px;left:20px;max-width:420px;margin:0 auto;background:rgba(255,255,255,0.98);backdrop-filter:blur(14px);border:1.5px solid rgba(21, 159, 140, 0.35);border-radius:20px;padding:14px 16px;box-shadow:0 14px 40px rgba(0,0,0,0.18);z-index:9990;align-items:center;justify-content:space-between;gap:12px;animation:slideUp 0.3s ease;">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+      <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg, #159F8C 0%, #0D6B5E 100%);color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(21, 159, 140, 0.3);">
+        <i data-lucide="smartphone" style="width:22px;height:22px;"></i>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ติดตั้งแอป ที่นี่มีอะไร?</div>
+        <div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ใช้งานเร็วขึ้น ไหลลื่น ไม่เปลืองเน็ต</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <button onclick="triggerPWAInstall()" style="padding:8px 14px;border-radius:10px;border:none;background:#159F8C;color:#FFFFFF;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+        <i data-lucide="download" style="width:14px;height:14px;"></i>
+        <span>ติดตั้ง</span>
+      </button>
+      <button onclick="dismissPWABanner()" style="border:none;background:none;padding:6px;color:#9CA3AF;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;" title="ปิด">
+        <i data-lucide="x" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Map, Bilingual Language Engine, & Core Global App Scripts (GPS, Social Share, Interactions) -->
+  <script src="{% static 'js/i18n.js' %}?v=1788775000"></script>
+  <script src="{% static 'js/map.js' %}?v=1788775000"></script>
+  <script src="{% static 'js/app.js' %}?v=1788775000"></script>
 
   {% block extra_js %}{% endblock %}
 </body>
