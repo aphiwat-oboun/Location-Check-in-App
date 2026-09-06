@@ -2,7 +2,7 @@
 
 {% block title %}สถานที่{% endblock %}
 {% block header_title %}จัดการสถานที่{% endblock %}
-{% block header_subtitle %}รายการสถานที่ทั้งหมดบนแผนที่{% endblock %}
+{% block header_subtitle %}รายการสถานที่ทั้งหมดบนแผนที่และการจัดการรูปภาพ{% endblock %}
 
 {% block content %}
 <div class="admin-card">
@@ -32,7 +32,7 @@
           <tr id="loc-row-{{ loc.id }}">
             <td>
               <div style="display: flex; align-items: center; gap: 12px;">
-                <img src="{{ loc.get_cover_url }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
+                <img id="loc-img-{{ loc.id }}" src="{{ loc.get_cover_url }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid #E5E7EB;">
                 <div>
                   <div style="font-weight: 600; color: #1F2937;">{{ loc.name }}</div>
                   <div style="font-size: 0.725rem; color: #9CA3AF;">{{ loc.address|default:loc.city }}</div>
@@ -48,7 +48,7 @@
               <button class="table-action-btn view" title="ดูบน Google Maps" onclick="window.open('https://maps.google.com/?q={{ loc.latitude }},{{ loc.longitude }}', '_blank')">
                 <i data-lucide="map" class="w-4 h-4"></i>
               </button>
-              <button class="table-action-btn edit" title="แก้ไขข้อมูลสถานที่" onclick="openEditLocationModal({{ loc.id }}, '{{ loc.name|escapejs }}', '{{ loc.category.id|default:'' }}', '{{ loc.city|escapejs }}', '{{ loc.province|escapejs }}', '{{ loc.latitude }}', '{{ loc.longitude }}', '{{ loc.description|escapejs }}')">
+              <button class="table-action-btn edit" title="แก้ไขข้อมูลและรูปภาพสถานที่" onclick="openEditLocationModal({{ loc.id }}, '{{ loc.name|escapejs }}', '{{ loc.category.id|default:'' }}', '{{ loc.city|escapejs }}', '{{ loc.province|escapejs }}', '{{ loc.latitude }}', '{{ loc.longitude }}', '{{ loc.description|escapejs }}', '{{ loc.get_cover_url|escapejs }}', '{{ loc.cover_image_url|default:''|escapejs }}')">
                 <i data-lucide="pencil" class="w-4 h-4"></i>
               </button>
               <button class="table-action-btn delete" title="ลบสถานที่" onclick="deleteLocation({{ loc.id }}, '{{ loc.name|escapejs }}')">
@@ -79,17 +79,54 @@
   {% endif %}
 </div>
 
-<!-- Edit Location Modal -->
+<!-- Edit Location Modal with Image Upload & URL Support -->
 <div id="editLocationModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:16px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#1F2937;">แก้ไขข้อมูลสถานที่</h3>
-      <button onclick="closeEditLocationModal()" style="border:none;background:transparent;cursor:pointer;color:#9CA3AF;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#1F2937;">แก้ไขข้อมูลสถานที่และรูปภาพ</h3>
+      </div>
+      <button onclick="closeEditLocationModal()" style="border:none;background:transparent;cursor:pointer;color:#9CA3AF;padding:4px;">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
     </div>
     <input type="hidden" id="editLocId">
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      
+      <!-- Image Section: Preview & Upload / URL -->
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px;">
+        <label style="font-size:0.825rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <i data-lucide="image" class="w-4 h-4" style="color:#159F8C;"></i>
+          <span>รูปภาพหน้าปกสถานที่ (Cover Image)</span>
+        </label>
+        
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <!-- Current Preview Box -->
+          <div style="width:110px;height:90px;border-radius:10px;overflow:hidden;background:#E2E8F0;flex-shrink:0;border:1px solid #CBD5E1;position:relative;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <img id="editLocImgPreview" src="" alt="พรีวิวรูปภาพ" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'">
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+            <!-- Option 1: File Upload -->
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">1. อัปโหลดไฟล์รูปภาพใหม่</label>
+              <input type="file" id="editLocCoverFile" accept="image/*" onchange="previewSelectedImage(event)" style="font-size:0.8rem;color:#475569;width:100%;">
+            </div>
+            
+            <!-- Option 2: Image URL -->
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">2. หรือใส่ลิงก์ URL รูปภาพ</label>
+              <input type="url" id="editLocCoverUrl" placeholder="https://images.unsplash.com/..." oninput="previewUrlImage(this.value)" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #CBD5E1;font-size:0.8rem;box-sizing:border-box;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Basic Info -->
       <div>
         <label style="font-size:0.825rem;font-weight:600;color:#374151;display:block;margin-bottom:5px;">ชื่อสถานที่ <span style="color:#EF4444;">*</span></label>
         <input type="text" id="editLocName" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:0.875rem;box-sizing:border-box;">
@@ -133,7 +170,9 @@
 
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
       <button onclick="closeEditLocationModal()" style="padding:9px 18px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:0.875rem;cursor:pointer;">ยกเลิก</button>
-      <button onclick="submitEditLocation()" style="padding:9px 20px;border-radius:8px;border:none;background:#159F8C;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">บันทึกการแก้ไข</button>
+      <button id="saveLocBtn" onclick="submitEditLocation()" style="padding:9px 20px;border-radius:8px;border:none;background:#159F8C;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <span>บันทึกการแก้ไข</span>
+      </button>
     </div>
   </div>
 </div>
@@ -141,7 +180,7 @@
 
 {% block extra_js %}
 <script>
-  function openEditLocationModal(id, name, categoryId, city, province, lat, lng, desc) {
+  function openEditLocationModal(id, name, categoryId, city, province, lat, lng, desc, coverUrl, originalCoverUrl) {
     document.getElementById('editLocId').value = id;
     document.getElementById('editLocName').value = name || '';
     document.getElementById('editLocCategory').value = categoryId || '';
@@ -151,8 +190,34 @@
     document.getElementById('editLocLng').value = lng || '';
     document.getElementById('editLocDesc').value = desc || '';
     
+    // Set image previews & URL
+    const previewEl = document.getElementById('editLocImgPreview');
+    const urlInput = document.getElementById('editLocCoverUrl');
+    const fileInput = document.getElementById('editLocCoverFile');
+    
+    previewEl.src = coverUrl || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';
+    urlInput.value = originalCoverUrl || '';
+    fileInput.value = '';
+    
     document.getElementById('editLocationModal').style.display = 'flex';
     if (window.lucide) lucide.createIcons();
+  }
+
+  function previewSelectedImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('editLocImgPreview').src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function previewUrlImage(url) {
+    if (url && url.trim().startsWith('http')) {
+      document.getElementById('editLocImgPreview').src = url.trim();
+    }
   }
 
   function closeEditLocationModal() {
@@ -168,13 +233,19 @@
     const lat = document.getElementById('editLocLat').value.trim();
     const lng = document.getElementById('editLocLng').value.trim();
     const desc = document.getElementById('editLocDesc').value.trim();
+    const coverUrl = document.getElementById('editLocCoverUrl').value.trim();
+    const fileInput = document.getElementById('editLocCoverFile');
 
     if (!name) {
       showToast('กรุณากรอกชื่อสถานที่', 'error');
       return;
     }
 
-    const formData = new URLSearchParams();
+    const saveBtn = document.getElementById('saveLocBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerText = 'กำลังบันทึก...';
+
+    const formData = new FormData();
     formData.append('name', name);
     formData.append('category_id', categoryId);
     formData.append('city', city);
@@ -182,26 +253,40 @@
     formData.append('latitude', lat);
     formData.append('longitude', lng);
     formData.append('description', desc);
+    formData.append('cover_image_url', coverUrl);
+
+    if (fileInput.files.length > 0) {
+      formData.append('cover_image', fileInput.files[0]);
+    }
 
     fetch(`/admin-panel/api/location/${locId}/edit/`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
         'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
       },
-      body: formData.toString()
+      body: formData
     })
     .then(res => res.json())
     .then(data => {
+      saveBtn.disabled = false;
+      saveBtn.innerText = 'บันทึกการแก้ไข';
       if (data.success) {
         closeEditLocationModal();
         showToast(data.message, 'success');
+        
+        // Update table row image dynamically
+        if (data.location && data.location.cover_url) {
+          const tableImg = document.getElementById(`loc-img-${locId}`);
+          if (tableImg) tableImg.src = data.location.cover_url;
+        }
         setTimeout(() => window.location.reload(), 600);
       } else {
         showToast(data.message || 'ไม่สามารถแก้ไขสถานที่ได้', 'error');
       }
     })
     .catch(err => {
+      saveBtn.disabled = false;
+      saveBtn.innerText = 'บันทึกการแก้ไข';
       console.error(err);
       showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
     });
