@@ -292,25 +292,37 @@
           <i data-lucide="camera" style="width:20px;height:20px;color:#159F8C;"></i>
           <span>ถ่ายภาพด้วยกล้อง</span>
         </div>
-        <button type="button" @click="closeCameraModal()" style="background:rgba(255,255,255,0.15);border:none;color:#FFF;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-          <i data-lucide="x" style="width:18px;height:18px;"></i>
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- Switch Facing Camera Button -->
+          <button type="button" @click="switchFacingMode()" title="สลับกล้องหน้า/หลัง" style="background:rgba(255,255,255,0.15);border:none;color:#FFF;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <i data-lucide="refresh-cw" style="width:17px;height:17px;"></i>
+          </button>
+          <button type="button" @click="closeCameraModal()" style="background:rgba(255,255,255,0.15);border:none;color:#FFF;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <i data-lucide="x" style="width:18px;height:18px;"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Live Video Stream Area -->
       <div style="width:100%;aspect-ratio:4/3;background:#000000;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-        <video x-ref="videoElement" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+        <video x-ref="videoElement" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
         <canvas x-ref="canvasElement" style="display:none;"></canvas>
       </div>
 
       <!-- Modal Controls & Shutter Button -->
-      <div style="padding:20px;display:flex;align-items:center;justify-content:center;gap:20px;background:#0F172A;">
-        <button type="button" @click="closeCameraModal()" style="padding:11px 20px;border-radius:9999px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;">
-          ยกเลิก
-        </button>
-        <button type="button" @click="captureWebcamPhoto()" style="width:64px;height:64px;border-radius:50%;background:#159F8C;color:#FFFFFF;border:4px solid #FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 20px rgba(21,159,140,0.5);">
-          <i data-lucide="camera" style="width:28px;height:28px;"></i>
-        </button>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;background:#0F172A;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:24px;width:100%;">
+          <button type="button" @click="closeCameraModal()" style="padding:11px 22px;border-radius:9999px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;">
+            ยกเลิก
+          </button>
+          <button type="button" @click="captureWebcamPhoto()" title="กดชัตเตอร์ถ่ายภาพ" style="width:64px;height:64px;border-radius:50%;background:#159F8C;color:#FFFFFF;border:4px solid #FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 20px rgba(21,159,140,0.6);transition:transform 0.1s;" onmousedown="this.style.transform='scale(0.92)'" onmouseup="this.style.transform='scale(1)'">
+            <i data-lucide="camera" style="width:28px;height:28px;"></i>
+          </button>
+          <button type="button" @click="triggerDeviceNativeCamera()" style="padding:11px 18px;border-radius:9999px;border:1px solid rgba(21,159,140,0.4);background:rgba(21,159,140,0.15);color:#159F8C;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="smartphone" style="width:16px;height:16px;"></i>
+            <span>กล้องมือถือ</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -339,6 +351,7 @@
 
       showCameraModal: false,
       cameraStream: null,
+      currentFacingMode: 'environment',
 
       init() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -349,27 +362,65 @@
       },
 
       openCamera() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth <= 768);
+        
+        // On mobile devices, triggering native system camera gives instant native camera experience
+        if (isMobile && this.$refs.cameraInput) {
+          this.$refs.cameraInput.click();
+          return;
+        }
+
+        // On desktop or web fallback, start WebRTC Live Camera
+        this.startWebcamStream();
+      },
+
+      triggerDeviceNativeCamera() {
+        this.closeCameraModal();
+        if (this.$refs.cameraInput) {
+          this.$refs.cameraInput.click();
+        }
+      },
+
+      startWebcamStream() {
+        if (this.cameraStream) {
+          this.cameraStream.getTracks().forEach(t => t.stop());
+        }
+
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
-            .then(stream => {
-              this.cameraStream = stream;
-              this.showCameraModal = true;
-              this.$nextTick(() => {
-                const video = this.$refs.videoElement;
-                if (video) {
-                  video.srcObject = stream;
-                  video.play();
-                }
-                if (window.lucide) lucide.createIcons();
-              });
-            })
-            .catch(err => {
-              console.warn('WebRTC camera error, falling back to file input:', err);
-              if (this.$refs.cameraInput) this.$refs.cameraInput.click();
+          navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              facingMode: { ideal: this.currentFacingMode },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }, 
+            audio: false 
+          })
+          .then(stream => {
+            this.cameraStream = stream;
+            this.showCameraModal = true;
+            this.$nextTick(() => {
+              const video = this.$refs.videoElement;
+              if (video) {
+                video.srcObject = stream;
+                video.muted = true;
+                video.playsInline = true;
+                video.play().catch(e => console.warn('Video play error:', e));
+              }
+              if (window.lucide) lucide.createIcons();
             });
+          })
+          .catch(err => {
+            console.warn('WebRTC camera error, falling back to camera input:', err);
+            if (this.$refs.cameraInput) this.$refs.cameraInput.click();
+          });
         } else {
           if (this.$refs.cameraInput) this.$refs.cameraInput.click();
         }
+      },
+
+      switchFacingMode() {
+        this.currentFacingMode = (this.currentFacingMode === 'environment') ? 'user' : 'environment';
+        this.startWebcamStream();
       },
 
       closeCameraModal() {
@@ -385,32 +436,46 @@
         const canvas = this.$refs.canvasElement;
         if (!video || !canvas) return;
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        const width = video.videoWidth || video.clientWidth || 1280;
+        const height = video.videoHeight || video.clientHeight || 720;
+
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, width, height);
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
         
-        canvas.toBlob((blob) => {
-          const file = blob ? new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' }) : null;
+        try {
+          canvas.toBlob((blob) => {
+            const file = blob ? new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' }) : null;
+            this.images.push({
+              id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              url: dataUrl,
+              file: file
+            });
+            this.syncFileInput();
+            this.$nextTick(() => {
+              if (window.lucide) lucide.createIcons();
+            });
+          }, 'image/jpeg', 0.92);
+        } catch (err) {
           this.images.push({
             id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
             url: dataUrl,
-            file: file
+            file: null
           });
           this.syncFileInput();
-          this.$nextTick(() => {
-            if (window.lucide) lucide.createIcons();
-          });
-        }, 'image/jpeg', 0.92);
+        }
 
         this.closeCameraModal();
       },
 
       handleCameraUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        files.forEach(file => {
           const reader = new FileReader();
           reader.onload = (e) => {
             this.images.push({
@@ -424,7 +489,10 @@
             });
           };
           reader.readAsDataURL(file);
-        }
+        });
+
+        // Reset value so user can take consecutive photos
+        event.target.value = '';
       },
 
       handleMultipleImagesUpload(event) {
