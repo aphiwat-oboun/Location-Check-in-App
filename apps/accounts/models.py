@@ -11,6 +11,8 @@ class Profile(models.Model):
     cover_image = models.ImageField(upload_to='covers/', blank=True, null=True)
     cover_image_url = models.URLField(max_length=500, blank=True, null=True)
     cover_position = models.IntegerField(default=50, verbose_name="ตำแหน่งภาพพื้นหลังแนวตั้ง (%)")
+    custom_level = models.IntegerField(default=0, verbose_name="ระดับเลเวลกำหนดเอง (0=คำนวณตามจริง, 1-5)")
+    bonus_xp = models.IntegerField(default=0, verbose_name="โบนัสแต้ม XP พิเศษ")
     is_suspended = models.BooleanField(default=False)
     
     # Device & Security / Audit tracking fields

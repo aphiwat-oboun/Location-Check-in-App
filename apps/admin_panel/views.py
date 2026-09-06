@@ -714,12 +714,33 @@ def user_edit_api(request, user_id):
         display_name = request.POST.get('display_name', '').strip()
         email = request.POST.get('email', '').strip()
         make_staff = request.POST.get('is_staff') == 'true'
+        custom_level = request.POST.get('custom_level')
+        bonus_xp = request.POST.get('bonus_xp')
 
         changes = []
         if display_name and display_name != user.profile.display_name:
             user.profile.display_name = display_name
-            user.profile.save()
             changes.append(f"ชื่อแสดง → {display_name}")
+
+        if custom_level is not None and str(custom_level).strip() != '':
+            try:
+                lvl = int(custom_level)
+                if 0 <= lvl <= 5 and lvl != user.profile.custom_level:
+                    user.profile.custom_level = lvl
+                    changes.append(f"ระดับ Level → {'คำนวณตามจริง (Auto)' if lvl == 0 else f'LV.{lvl}'}")
+            except (ValueError, TypeError):
+                pass
+
+        if bonus_xp is not None and str(bonus_xp).strip() != '':
+            try:
+                xp_val = max(0, int(bonus_xp))
+                if xp_val != user.profile.bonus_xp:
+                    user.profile.bonus_xp = xp_val
+                    changes.append(f"โบนัส XP → +{xp_val} XP")
+            except (ValueError, TypeError):
+                pass
+
+        user.profile.save()
 
         if email and email != user.email:
             if User.objects.filter(email__iexact=email).exclude(id=user_id).exists():
@@ -741,6 +762,8 @@ def user_edit_api(request, user_id):
             'display_name': user.profile.display_name,
             'email': user.email,
             'is_staff': user.is_staff,
+            'custom_level': user.profile.custom_level,
+            'bonus_xp': user.profile.bonus_xp,
         })
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'เกิดข้อผิดพลาด: {str(e)}'}, status=400)
