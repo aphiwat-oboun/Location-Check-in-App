@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}เกี่ยวกับเราและทีมผู้จัดทำ - ที่นี่มีอะไร?{% endblock %}
+
+{% block extra_css %}
+<style>
+  .about-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 80px 20px;
+  }
+
+  /* ส่วนหัวแนะนำโครงงาน (Hero Banner) */
+  .about-hero {
+    background: linear-gradient(135deg, #0F5E56 0%, #159F8C 100%);
+    border-radius: 24px;
+    padding: 44px 32px;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(21, 159, 140, 0.22);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 40px;
+  }
+  .about-hero::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+  }
+  .about-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .about-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .about-hero p {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* หัวข้อประจำส่วน */
+  .section-heading {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .section-heading h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-main, #0F172A);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-heading p {
+    font-size: 0.95rem;
+    color: var(--text-subtle, #64748B);
+    margin-top: 6px;
+  }
+
+  /* การ์ดทีมผู้จัดทำ (Team Grid) */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    margin-bottom: 50px;
+  }
+  .team-card {
+    background: var(--bg-surface, #FFFFFF);
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  }
+  .team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  }
+  .team-avatar-wrapper {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 16px auto;
+    border-radius: 50%;
+    border: 3px solid #159F8C;
+    padding: 3px;
+    background: var(--bg-surface, #FFFFFF);
+  }
+  .team-avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .team-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main, #0F172A);
+    margin-bottom: 4px;
+  }
+  .team-id {
+    font-size: 0.85rem;
+    color: var(--text-subtle, #64748B);
+    font-family: monospace;
+    background: var(--bg-surface-subtle, #F1F5F9);
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .team-role {
+    font-size: 0.9rem;
+    color: #159F8C;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* คำถามที่พบบ่อย (FAQ Section) */
+  .faq-section {
+    background: var(--bg-surface, #FFFFFF);
+    border: 1px solid var(--border-light, #E2E8F0);
+    border-radius: 20px;
+    padding: 32px 24px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  }
+  .faq-item {
+    border-bottom: 1px solid var(--border-light, #E2E8F0);
+    padding: 18px 0;
+  }
+  .faq-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .faq-question {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main, #0F172A);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .faq-question i {
+    color: #159F8C;
+    flex-shrink: 0;
+  }
+  .faq-answer {
+    font-size: 0.925rem;
+    color: var(--text-subtle, #475569);
+    line-height: 1.6;
+    padding-left: 28px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-container">
+
+  <!-- 1. แนะนำโครงงาน "ที่นี่มีอะไร? (What's Here?)" -->
+  <section class="about-hero">
+    <div class="about-badge">
+      <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+      <span>โครงงานพัฒนาระบบเช็คอินสถานที่</span>
+    </div>
+    <h1>ที่นี่มีอะไร? (What's Here?)</h1>
+    <p>
+      เว็บแอปพลิเคชันที่สร้างขึ้นเพื่อเชื่อมโยงผู้คนเข้ากับสถานที่น่าสนใจใกล้ตัว 
+      แบ่งปันรูปภาพ ความประทับใจ รีวิวพิกัดเด็ด และสำรวจเรื่องราวใหม่ๆ บนแผนที่เรียลไทม์ได้อย่างสะดวก รวดเร็ว และสนุกสนาน
+    </p>
+  </section>
+
+  <!-- 2. การ์ดแนะนำสมาชิกทีม 3 คน -->
+  <section>
+    <div class="section-heading">
+      <h2>
+        <i data-lucide="users" style="width:24px;height:24px;color:#159F8C;"></i>
+        <span>ทีมผู้จัดทำ</span>
+      </h2>
+      <p>คณะผู้พัฒนาและออกแบบเว็บแอปพลิเคชัน</p>
+    </div>
+
+    <div class="team-grid">
+      <!-- สมาชิกคนที่ 1 -->
+      <div class="team-card">
+        <div class="team-avatar-wrapper">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=member1" alt="สมาชิกคนที่ 1">
+        </div>
+        <div class="team-name">นายอภิวัฒน์ อยู่บุญ</div>
+        <div class="team-id">รหัสนักศึกษา: 6812732127</div>
+        <div class="team-role">Full-stack Developer & UI/UX Design</div>
+      </div>
+
+      <!-- สมาชิกคนที่ 2 -->
+      <div class="team-card">
+        <div class="team-avatar-wrapper">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=member2" alt="สมาชิกคนที่ 2">
+        </div>
+        <div class="team-name">นายพิทักษ์ แสงลอย</div>
+        <div class="team-id">รหัสนักศึกษา: 6812732117</div>
+        <div class="team-role">Backend & Database Architecture</div>
+      </div>
+
+      <!-- สมาชิกคนที่ 3 -->
+      <div class="team-card">
+        <div class="team-avatar-wrapper">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=member3" alt="สมาชิกคนที่ 3">
+        </div>
+        <div class="team-name">นายปุณยเทพ อารีย์รัตน์กุล</div>
+        <div class="team-id">รหัสนักศึกษา: 6812732113</div>
+        <div class="team-role">Frontend & Quality Assurance (QA)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. คำถามที่พบบ่อย (FAQ) -->
+  <section class="faq-section">
+    <div class="section-heading" style="text-align:left; margin-bottom:16px;">
+      <h2>
+        <i data-lucide="help-circle" style="width:24px;height:24px;color:#159F8C;"></i>
+        <span>คำถามที่พบบ่อย (FAQ)</span>
+      </h2>
+      <p>ข้อสงสัยเกี่ยวกับการใช้งานและเช็คอินสถานที่</p>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+        <span>ฉันสามารถเช็คอินสถานที่ใหม่ที่ยังไม่มีในระบบได้อย่างไร?</span>
+      </div>
+      <div class="faq-answer">
+        คุณสามารถกดปุ่มเครื่องหมายบวก (+) เพื่อสร้างโพสต์ใหม่ จากนั้นเลือกตำแหน่งพิกัด GPS ปัจจุบันของคุณ ระบบจะบันทึกพิกัดและสร้างจุดเช็คอินใหม่ให้ทันที
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+        <span>จำเป็นต้องเปิด GPS ตลอดเวลาหรือไม่?</span>
+      </div>
+      <div class="faq-answer">
+        ไม่จำเป็นครับ สามารถเปิด GPS เฉพาะเวลาที่ต้องการค้นหาสถานที่ใกล้ตัวหรือเวลาเช็คอิน ส่วนการดูฟีดภาพและเรื่องราวทั่วไปสามารถเปิดดูได้ตามปกติ
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">
+        <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+        <span>โพสต์และรูปภาพที่เช็คอินจะแสดงแก่ใครบ้าง?</span>
+      </div>
+      <div class="faq-answer">
+        โพสต์สาธารณะจะแสดงบนหน้ารวมเรื่องราวและบนแผนที่ เพื่อให้เพื่อนๆ และผู้ใช้งานท่านอื่นสามารถร่วมแชร์และตามรอยพิกัดสถานที่ได้ครับ
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+</script>
+{% endblock %}

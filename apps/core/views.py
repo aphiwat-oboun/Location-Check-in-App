@@ -111,6 +111,13 @@ def saved_places_view(request):
         saved_items = []
     return render(request, 'core/saved.html', {'saved_items': saved_items, 'active_nav': 'saved'})
 
+def about_view(request):
+    """หน้าเกี่ยวกับเราและทีมผู้จัดทำ"""
+    context = {
+        'active_nav': 'about',
+    }
+    return render(request, 'core/about.html', context)
+
 from django.http import HttpResponse, JsonResponse
 
 def manifest_view(request):

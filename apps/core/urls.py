@@ -9,4 +9,5 @@ urlpatterns = [
     path('map/', views.map_view, name='map'),
     path('welcome/', views.welcome_view, name='welcome'),
     path('saved/', views.saved_places_view, name='saved'),
+    path('about/', views.about_view, name='about'),
 ]
