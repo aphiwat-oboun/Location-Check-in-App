@@ -135,7 +135,11 @@
           </li>
           <li class="nav-item {% if active_nav == 'about' %}active{% endif %}">
             <a href="{% url 'core:about' %}">
+
+              <span class="nav-icon"><i data-lucide="users"></i></span>
+
               <span class="nav-icon"><i data-lucide="info"></i></span>
+
               <span>เกี่ยวกับเรา</span>
             </a>
           </li>
@@ -241,6 +245,12 @@
             <span style="color:#0F172A;">แผงควบคุม</span>
           </a>
           {% endif %}
+
+          <!-- About Us Link Button in Header -->
+          <a href="{% url 'core:about' %}" class="header-about-pill" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;background:var(--bg-surface-subtle, #F8FAFC);color:var(--text-main, #334155);font-size:12.5px;font-weight:600;text-decoration:none;border:1px solid var(--border-light, #E2E8F0);transition:all 0.15s ease;" title="เกี่ยวกับเราและทีมผู้จัดทำ">
+            <i data-lucide="users" style="width:14px;height:14px;color:#159F8C;"></i>
+            <span>เกี่ยวกับเรา</span>
+          </a>
 
           {% if user.is_authenticated %}
           <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="openNotificationDrawer(event)">
