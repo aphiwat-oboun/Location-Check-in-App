@@ -112,8 +112,16 @@ def saved_places_view(request):
     return render(request, 'core/saved.html', {'saved_items': saved_items, 'active_nav': 'saved'})
 
 def about_view(request):
+
+    """หน้าเกี่ยวกับเราและทีมผู้จัดทำ"""
+    context = {
+        'active_nav': 'about',
+    }
+    return render(request, 'core/about.html', context)
+
     """About us and Team Members view"""
     return render(request, 'core/about.html', {'active_nav': 'about'})
+
 
 from django.http import HttpResponse, JsonResponse
 
