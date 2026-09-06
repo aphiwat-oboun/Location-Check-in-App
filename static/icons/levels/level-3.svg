@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- 24K Pure Gold Metallic Gradient -->
+    <linearGradient id="goldGradL3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="20%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="80%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Deep Royal Amethyst Purple Gradient -->
+    <linearGradient id="amethystGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95" />
+      <stop offset="50%" stop-color="#2E1065" />
+      <stop offset="100%" stop-color="#0F051D" />
+    </linearGradient>
+
+    <linearGradient id="purpleFlare" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E879F9" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+
+    <linearGradient id="specularGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <filter id="shadowLvl3" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#1E0738" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <g filter="url(#shadowLvl3)">
+    <!-- Golden Side Laurels / Chevrons -->
+    <path d="M14 36 Q32 20 48 38 L48 64 Q22 58 14 36 Z" fill="url(#goldGradL3)" />
+    <path d="M106 36 Q88 20 72 38 L72 64 Q98 58 106 36 Z" fill="url(#goldGradL3)" />
+
+    <!-- Royal Faceted Shield -->
+    <polygon points="60,4 102,26 102,74 60,114 18,74 18,26" fill="url(#goldGradL3)" />
+    <polygon points="60,12 94,32 94,70 60,104 26,70 26,32" fill="url(#amethystGrad)" />
+    <polygon points="60,12 94,32 94,70 60,104 26,70 26,32" fill="none" stroke="url(#goldGradL3)" stroke-width="2.5" />
+
+    <!-- Top Gloss Arc -->
+    <path d="M26 32 L60 12 L94 32 L94 50 Q60 38 26 50 Z" fill="url(#specularGold)" />
+
+    <!-- Center Radiant Amethyst Gem & Golden Compass Star -->
+    <g transform="translate(60, 56)">
+      <circle cx="0" cy="0" r="24" fill="none" stroke="url(#goldGradL3)" stroke-width="2.5" />
+      <circle cx="0" cy="0" r="20" fill="#1C0936" />
+
+      <!-- Faceted Diamond Sparkle Core -->
+      <polygon points="0,-18 13,-13 18,0 13,13 0,18 -13,13 -18,0 -13,-13" fill="url(#purpleFlare)" />
+      
+      <!-- 4-Point Golden Star -->
+      <path d="M0 -15 Q0 0 15 0 Q0 0 0 15 Q0 0 -15 0 Q0 0 0 -15 Z" fill="url(#goldGradL3)" />
+      
+      <circle cx="0" cy="0" r="4" fill="#FFFFFF" />
+      <circle cx="0" cy="0" r="1.8" fill="#F59E0B" />
+    </g>
+
+    <!-- Level Tag Pill -->
+    <rect x="36" y="90" width="48" height="18" rx="9" fill="url(#goldGradL3)" />
+    <rect x="37" y="91" width="46" height="16" rx="8" fill="#0F051D" />
+    <text x="60" y="103" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" fill="#FDE68A" text-anchor="middle" letter-spacing="1">LV.3</text>
+  </g>
+</svg>

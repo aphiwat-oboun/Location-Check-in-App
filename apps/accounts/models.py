@@ -10,6 +10,7 @@ class Profile(models.Model):
     city = models.CharField(max_length=100, default='ศรีสะเกษ')
     cover_image = models.ImageField(upload_to='covers/', blank=True, null=True)
     cover_image_url = models.URLField(max_length=500, blank=True, null=True)
+    cover_position = models.IntegerField(default=50, verbose_name="ตำแหน่งภาพพื้นหลังแนวตั้ง (%)")
     is_suspended = models.BooleanField(default=False)
     
     # Device & Security / Audit tracking fields
@@ -45,6 +46,19 @@ class Profile(models.Model):
         if self.cover_image_url:
             return self.cover_image_url
         return None
+
+    def get_gamification(self):
+        from .gamification import calculate_user_gamification
+        return calculate_user_gamification(self.user)
+
+    def get_level(self):
+        return self.get_gamification().get('level', 1)
+
+    def get_level_svg(self):
+        return self.get_gamification().get('level_svg', '/static/icons/levels/level-1.svg')
+
+    def get_top_badge(self):
+        return self.get_gamification().get('top_badge')
 
     def __str__(self):
         return f"{self.get_display_name()} (@{self.user.username})"

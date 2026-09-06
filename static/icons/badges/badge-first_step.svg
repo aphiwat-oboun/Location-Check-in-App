@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="b1Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#451A03" />
+      <stop offset="50%" stop-color="#78350F" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="b1Gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF3C7" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
+    <filter id="b1Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#2D1102" flood-opacity="0.6" />
+    </filter>
+  </defs>
+  <g filter="url(#b1Shadow)">
+    <circle cx="50" cy="50" r="44" fill="url(#b1Bg)" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#b1Gold)" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="39" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+    <!-- Footprint Graphic in Gold -->
+    <g transform="translate(50, 48) rotate(-15) scale(0.9)">
+      <!-- Heel -->
+      <ellipse cx="0" cy="16" rx="8" ry="10" fill="url(#b1Gold)" />
+      <!-- Ball -->
+      <ellipse cx="2" cy="-4" rx="12" ry="14" fill="url(#b1Gold)" />
+      <!-- Toes -->
+      <circle cx="-9" cy="-22" r="3" fill="url(#b1Gold)" />
+      <circle cx="-3" cy="-26" r="3.5" fill="url(#b1Gold)" />
+      <circle cx="4" cy="-26" r="3.2" fill="url(#b1Gold)" />
+      <circle cx="10" cy="-23" r="2.8" fill="url(#b1Gold)" />
+      <circle cx="15" cy="-18" r="2.2" fill="url(#b1Gold)" />
+    </g>
+    <!-- Sparkle -->
+    <path d="M72 26 Q72 31 77 31 Q72 31 72 36 Q72 31 67 31 Q72 31 72 26 Z" fill="url(#b1Gold)" />
+  </g>
+</svg>

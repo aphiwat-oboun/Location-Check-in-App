@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Background Luxury Gradient -->
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#062826" />
+      <stop offset="50%" stop-color="#0E4E47" />
+      <stop offset="100%" stop-color="#148376" />
+    </linearGradient>
+
+    <!-- Luxury Gold Accent Gradient -->
+    <linearGradient id="favGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF0BE" />
+      <stop offset="45%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <!-- Emerald Shimmer Gradient -->
+    <linearGradient id="favPin" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="35%" stop-color="#E6FAF7" />
+      <stop offset="100%" stop-color="#99E8DD" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow -->
+    <filter id="favShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#031615" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base with Gold Edge Accent -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#favBg)" />
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="none" stroke="url(#favGold)" stroke-width="1.2" stroke-opacity="0.85" />
+  <rect x="3.5" y="3.5" width="57" height="57" rx="14.5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" />
+
+  <!-- Luxury Pin Body -->
+  <g filter="url(#favShadow)">
+    <!-- Outer Precision Pin -->
+    <path d="M32 10 C22.06 10 14 18.06 14 28 C14 40.5 30 52.8 31.2 53.7 C31.7 54.1 32.3 54.1 32.8 53.7 C34 52.8 50 40.5 50 28 C50 18.06 41.94 10 32 10 Z" 
+          fill="url(#favPin)" />
+    
+    <!-- Inner Deep Emerald Core -->
+    <circle cx="32" cy="27" r="11" fill="#0A3833" />
+    <circle cx="32" cy="27" r="11" fill="none" stroke="url(#favGold)" stroke-width="1.2" />
+
+    <!-- 4-Point Golden Luxury Compass Star / Sparkle -->
+    <path d="M32 19.5 Q32 27 39.5 27 Q32 27 32 34.5 Q32 27 24.5 27 Q32 27 32 19.5 Z" fill="url(#favGold)" />
+    <circle cx="32" cy="27" r="2" fill="#FFFDF0" />
+  </g>
+</svg>

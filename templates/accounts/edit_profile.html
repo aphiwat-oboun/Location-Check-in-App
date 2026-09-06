@@ -26,13 +26,50 @@
         </div>
       </div>
 
-      <!-- Cover Image / Banner Upload Preview -->
+      <!-- Cover Image / Banner Upload Preview with Drag & Slider Repositioning -->
       <div style="padding-bottom:18px;border-bottom:1px solid var(--border-subtle);">
-        <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:8px;">ภาพพื้นหลังโปรไฟล์ (Cover / Banner)</label>
-        <div style="width:100%;height:120px;border-radius:14px;overflow:hidden;background:{% if profile.get_cover_url %}url('{{ profile.get_cover_url }}') center/cover{% else %}linear-gradient(135deg, #0F766E 0%, #14B8A6 45%, #2DD4BF 100%){% endif %};margin-bottom:10px;border:1px solid var(--border-light);position:relative;" id="coverPreviewWrap">
-          <img id="coverPreview" src="{{ profile.get_cover_url|default:'' }}" alt="Cover" style="width:100%;height:100%;object-fit:cover;{% if not profile.get_cover_url %}display:none;{% endif %}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label style="font-size:13.5px;font-weight:600;color:var(--text-main);">ภาพพื้นหลังโปรไฟล์ (Cover / Banner)</label>
+          <span style="font-size:11.5px;color:var(--text-muted);">ลากบนภาพหรือเลื่อนแถบเพื่อปรับตำแหน่ง</span>
         </div>
-        <input type="file" name="cover_image" accept="image/*" onchange="previewCoverImage(event)" style="font-size:12.5px;color:var(--text-muted);">
+
+        <div id="coverPreviewWrap" style="width:100%;height:140px;border-radius:14px;overflow:hidden;background:{% if profile.get_cover_url %}#1E293B{% else %}linear-gradient(135deg, #0F766E 0%, #14B8A6 45%, #2DD4BF 100%){% endif %};margin-bottom:10px;border:1px solid var(--border-light);position:relative;cursor:grab;user-select:none;touch-action:none;">
+          <img id="coverPreview" src="{{ profile.get_cover_url|default:'' }}" alt="Cover" style="width:100%;height:100%;object-fit:cover;object-position:center {{ profile.cover_position|default:50 }}%;{% if not profile.get_cover_url %}display:none;{% endif %}pointer-events:none;transition:none;">
+          
+          <div id="coverDragBadge" style="position:absolute;bottom:10px;right:10px;background:rgba(15,23,42,0.72);backdrop-filter:blur(4px);color:#FFFFFF;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:{% if profile.get_cover_url %}flex{% else %}none{% endif %};align-items:center;gap:5px;pointer-events:none;border:1px solid rgba(255,255,255,0.15);">
+            <i data-lucide="move" style="width:12px;height:12px;"></i>
+            <span>ลากภาพเพื่อเลื่อนตำแหน่ง</span>
+          </div>
+        </div>
+
+        <input type="hidden" name="cover_position" id="coverPositionInput" value="{{ profile.cover_position|default:50 }}">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+          <input type="file" name="cover_image" id="coverImageFileInput" accept="image/*" onchange="previewCoverImage(event)" style="font-size:12.5px;color:var(--text-muted);flex:1;">
+        </div>
+
+        <!-- Position Slider & Presets Control -->
+        <div id="coverPositionControls" style="background:var(--bg-surface-subtle, #F8FAFC);padding:12px 14px;border-radius:12px;border:1px solid var(--border-subtle);margin-top:6px;display:{% if profile.get_cover_url %}block{% else %}none{% endif %};">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:5px;">
+              <i data-lucide="move-vertical" style="width:13px;height:13px;color:var(--primary);"></i>
+              ตำแหน่งแนวตั้ง (Vertical Position)
+            </span>
+            <span id="coverPositionVal" style="font-size:12px;font-weight:800;color:var(--primary);">{{ profile.cover_position|default:50 }}%</span>
+          </div>
+          
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;font-weight:600;color:var(--text-muted);">บน</span>
+            <input type="range" id="coverPositionSlider" min="0" max="100" value="{{ profile.cover_position|default:50 }}" style="flex:1;accent-color:var(--primary);cursor:pointer;" oninput="onCoverSliderChange(this.value)">
+            <span style="font-size:11px;font-weight:600;color:var(--text-muted);">ล่าง</span>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button type="button" class="btn-cover-pos-preset" onclick="setCoverPos(0)">บนสุด (0%)</button>
+            <button type="button" class="btn-cover-pos-preset" onclick="setCoverPos(50)">ตรงกลาง (50%)</button>
+            <button type="button" class="btn-cover-pos-preset" onclick="setCoverPos(100)">ล่างสุด (100%)</button>
+          </div>
+        </div>
       </div>
 
       <!-- Display Name -->
@@ -140,14 +177,38 @@
   </div>
 </div>
 
+<style>
+.btn-cover-pos-preset {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-light, #E2E8F0);
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #1E293B);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.btn-cover-pos-preset:hover {
+  background: var(--primary-light, rgba(20, 184, 166, 0.1));
+  border-color: var(--primary, #0D9488);
+  color: var(--primary, #0D9488);
+}
+#coverPreviewWrap.is-dragging {
+  cursor: grabbing !important;
+}
+</style>
+
 <script>
   function previewImage(event) {
     const reader = new FileReader();
     reader.onload = function(){
       const output = document.getElementById('avatarPreview');
-      output.src = reader.result;
+      if (output) output.src = reader.result;
     };
-    if (event.target.files[0]) {
+    if (event.target.files && event.target.files[0]) {
       reader.readAsDataURL(event.target.files[0]);
     }
   }
@@ -156,14 +217,103 @@
     const reader = new FileReader();
     reader.onload = function(){
       const output = document.getElementById('coverPreview');
+      const badge = document.getElementById('coverDragBadge');
+      const controls = document.getElementById('coverPositionControls');
       if (output) {
         output.src = reader.result;
         output.style.display = 'block';
       }
+      if (badge) badge.style.display = 'flex';
+      if (controls) controls.style.display = 'block';
+      if (window.lucide) lucide.createIcons();
     };
-    if (event.target.files[0]) {
+    if (event.target.files && event.target.files[0]) {
       reader.readAsDataURL(event.target.files[0]);
     }
   }
+
+  function updateCoverPosition(pct) {
+    pct = Math.max(0, Math.min(100, Math.round(pct)));
+    const img = document.getElementById('coverPreview');
+    const input = document.getElementById('coverPositionInput');
+    const slider = document.getElementById('coverPositionSlider');
+    const valLabel = document.getElementById('coverPositionVal');
+
+    if (img) img.style.objectPosition = `center ${pct}%`;
+    if (input) input.value = pct;
+    if (slider) slider.value = pct;
+    if (valLabel) valLabel.textContent = `${pct}%`;
+  }
+
+  function onCoverSliderChange(val) {
+    updateCoverPosition(val);
+  }
+
+  function setCoverPos(pct) {
+    updateCoverPosition(pct);
+  }
+
+  // Interactive Drag-to-reposition logic (Mouse + Touch)
+  document.addEventListener('DOMContentLoaded', function() {
+    const wrap = document.getElementById('coverPreviewWrap');
+    if (!wrap) return;
+
+    let isDragging = false;
+    let startY = 0;
+    let startPos = 50;
+
+    function getPointerY(e) {
+      if (e.touches && e.touches.length > 0) {
+        return e.touches[0].clientY;
+      }
+      return e.clientY;
+    }
+
+    function onDragStart(e) {
+      const img = document.getElementById('coverPreview');
+      if (!img || img.style.display === 'none' || !img.getAttribute('src')) return;
+      
+      isDragging = true;
+      wrap.classList.add('is-dragging');
+      startY = getPointerY(e);
+      const input = document.getElementById('coverPositionInput');
+      startPos = input ? parseInt(input.value || '50', 10) : 50;
+      if (isNaN(startPos)) startPos = 50;
+      
+      if (e.type !== 'touchstart') {
+        e.preventDefault();
+      }
+    }
+
+    function onDragMove(e) {
+      if (!isDragging) return;
+      const currentY = getPointerY(e);
+      const deltaY = currentY - startY;
+      const wrapHeight = wrap.offsetHeight || 140;
+
+      // Dragging down shows top (lower %), dragging up shows bottom (higher %)
+      const deltaPercent = (deltaY / wrapHeight) * -100;
+      const newPos = startPos + deltaPercent;
+      updateCoverPosition(newPos);
+      if (e.cancelable && e.type !== 'touchmove') {
+        e.preventDefault();
+      }
+    }
+
+    function onDragEnd(e) {
+      if (isDragging) {
+        isDragging = false;
+        wrap.classList.remove('is-dragging');
+      }
+    }
+
+    wrap.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
+    wrap.addEventListener('touchstart', onDragStart, { passive: true });
+    window.addEventListener('touchmove', onDragMove, { passive: true });
+    window.addEventListener('touchend', onDragEnd, { passive: true });
+  });
 </script>
 {% endblock %}

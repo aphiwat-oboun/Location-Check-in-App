@@ -10,7 +10,7 @@
   <div class="tiktok-profile-card">
     
     <!-- Top Cover / Ambient Background -->
-    <div class="tiktok-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}');{% endif %} position: relative;">
+    <div class="tiktok-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}'); background-position: center {{ profile.cover_position|default:50 }}%;{% endif %} position: relative;">
       <div class="tiktok-cover-gradient"></div>
     </div>
 
@@ -43,6 +43,11 @@
             <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
             {{ profile.city|default:'ศรีสะเกษ' }}
           </span>
+          <span class="tiktok-dot-sep">•</span>
+          <span class="user-level-badge level-{{ gamification.level }}" onclick="openBadgesModal()" title="ดูระดับเลเวลและเหรียญรางวัล">
+            <img src="{{ gamification.level_svg }}" alt="LV.{{ gamification.level }}" style="width:14px;height:14px;vertical-align:middle;">
+            LV.{{ gamification.level }}
+          </span>
         </div>
       </div>
 
@@ -71,6 +76,38 @@
           <span class="tiktok-stat-lbl">ถูกใจ</span>
         </div>
 
+      </div>
+
+      <!-- Luxury VIP Explorer Level & XP Card -->
+      <div class="gamification-level-card" onclick="openBadgesModal()" title="แตะเพื่อดูรายละเอียดระดับเลเวลและเหรียญรางวัล">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="gamification-level-shield">
+            <img src="{{ gamification.level_svg }}" alt="Level {{ gamification.level }}" style="width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.25));">
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:800;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ gamification.level_title }}
+              </span>
+              <span class="gamification-level-pill" style="background:{{ gamification.level_gradient }};">
+                LV. {{ gamification.level }}
+              </span>
+            </div>
+            
+            <!-- XP Progress Bar -->
+            <div class="gamification-xp-bar-bg" style="margin-bottom:4px;">
+              <div class="gamification-xp-bar-fill" style="width:{{ gamification.level_progress_pct }}%;background:{{ gamification.level_gradient }};"></div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--text-muted);font-weight:600;">
+              <span>{{ gamification.xp }} XP</span>
+              <span>{% if gamification.level >= 5 %}ระดับสูงสุด (MAX){% else %}เป้าหมาย {{ gamification.xp_for_next_level }} XP ({{ gamification.level_progress_pct }}%){% endif %}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;color:var(--primary);padding-left:2px;">
+            <i data-lucide="chevron-right" style="width:18px;height:18px;"></i>
+          </div>
+        </div>
       </div>
 
       <!-- Action Buttons Row -->
@@ -102,7 +139,7 @@
           </button>
 
           <button class="btn-tiktok-action secondary" onclick="shareProfile('{{ profile_user.username }}', '{{ profile.get_display_name|escapejs }}')" title="แชร์โปรไฟล์นี้">
-            <i data-lucide="share-2" style="width:16px;height:16px;"></i>
+            <i data-lucide="share-2" style="width:15px;height:15px;"></i>
             <span>แชร์</span>
           </button>
         {% endif %}
@@ -138,6 +175,12 @@
       <span class="tab-count-pill">{{ liked_posts|length }}</span>
     </a>
 
+    <a href="?tab=badges" class="tiktok-tab-item {% if active_tab == 'badges' %}active{% endif %}" title="เหรียญตราเกียรติยศ">
+      <i data-lucide="award" style="width:18px;height:18px;"></i>
+      <span>เหรียญตรา</span>
+      <span class="tab-count-pill">{{ gamification.unlocked_count }}/{{ gamification.total_badges }}</span>
+    </a>
+
     {% if is_own_profile %}
     <a href="?tab=saved" class="tiktok-tab-item {% if active_tab == 'saved' %}active{% endif %}" title="โพสต์ที่บันทึกไว้">
       <i data-lucide="bookmark" style="width:18px;height:18px;"></i>
@@ -145,7 +188,6 @@
       <span class="tab-count-pill">{{ saved_posts|length }}</span>
     </a>
     {% endif %}
-  </div>
 
   <!-- Content Section: 3-Column TikTok Grid -->
   {% if active_tab == 'liked' %}

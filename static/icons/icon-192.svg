@@ -1,27 +1,111 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#14B8A6" />
-      <stop offset="50%" stop-color="#0D9488" />
-      <stop offset="100%" stop-color="#0F766E" />
+    <!-- Dark Emerald Obsidian Canvas Gradient -->
+    <linearGradient id="bgGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#041D1B" />
+      <stop offset="40%" stop-color="#093833" />
+      <stop offset="75%" stop-color="#0E574E" />
+      <stop offset="100%" stop-color="#148376" />
     </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="rgba(15, 23, 42, 0.25)" />
+
+    <!-- Radial Emerald Ambient Light -->
+    <radialGradient id="ambientGlow192" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.35" />
+      <stop offset="60%" stop-color="#0F766E" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- 24K Champagne Gold Metallic Gradient -->
+    <linearGradient id="goldGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5D1" />
+      <stop offset="25%" stop-color="#FCD34D" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="80%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
+
+    <!-- Subtle Gold Highlight for Insets -->
+    <linearGradient id="goldLight192" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#FDE68A" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#D97706" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Pearl Platinum Pin Gradient -->
+    <linearGradient id="pinGrad192" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#F0FDFB" />
+      <stop offset="80%" stop-color="#CCFBF1" />
+      <stop offset="100%" stop-color="#99F6E4" />
+    </linearGradient>
+
+    <!-- Glass Specular Reflection Gradient -->
+    <linearGradient id="glassReflect192" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.32" />
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Ultra Premium Heavy Drop Shadow -->
+    <filter id="luxuryDropShadow192" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#010D0C" flood-opacity="0.75" />
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0A2A26" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Inner Core Glow -->
+    <filter id="coreGlow192" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
-  
-  <!-- App Icon Background -->
-  <rect width="192" height="192" rx="42" fill="url(#bgGrad)" />
-  
-  <!-- Subtle Inner Ring -->
-  <rect x="8" y="8" width="176" height="176" rx="36" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2" />
-  
-  <!-- Map Pin Graphic with Heart Check-in -->
-  <g filter="url(#shadow)" transform="translate(40, 32)">
-    <!-- Pin Body -->
-    <path d="M56 0C25.072 0 0 25.072 0 56c0 38.5 48.5 76 52.4 79a5.8 5.8 0 0 0 7.2 0C63.5 132 112 94.5 112 56 112 25.072 86.928 0 56 0z" fill="#FFFFFF" />
-    
-    <!-- Inner Heart -->
-    <path d="M56 68l-2.4-2.18C45 58.2 38.4 52.3 38.4 45.2c0-5.8 4.6-10.4 10.4-10.4 3.3 0 6.4 1.5 8.4 3.9 2-2.4 5.1-3.9 8.4-3.9 5.8 0 10.4 4.6 10.4 10.4 0 7.1-6.6 13-15.2 20.62L56 68z" fill="#0D9488" />
+
+  <!-- Base Rounded Squircle -->
+  <rect x="4" y="4" width="184" height="184" rx="46" fill="url(#bgGrad192)" />
+  <rect x="4" y="4" width="184" height="184" rx="46" fill="url(#ambientGlow192)" />
+
+  <!-- Outer Champagne Gold Luxury Bevel Rim -->
+  <rect x="4.5" y="4.5" width="183" height="183" rx="45.5" fill="none" stroke="url(#goldGrad192)" stroke-width="2.5" stroke-opacity="0.9" />
+
+  <!-- Inner Subtle Metallic Inset Rim -->
+  <rect x="9" y="9" width="174" height="174" rx="41" fill="none" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.2" />
+
+  <!-- Glass Sheen Diagonal Arc Top-Half -->
+  <path d="M4 50 C4 24.6 24.6 4 50 4 L142 4 C167.4 4 188 24.6 188 50 C188 78 120 100 4 82 Z" fill="url(#glassReflect192)" />
+
+  <!-- Main Luxury Pin Composition -->
+  <g filter="url(#luxuryDropShadow192)">
+    <!-- Golden Backing Glow / Halo Ring for Pin -->
+    <path d="M96 24 C64.5 24 39 49.5 39 81 C39 120 89 157.5 93.3 160.7 C94.9 161.9 97.1 161.9 98.7 160.7 C103 157.5 153 120 153 81 C153 49.5 127.5 24 96 24 Z" 
+          fill="none" stroke="url(#goldGrad192)" stroke-width="3" stroke-opacity="0.85" />
+
+    <!-- Platinum & Pearl Map Pin Shell -->
+    <path d="M96 26 C66.2 26 42 50.2 42 80 C42 117.5 89.6 153.8 93.8 156.9 C95.1 157.9 96.9 157.9 98.2 156.9 C102.4 153.8 150 117.5 150 80 C150 50.2 125.8 26 96 26 Z" 
+          fill="url(#pinGrad192)" />
+
+    <!-- Sleek Top Highlight Reflection on Pin -->
+    <path d="M96 28 C70 28 50 48.5 48 74 C56 54 80 44 116 45 C132 45.4 140 49 144 54 C142 39 121 28 96 28 Z" 
+          fill="#FFFFFF" fill-opacity="0.65" />
+
+    <!-- Deep Emerald Obsidian Inset Lens / Chamber -->
+    <circle cx="96" cy="77" r="32" fill="#042320" />
+    <circle cx="96" cy="77" r="32" fill="none" stroke="url(#goldGrad192)" stroke-width="2.5" />
+    <circle cx="96" cy="77" r="28" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" />
+
+    <!-- Luxury 4-Point Golden Celestial Star & Lens Diamonds -->
+    <!-- Secondary Diagonal Micro Sparkles -->
+    <path d="M96 61 Q96 77 112 77 Q96 77 96 93 Q96 77 80 77 Q96 77 96 61 Z" 
+          transform="rotate(45 96 77)" fill="url(#goldLight192)" opacity="0.65" />
+
+    <!-- Primary Diamond Star Pin -->
+    <path d="M96 55 Q96 77 118 77 Q96 77 96 99 Q96 77 74 77 Q96 77 96 55 Z" 
+          fill="url(#goldGrad192)" filter="url(#coreGlow192)" />
+
+    <!-- Pure Brilliant Core Diamond Center Gem -->
+    <circle cx="96" cy="77" r="4.5" fill="#FFFDF5" />
+    <circle cx="96" cy="77" r="2.2" fill="#FFFFFF" />
   </g>
+
+  <!-- Micro Corner Sparkle Top Right -->
+  <path d="M152 28 Q152 35 159 35 Q152 35 152 42 Q152 35 145 35 Q152 35 152 28 Z" fill="url(#goldGrad192)" opacity="0.8" />
+  <circle cx="152" cy="35" r="1.2" fill="#FFFFFF" />
 </svg>

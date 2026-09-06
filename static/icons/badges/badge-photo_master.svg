@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="b9Amethyst" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3E8FF" />
+      <stop offset="30%" stop-color="#C084FC" />
+      <stop offset="65%" stop-color="#9333EA" />
+      <stop offset="100%" stop-color="#581C87" />
+    </linearGradient>
+    <linearGradient id="b9Gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="b9Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B0764" />
+      <stop offset="60%" stop-color="#1E0538" />
+      <stop offset="100%" stop-color="#0F001C" />
+    </linearGradient>
+    <filter id="b9Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#7E22CE" flood-opacity="0.55" />
+    </filter>
+  </defs>
+  <g filter="url(#b9Shadow)">
+    <circle cx="50" cy="50" r="44" fill="url(#b9Bg)" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#b9Amethyst)" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="39" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+
+    <!-- Vintage Rangefinder Camera with Lens Flare -->
+    <g transform="translate(50, 50)">
+      <!-- Flash Hotshoe & Viewfinder -->
+      <rect x="-14" y="-20" width="10" height="6" rx="2" fill="url(#b9Amethyst)" />
+      <rect x="8" y="-18" width="8" height="4" rx="2" fill="url(#b9Gold)" />
+
+      <!-- Camera Body -->
+      <rect x="-24" y="-14" width="48" height="32" rx="6" fill="url(#b9Amethyst)" />
+      <rect x="-22" y="-12" width="44" height="28" rx="4" fill="#1E0538" />
+
+      <!-- Lens Assembly -->
+      <circle cx="0" cy="2" r="14" fill="url(#b9Amethyst)" />
+      <circle cx="0" cy="2" r="11" fill="#0A0214" />
+      <circle cx="0" cy="2" r="11" fill="none" stroke="url(#b9Gold)" stroke-width="1.5" />
+      <circle cx="0" cy="2" r="7" fill="url(#b9Amethyst)" opacity="0.6" />
+
+      <!-- Lens Flare Glint -->
+      <circle cx="-3" cy="-1" r="3" fill="#FFFFFF" />
+      <circle cx="3" cy="5" r="1.5" fill="#C084FC" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Imperial 24K Gold Master Gradient -->
+    <linearGradient id="goldGradL4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF0" />
+      <stop offset="20%" stop-color="#FEF08A" />
+      <stop offset="45%" stop-color="#F59E0B" />
+      <stop offset="75%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Deep Imperial Crimson Ruby Gradient -->
+    <linearGradient id="rubyGradL4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#881337" />
+      <stop offset="50%" stop-color="#4C0519" />
+      <stop offset="100%" stop-color="#1F020A" />
+    </linearGradient>
+
+    <linearGradient id="flameRuby" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDA4AF" />
+      <stop offset="50%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+
+    <linearGradient id="specularRuby" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <filter id="shadowLvl4" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#26030E" flood-opacity="0.75" />
+    </filter>
+  </defs>
+
+  <g filter="url(#shadowLvl4)">
+    <!-- Golden Master Laurels -->
+    <path d="M10 40 Q28 16 50 34 L50 64 Q22 54 10 40 Z" fill="url(#goldGradL4)" />
+    <path d="M110 40 Q92 16 70 34 L70 64 Q98 54 110 40 Z" fill="url(#goldGradL4)" />
+
+    <!-- Top Crown Tri-Crest -->
+    <polygon points="60,2 67,14 53,14" fill="url(#goldGradL4)" />
+    <polygon points="45,6 50,16 38,16" fill="url(#goldGradL4)" />
+    <polygon points="75,6 82,16 70,16" fill="url(#goldGradL4)" />
+
+    <!-- Main Imperial Crest Shield -->
+    <polygon points="60,8 104,28 104,74 60,114 16,74 16,28" fill="url(#goldGradL4)" />
+    <polygon points="60,16 96,34 96,70 60,104 24,70 24,34" fill="url(#rubyGradL4)" />
+    <polygon points="60,16 96,34 96,70 60,104 24,70 24,34" fill="none" stroke="url(#goldGradL4)" stroke-width="2.5" />
+
+    <!-- Specular Arc -->
+    <path d="M24 34 L60 16 L96 34 L96 52 Q60 38 24 52 Z" fill="url(#specularRuby)" />
+
+    <!-- Center Ruby Diamond Gemstone & Golden Master Star -->
+    <g transform="translate(60, 56)">
+      <circle cx="0" cy="0" r="25" fill="none" stroke="url(#goldGradL4)" stroke-width="3" />
+      <circle cx="0" cy="0" r="20" fill="#2E0411" />
+
+      <!-- Faceted Ruby Octagon -->
+      <polygon points="0,-16 11,-11 16,0 11,11 0,16 -11,11 -16,0 -11,-11" fill="url(#flameRuby)" />
+      
+      <!-- 8-Point Golden Radiant Sparkle -->
+      <polygon points="0,-18 3,-5 18,0 3,5 0,18 -3,5 -18,0 -3,-5" fill="url(#goldGradL4)" />
+      
+      <circle cx="0" cy="0" r="4.5" fill="#FFFFFF" />
+      <circle cx="0" cy="0" r="2" fill="#E11D48" />
+    </g>
+
+    <!-- Level Tag Pill -->
+    <rect x="36" y="90" width="48" height="18" rx="9" fill="url(#goldGradL4)" />
+    <rect x="37" y="91" width="46" height="16" rx="8" fill="#1F020A" />
+    <text x="60" y="103" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" fill="#FEF08A" text-anchor="middle" letter-spacing="1">LV.4</text>
+  </g>
+</svg>

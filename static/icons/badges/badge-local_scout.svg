@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="b2Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+    <linearGradient id="b2Silver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="35%" stop-color="#CBD5E1" />
+      <stop offset="70%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <linearGradient id="b2Cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <filter id="b2Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#080D1A" flood-opacity="0.65" />
+    </filter>
+  </defs>
+  <g filter="url(#b2Shadow)">
+    <circle cx="50" cy="50" r="44" fill="url(#b2Bg)" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#b2Silver)" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="39" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+    
+    <!-- Compass Rose -->
+    <g transform="translate(50, 50)">
+      <!-- Outer Dial Tick Marks -->
+      <circle cx="0" cy="0" r="28" fill="none" stroke="url(#b2Silver)" stroke-width="1.5" stroke-dasharray="3, 4" />
+      
+      <!-- Primary 4 Points -->
+      <polygon points="0,-22 4,0 0,2 -4,0" fill="url(#b2Cyan)" />
+      <polygon points="0,22 4,0 0,-2 -4,0" fill="url(#b2Silver)" />
+      <polygon points="22,0 0,4 -2,0 0,-4" fill="url(#b2Silver)" />
+      <polygon points="-22,0 0,4 2,0 0,-4" fill="url(#b2Silver)" />
+
+      <!-- Center Star Sapphire -->
+      <circle cx="0" cy="0" r="5" fill="#FFFFFF" />
+      <circle cx="0" cy="0" r="2.5" fill="#0284C7" />
+    </g>
+  </g>
+</svg>

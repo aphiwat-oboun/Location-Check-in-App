@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="b4Diamond" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="30%" stop-color="#7DD3FC" />
+      <stop offset="65%" stop-color="#818CF8" />
+      <stop offset="100%" stop-color="#C084FC" />
+    </linearGradient>
+    <linearGradient id="b4Gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="b4Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#020617" />
+      <stop offset="100%" stop-color="#1E1B4B" />
+    </linearGradient>
+    <filter id="b4Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0369A1" flood-opacity="0.5" />
+    </filter>
+  </defs>
+  <g filter="url(#b4Shadow)">
+    <circle cx="50" cy="50" r="44" fill="url(#b4Bg)" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#b4Diamond)" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="39" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+
+    <!-- Imperial Royal Crown -->
+    <g transform="translate(50, 48)">
+      <!-- Crown Base -->
+      <path d="M-22 14 L22 14 L18 18 L-18 18 Z" fill="url(#b4Gold)" />
+      
+      <!-- Crown Spikes -->
+      <path d="M-22 14 L-24 -4 L-12 6 L0 -14 L12 6 L24 -4 L22 14 Z" fill="url(#b4Gold)" />
+      
+      <!-- Jewels on Peaks -->
+      <circle cx="-24" cy="-4" r="3" fill="#38BDF8" />
+      <circle cx="0" cy="-14" r="4" fill="#FFFFFF" />
+      <circle cx="24" cy="-4" r="3" fill="#F472B6" />
+
+      <!-- Center Diamond Heart -->
+      <polygon points="0,0 6,6 0,12 -6,6" fill="url(#b4Diamond)" />
+      <circle cx="0" cy="6" r="1.5" fill="#FFFFFF" />
+    </g>
+  </g>
+</svg>

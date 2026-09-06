@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="b5Amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEDD5" />
+      <stop offset="35%" stop-color="#FB923C" />
+      <stop offset="70%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#7C2D12" />
+    </linearGradient>
+    <linearGradient id="b5Bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#431407" />
+      <stop offset="60%" stop-color="#1C0602" />
+      <stop offset="100%" stop-color="#0F0300" />
+    </linearGradient>
+    <filter id="b5Shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#431407" flood-opacity="0.6" />
+    </filter>
+  </defs>
+  <g filter="url(#b5Shadow)">
+    <circle cx="50" cy="50" r="44" fill="url(#b5Bg)" />
+    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#b5Amber)" stroke-width="2.5" />
+    <circle cx="50" cy="50" r="39" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+
+    <!-- Coffee Cup & Aroma Steam -->
+    <g transform="translate(50, 52)">
+      <!-- Aroma Steam -->
+      <path d="M-6 -18 Q-10 -24 -6 -28" fill="none" stroke="url(#b5Amber)" stroke-width="2" stroke-linecap="round" />
+      <path d="M0 -20 Q-4 -26 0 -30" fill="none" stroke="url(#b5Amber)" stroke-width="2" stroke-linecap="round" />
+      <path d="M6 -18 Q2 -24 6 -28" fill="none" stroke="url(#b5Amber)" stroke-width="2" stroke-linecap="round" />
+
+      <!-- Cup Body -->
+      <path d="M-16 -12 L16 -12 C16 4 10 12 0 12 C-10 12 -16 4 -16 -12 Z" fill="url(#b5Amber)" />
+      <!-- Handle -->
+      <path d="M14 -8 C22 -8 22 4 14 6" fill="none" stroke="url(#b5Amber)" stroke-width="3" stroke-linecap="round" />
+      <!-- Saucer -->
+      <path d="M-20 16 L20 16" stroke="url(#b5Amber)" stroke-width="3" stroke-linecap="round" />
+
+      <!-- Coffee Heart Art -->
+      <path d="M0 -3 Q-4 -9 -7 -5 Q-10 -1 0 5 Q10 -1 7 -5 Q4 -9 0 -3 Z" fill="#431407" transform="scale(0.8) translate(0, -6)" />
+    </g>
+  </g>
+</svg>

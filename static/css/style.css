@@ -299,28 +299,55 @@ input, textarea, select {
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: 12px;
+  padding: 8px 10px;
   margin-bottom: 24px;
+  text-decoration: none;
+  border-radius: 14px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .brand-icon {
-  width: 34px;
-  height: 34px;
-  background: var(--primary-light);
-  color: var(--primary);
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  box-shadow: 0 4px 14px rgba(4, 34, 31, 0.28), 0 0 0 1px rgba(253, 230, 138, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #04221F;
+}
+
+.brand-icon .brand-mark-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.brand-logo:hover .brand-icon {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 22px rgba(4, 34, 31, 0.38), 0 0 0 1.5px rgba(253, 230, 138, 0.65);
 }
 
 .brand-name {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 17.5px;
+  font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #0F172A 0%, #0F766E 60%, #159F8C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+:root[data-theme="dark"] .brand-name {
+  background: linear-gradient(135deg, #FFFFFF 0%, #5EEAD4 70%, #2DD4BF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .nav-menu {
@@ -451,7 +478,8 @@ input, textarea, select {
   padding: 0 24px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
-  z-index: 15;
+  position: relative;
+  z-index: 10000;
 }
 
 .search-container {
@@ -2856,6 +2884,7 @@ input, textarea, select {
    ========================================================================== */
 .user-menu-dropdown-wrapper {
   position: relative;
+  z-index: 100050;
 }
 
 .user-menu-popover {
@@ -2863,12 +2892,12 @@ input, textarea, select {
   top: calc(100% + 10px);
   right: 0;
   width: 280px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border-radius: 20px;
   border: 1px solid var(--border-light, #E2E8F0);
-  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(21, 159, 140, 0.08);
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(21, 159, 140, 0.12);
   padding: 8px;
-  z-index: 200;
+  z-index: 100050 !important;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px) scale(0.96);
@@ -2881,6 +2910,7 @@ input, textarea, select {
   visibility: visible;
   transform: translateY(0) scale(1);
   pointer-events: auto;
+  z-index: 100050 !important;
 }
 
 .user-menu-header {
@@ -4236,5 +4266,308 @@ input, textarea, select {
     border-radius: 18px !important;
   }
 }
+
+/* ==========================================================================
+   LUXURY GAMIFICATION & BADGES SYSTEM (WORLD-CLASS JEWEL AESTHETICS)
+   ========================================================================== */
+
+@keyframes jewelShimmer {
+  0% { transform: translateX(-100%) rotate(25deg); opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { transform: translateX(200%) rotate(25deg); opacity: 0; }
+}
+
+@keyframes pulseGoldGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.7), 0 0 45px rgba(245, 158, 11, 0.35); }
+}
+
+@keyframes pulseDiamondGlow {
+  0%, 100% { box-shadow: 0 0 18px rgba(56, 189, 248, 0.5), 0 0 35px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 28px rgba(56, 189, 248, 0.8), 0 0 55px rgba(139, 92, 246, 0.5); }
+}
+
+/* Luxury Level Banner */
+.gamification-level-card {
+  position: relative;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border-light, #E2E8F0);
+  border-radius: 20px;
+  padding: 18px 20px;
+  margin: 14px 0 18px 0;
+  box-shadow: 0 8px 30px -6px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(21, 159, 140, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gamification-level-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gamification-rank-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gamification-rank-icon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.gamification-rank-icon-wrap::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+  animation: jewelShimmer 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.gamification-level-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #159F8C, #0D7A6C);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(21, 159, 140, 0.3);
+}
+
+.gamification-xp-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-surface-subtle, #F1F5F9);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gamification-xp-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #159F8C 0%, #3B82F6 50%, #8B5CF6 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Luxury Badges Grid */
+.luxury-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.luxury-badge-card {
+  position: relative;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1.5px solid var(--border-light, #E2E8F0);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.luxury-badge-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary, #159F8C);
+}
+
+.luxury-badge-card.unlocked {
+  border-color: rgba(21, 159, 140, 0.35);
+}
+
+.luxury-badge-card.locked {
+  opacity: 0.72;
+  filter: grayscale(0.2);
+}
+
+.luxury-badge-card.locked:hover {
+  opacity: 0.95;
+  filter: grayscale(0);
+}
+
+.luxury-badge-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.luxury-jewel-icon-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.luxury-jewel-icon-wrap::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%);
+  animation: jewelShimmer 4.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.luxury-badge-tier-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.luxury-badge-tier-tag.diamond { background: rgba(56, 189, 248, 0.15); color: #0284C7; border: 1px solid rgba(56, 189, 248, 0.3); }
+.luxury-badge-tier-tag.gold { background: rgba(245, 158, 11, 0.15); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+.luxury-badge-tier-tag.silver { background: rgba(148, 163, 184, 0.15); color: #475569; border: 1px solid rgba(148, 163, 184, 0.3); }
+.luxury-badge-tier-tag.bronze { background: rgba(217, 119, 6, 0.15); color: #B45309; border: 1px solid rgba(217, 119, 6, 0.3); }
+.luxury-badge-tier-tag.emerald { background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+.luxury-badge-tier-tag.ruby { background: rgba(244, 63, 94, 0.15); color: #E11D48; border: 1px solid rgba(244, 63, 94, 0.3); }
+.luxury-badge-tier-tag.amethyst { background: rgba(168, 85, 247, 0.15); color: #7C3AED; border: 1px solid rgba(168, 85, 247, 0.3); }
+.luxury-badge-tier-tag.amber { background: rgba(234, 88, 12, 0.15); color: #C2410C; border: 1px solid rgba(234, 88, 12, 0.3); }
+.luxury-badge-tier-tag.forest { background: rgba(5, 150, 105, 0.15); color: #047857; border: 1px solid rgba(5, 150, 105, 0.3); }
+
+.luxury-badge-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main, #0F172A);
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.luxury-badge-subtitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, #64748B);
+  margin-bottom: 6px;
+}
+
+.luxury-badge-desc {
+  font-size: 12.5px;
+  color: var(--text-muted, #475569);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.luxury-badge-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-light, #F1F5F9);
+}
+
+.luxury-badge-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.luxury-badge-status-pill.unlocked {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+.luxury-badge-status-pill.locked {
+  background: var(--bg-surface-subtle, #F1F5F9);
+  color: var(--text-muted, #64748B);
+  border: 1px solid var(--border-light, #E2E8F0);
+}
+
+/* User Badge Pill (Mini tag next to author name on posts) */
+.user-rank-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* Dark Mode Overrides for Gamification */
+:root[data-theme="dark"] .gamification-level-card,
+:root[data-theme="dark"] .luxury-badge-card {
+  background: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+:root[data-theme="dark"] .luxury-badge-progress-wrap {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme="dark"] .luxury-badge-status-pill.unlocked {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34D399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+:root[data-theme="dark"] .luxury-badge-status-pill.locked {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #94A3B8 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+@media (max-width: 640px) {
+  .luxury-badges-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 
 

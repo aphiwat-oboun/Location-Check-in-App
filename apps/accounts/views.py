@@ -399,6 +399,9 @@ def profile_view(request, username=None):
             lp.is_liked = lp.id in user_liked_ids
             lp.is_saved = lp.id in user_saved_ids
 
+    from .gamification import calculate_user_gamification
+    gamification = calculate_user_gamification(user_obj)
+
     context = {
         'profile_user': user_obj,
         'profile': profile,
@@ -413,6 +416,7 @@ def profile_view(request, username=None):
         'total_likes_received': total_likes_received,
         'is_following': is_following,
         'is_own_profile': is_own_profile,
+        'gamification': gamification,
         'active_tab': request.GET.get('tab', 'posts')
     }
     return render(request, 'accounts/profile.html', context)
@@ -508,6 +512,15 @@ def edit_profile_view(request):
             profile.avatar = request.FILES['avatar']
         if 'cover_image' in request.FILES:
             profile.cover_image = request.FILES['cover_image']
+        
+        cover_position = request.POST.get('cover_position')
+        if cover_position is not None and str(cover_position).strip() != '':
+            try:
+                pos_val = int(cover_position)
+                profile.cover_position = max(0, min(100, pos_val))
+            except (ValueError, TypeError):
+                pass
+
         profile.display_name = display_name
         profile.bio = bio
         profile.city = city

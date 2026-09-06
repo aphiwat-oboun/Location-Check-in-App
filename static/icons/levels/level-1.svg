@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Bronze & Copper Metallic Gradient -->
+    <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="25%" stop-color="#D97706" />
+      <stop offset="60%" stop-color="#B45309" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Emerald Core Gradient -->
+    <linearGradient id="jadeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F5E56" />
+      <stop offset="60%" stop-color="#093833" />
+      <stop offset="100%" stop-color="#041E1C" />
+    </linearGradient>
+
+    <!-- Specular Highlight -->
+    <linearGradient id="specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <filter id="shadowLvl1" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#021412" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Outer Bronze Shield / Hexagon -->
+  <g filter="url(#shadowLvl1)">
+    <!-- Base Shield -->
+    <polygon points="60,8 104,24 104,74 60,112 16,74 16,24" fill="url(#bronzeGrad)" />
+    
+    <!-- Inner Dark Jade Core -->
+    <polygon points="60,16 96,30 96,70 60,102 24,70 24,30" fill="url(#jadeGrad)" />
+    <polygon points="60,16 96,30 96,70 60,102 24,70 24,30" fill="none" stroke="url(#bronzeGrad)" stroke-width="2" />
+
+    <!-- Top Gloss Arc -->
+    <path d="M24 30 L60 16 L96 30 L96 50 Q60 38 24 50 Z" fill="url(#specular)" />
+
+    <!-- Central Compass Needle / Wayfarer Arrow -->
+    <g transform="translate(60, 56)">
+      <!-- Outer Compass Ring -->
+      <circle cx="0" cy="0" r="22" fill="none" stroke="url(#bronzeGrad)" stroke-width="2.5" />
+      <circle cx="0" cy="0" r="18" fill="#04201D" />
+
+      <!-- North Star Needle -->
+      <polygon points="0,-16 5,0 0,3 -5,0" fill="#F59E0B" />
+      <polygon points="0,16 5,0 0,-3 -5,0" fill="#92400E" />
+      
+      <!-- Central Bronze Rivet -->
+      <circle cx="0" cy="0" r="4" fill="url(#bronzeGrad)" />
+      <circle cx="0" cy="0" r="1.5" fill="#FFFDF0" />
+    </g>
+
+    <!-- Level Tag Pill -->
+    <rect x="36" y="90" width="48" height="18" rx="9" fill="url(#bronzeGrad)" />
+    <rect x="37" y="91" width="46" height="16" rx="8" fill="#041E1C" />
+    <text x="60" y="103" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="800" fill="#FDE68A" text-anchor="middle" letter-spacing="1">LV.1</text>
+  </g>
+</svg>
