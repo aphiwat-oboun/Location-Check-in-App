@@ -163,7 +163,7 @@
 
       <!-- Admin Panel Shortcut for Staff Users -->
       {% if user.is_authenticated and user.is_staff %}
-      <div style="padding: 300px 14px 10px 14px;">
+      <div style="padding: 250px 14px 10px 14px;">
         <a href="{% url 'admin_panel:dashboard' %}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; background: #E6F5F3; color: #0D7A6C; text-decoration: none; font-weight: 700; font-size: 13px; border: 1px solid rgba(21, 159, 140, 0.3); box-shadow: 0 2px 8px rgba(21, 159, 140, 0.12); transition: all 0.2s ease;">
           <div style="width: 26px; height: 26px; border-radius: 8px; background: #159F8C; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #FFFFFF;">
             <i data-lucide="shield" style="width: 15px; height: 15px;"></i>
