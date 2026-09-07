@@ -287,3 +287,78 @@ def list_notifications_api(request):
 def mark_notifications_read_api(request):
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     return JsonResponse({'status': 'ok'})
+
+@require_POST
+def submit_report_api(request):
+    """
+    User endpoint to submit a report on post, comment, location, or user
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'message': 'กรุณาเข้าสู่ระบบก่อนส่งรายงาน'}, status=401)
+
+    try:
+        report_type = request.POST.get('report_type', 'post').strip()
+        target_id = request.POST.get('target_id')
+        reason = request.POST.get('reason', 'inappropriate').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not target_id:
+            return JsonResponse({'success': False, 'message': 'ไม่พบข้อมูลเป้าหมายที่ต้องการรายงาน'}, status=400)
+
+        from apps.admin_panel.models import Report, Notification as AdminNotification
+        from apps.locations.models import Location
+        from apps.interactions.models import Comment
+        from django.contrib.auth.models import User
+
+        post_obj = None
+        comment_obj = None
+        location_obj = None
+        target_user_obj = None
+
+        if report_type == 'post':
+            post_obj = Post.objects.filter(id=target_id).first()
+            if not post_obj:
+                return JsonResponse({'success': False, 'message': 'ไม่พบโพสต์ที่ต้องการรายงาน'}, status=404)
+        elif report_type == 'comment':
+            comment_obj = Comment.objects.filter(id=target_id).first()
+            if not comment_obj:
+                return JsonResponse({'success': False, 'message': 'ไม่พบคอมเมนต์ที่ต้องการรายงาน'}, status=404)
+        elif report_type == 'location':
+            location_obj = Location.objects.filter(id=target_id).first()
+            if not location_obj:
+                return JsonResponse({'success': False, 'message': 'ไม่พบสถานที่ที่ต้องการรายงาน'}, status=404)
+        elif report_type == 'user':
+            target_user_obj = User.objects.filter(id=target_id).first()
+            if not target_user_obj:
+                return JsonResponse({'success': False, 'message': 'ไม่พบผู้ใช้ที่ต้องการรายงาน'}, status=404)
+
+        report = Report.objects.create(
+            reporter=request.user,
+            report_type=report_type,
+            reason=reason,
+            description=description,
+            post=post_obj,
+            comment=comment_obj,
+            location=location_obj,
+            target_user=target_user_obj,
+            status='pending'
+        )
+
+        # Notify all admins
+        admins = User.objects.filter(is_staff=True)
+        for admin in admins:
+            AdminNotification.objects.create(
+                user=admin,
+                category='report',
+                title=f'มีรายงานใหม่ #{report.id} รอการตรวจสอบ',
+                message=f'@{request.user.username} รายงาน {report.get_report_type_display()} (เหตุผล: {report.get_reason_display_thai()})',
+                link='/admin-panel/reports/',
+                is_read=False
+            )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'ส่งรายงานสำเร็จแล้ว เจ้าหน้าที่จะดำเนินการตรวจสอบโดยเร็วที่สุด'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'เกิดข้อผิดพลาด: {str(e)}'}, status=400)

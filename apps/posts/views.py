@@ -86,8 +86,27 @@ def create_post_view(request):
             if not place_name:
                 place_name = 'สถานที่ท่องเที่ยว'
 
+            # Get or create category (support custom category when 'other' or custom input is given)
+            custom_category = request.POST.get('custom_category', '').strip()
+            category_obj = None
+            if custom_category and (category_id == 'other' or not category_id or not str(category_id).isdigit()):
+                category_obj, _ = Category.objects.get_or_create(
+                    name=custom_category,
+                    defaults={'slug': slugify(custom_category, allow_unicode=True) or 'cat', 'icon': 'tag'}
+                )
+            elif category_id and str(category_id).isdigit():
+                category_obj = Category.objects.filter(id=category_id).first()
+
+            if not category_obj and custom_category:
+                category_obj, _ = Category.objects.get_or_create(
+                    name=custom_category,
+                    defaults={'slug': slugify(custom_category, allow_unicode=True) or 'cat', 'icon': 'tag'}
+                )
+
+            if not category_obj:
+                category_obj = Category.objects.first()
+
             # Get or create location
-            category_obj = Category.objects.filter(id=category_id).first() if category_id else Category.objects.first()
             location, created = Location.objects.get_or_create(
                 name=place_name,
                 defaults={
@@ -205,7 +224,14 @@ def edit_post_view(request, pk):
             PostImage.objects.filter(post=post, id__in=delete_image_ids).delete()
             
         post.caption = caption
-        if category_id:
+        custom_category = request.POST.get('custom_category', '').strip()
+        if custom_category and (category_id == 'other' or not category_id or not str(category_id).isdigit()):
+            category_obj, _ = Category.objects.get_or_create(
+                name=custom_category,
+                defaults={'slug': slugify(custom_category, allow_unicode=True) or 'cat', 'icon': 'tag'}
+            )
+            post.category = category_obj
+        elif category_id and str(category_id).isdigit():
             category_obj = Category.objects.filter(id=category_id).first()
             if category_obj:
                 post.category = category_obj
