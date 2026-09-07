@@ -56,10 +56,6 @@
     <input type="hidden" name="lat" :value="lat">
     <input type="hidden" name="lng" :value="lng">
     
-    <!-- Hidden container for camera data URLs -->
-    <template x-for="(img, idx) in images" :key="img.id">
-      <input type="hidden" name="image_urls" :value="img.url">
-    </template>
     <input type="file" x-ref="allFilesInput" name="images" multiple style="display:none;">
 
     <!-- =======================================================================
@@ -471,11 +467,12 @@
         this.closeCameraModal();
       },
 
-      handleCameraUpload(event) {
+      async handleCameraUpload(event) {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
-        files.forEach(file => {
+        for (const rawFile of files) {
+          const file = await compressImageFile(rawFile, 1920, 1920, 0.85);
           const reader = new FileReader();
           reader.onload = (e) => {
             this.images.push({
@@ -489,17 +486,18 @@
             });
           };
           reader.readAsDataURL(file);
-        });
+        }
 
         // Reset value so user can take consecutive photos
         event.target.value = '';
       },
 
-      handleMultipleImagesUpload(event) {
+      async handleMultipleImagesUpload(event) {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
-        files.forEach((file) => {
+        for (const rawFile of files) {
+          const file = await compressImageFile(rawFile, 1920, 1920, 0.85);
           const reader = new FileReader();
           reader.onload = (e) => {
             this.images.push({
@@ -513,7 +511,7 @@
             });
           };
           reader.readAsDataURL(file);
-        });
+        }
 
         // Reset input value so same files can be re-selected if desired
         event.target.value = '';
