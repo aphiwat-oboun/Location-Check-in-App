@@ -4,39 +4,56 @@
 {% block title %}แก้ไขโปรไฟล์ - ที่นี่มีอะไร?{% endblock %}
 
 {% block content %}
-<div style="flex:1;overflow-y:auto;padding:24px 24px 240px 24px;max-width:640px;margin:0 auto;width:100%;">
+<div class="edit-profile-page-wrap">
   
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-    <a href="{% url 'accounts:profile' %}" class="btn-icon-circle" style="width:36px;height:36px;">
+  <div class="edit-profile-header">
+    <a href="{% url 'accounts:profile' %}" class="btn-icon-circle" style="width:38px;height:38px;background:var(--bg-surface);border:1px solid var(--border-light);box-shadow:var(--shadow-sm);" title="ย้อนกลับไปหน้าโปรไฟล์">
       <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
     </a>
-    <h1 style="font-size:20px;font-weight:700;color:var(--text-main);">แก้ไขข้อมูลส่วนตัว</h1>
+    <div>
+      <h1 style="font-size:20px;font-weight:700;color:var(--text-main);margin:0;">แก้ไขข้อมูลส่วนตัว</h1>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:2px 0 0 0;">ปรับแต่งรูปโปรไฟล์ ภาพพื้นหลัง และข้อมูลของคุณ</p>
+    </div>
   </div>
 
-  <div style="background:var(--bg-surface, #FFFFFF);border-radius:var(--radius-xl);border:1px solid var(--border-light);padding:24px;box-shadow:var(--shadow-sm);">
-    <form method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:18px;">
+  <div class="edit-profile-card">
+    <form id="editProfileForm" method="POST" enctype="multipart/form-data" onsubmit="handleProfileFormSubmit(event)">
       {% csrf_token %}
 
-      <!-- Avatar Upload Preview -->
-      <div style="display:flex;align-items:center;gap:20px;padding-bottom:18px;border-bottom:1px solid var(--border-subtle);">
-        <img id="avatarPreview" src="{{ profile.get_avatar_url }}" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light);box-shadow:var(--shadow-sm);">
-        <div>
-          <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">รูปโปรไฟล์</label>
-          <input type="file" name="avatar" accept="image/*" onchange="previewImage(event)" style="font-size:12.5px;color:var(--text-muted);">
+      <!-- 1. AVATAR UPLOAD SECTION (Guaranteed 100% Round & Mobile Friendly) -->
+      <div class="avatar-upload-row">
+        <div class="avatar-preview-container" onclick="document.getElementById('avatarFileInput').click()" title="แตะเพื่อเลือกรูปโปรไฟล์ใหม่">
+          <img id="avatarPreview" src="{{ profile.get_avatar_url }}" alt="Avatar" class="avatar-round-img">
+          <div class="avatar-camera-badge">
+            <i data-lucide="camera" style="width:14px;height:14px;"></i>
+          </div>
+        </div>
+
+        <div class="avatar-info-col">
+          <label style="font-size:14px;font-weight:700;color:var(--text-main);margin:0;">รูปโปรไฟล์</label>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">
+            <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="btn-select-file">
+              <i data-lucide="image" style="width:14px;height:14px;color:var(--primary);"></i>
+              <span>เลือกรูปภาพใหม่</span>
+            </button>
+            <span id="avatarFileNameDisplay" class="file-name-pill"></span>
+          </div>
+          <input type="file" id="avatarFileInput" name="avatar" accept="image/*" onchange="previewAvatarImage(event)" style="display:none;">
+          <span style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">รองรับรูปภาพ JPG, PNG, WEBP ขนาดไม่เกิน 10MB</span>
         </div>
       </div>
 
-      <!-- Cover Image / Banner Upload Preview with Drag & Slider Repositioning -->
-      <div style="padding-bottom:18px;border-bottom:1px solid var(--border-subtle);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <label style="font-size:13.5px;font-weight:600;color:var(--text-main);">ภาพพื้นหลังโปรไฟล์ (Cover / Banner)</label>
-          <span style="font-size:11.5px;color:var(--text-muted);">ลากบนภาพหรือเลื่อนแถบเพื่อปรับตำแหน่ง</span>
+      <!-- 2. COVER IMAGE / BANNER WITH REPOSITIONING -->
+      <div class="cover-upload-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+          <label style="font-size:14px;font-weight:700;color:var(--text-main);margin:0;">ภาพพื้นหลังโปรไฟล์ (Cover / Banner)</label>
+          <span style="font-size:11.5px;color:var(--text-muted);">ลากบนภาพเพื่อเลื่อนปรับตำแหน่ง</span>
         </div>
 
-        <div id="coverPreviewWrap" style="width:100%;height:140px;border-radius:14px;overflow:hidden;background:{% if profile.get_cover_url %}#1E293B{% else %}linear-gradient(135deg, #0F766E 0%, #14B8A6 45%, #2DD4BF 100%){% endif %};margin-bottom:10px;border:1px solid var(--border-light);position:relative;cursor:grab;user-select:none;touch-action:none;">
+        <div id="coverPreviewWrap" class="cover-preview-wrapper" style="background:{% if profile.get_cover_url %}#1E293B{% else %}linear-gradient(135deg, #0F766E 0%, #14B8A6 45%, #2DD4BF 100%){% endif %};">
           <img id="coverPreview" src="{{ profile.get_cover_url|default:'' }}" alt="Cover" style="width:100%;height:100%;object-fit:cover;object-position:center {{ profile.cover_position|default:50 }}%;{% if not profile.get_cover_url %}display:none;{% endif %}pointer-events:none;transition:none;">
           
-          <div id="coverDragBadge" style="position:absolute;bottom:10px;right:10px;background:rgba(15,23,42,0.72);backdrop-filter:blur(4px);color:#FFFFFF;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:{% if profile.get_cover_url %}flex{% else %}none{% endif %};align-items:center;gap:5px;pointer-events:none;border:1px solid rgba(255,255,255,0.15);">
+          <div id="coverDragBadge" class="cover-drag-badge" style="display:{% if profile.get_cover_url %}flex{% else %}none{% endif %};">
             <i data-lucide="move" style="width:12px;height:12px;"></i>
             <span>ลากภาพเพื่อเลื่อนตำแหน่ง</span>
           </div>
@@ -44,12 +61,17 @@
 
         <input type="hidden" name="cover_position" id="coverPositionInput" value="{{ profile.cover_position|default:50 }}">
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
-          <input type="file" name="cover_image" id="coverImageFileInput" accept="image/*" onchange="previewCoverImage(event)" style="font-size:12.5px;color:var(--text-muted);flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button type="button" onclick="document.getElementById('coverImageFileInput').click()" class="btn-select-file">
+            <i data-lucide="image" style="width:14px;height:14px;color:var(--primary);"></i>
+            <span>เลือกภาพพื้นหลังใหม่</span>
+          </button>
+          <span id="coverFileNameDisplay" class="file-name-pill"></span>
+          <input type="file" name="cover_image" id="coverImageFileInput" accept="image/*" onchange="previewCoverImage(event)" style="display:none;">
         </div>
 
         <!-- Position Slider & Presets Control -->
-        <div id="coverPositionControls" style="background:var(--bg-surface-subtle, #F8FAFC);padding:12px 14px;border-radius:12px;border:1px solid var(--border-subtle);margin-top:6px;display:{% if profile.get_cover_url %}block{% else %}none{% endif %};">
+        <div id="coverPositionControls" class="cover-controls-panel" style="display:{% if profile.get_cover_url %}block{% else %}none{% endif %};">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <span style="font-size:12px;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:5px;">
               <i data-lucide="move-vertical" style="width:13px;height:13px;color:var(--primary);"></i>
@@ -72,16 +94,16 @@
         </div>
       </div>
 
-      <!-- Display Name -->
+      <!-- 3. DISPLAY NAME -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">ชื่อที่แสดง (Display Name)</label>
-        <input type="text" name="display_name" value="{{ profile.get_display_name }}" required style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">
+        <input type="text" name="display_name" value="{{ profile.get_display_name }}" required class="form-control-input">
       </div>
 
-      <!-- City / Location -->
+      <!-- 4. CITY / PROVINCE -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">จังหวัดที่อยู่</label>
-        <select name="city" style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);outline:none;cursor:pointer;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">
+        <select name="city" class="form-control-select">
           <option value="กรุงเทพมหานคร" {% if profile.city == 'กรุงเทพมหานคร' %}selected{% endif %}>กรุงเทพมหานคร</option>
           <option value="กระบี่" {% if profile.city == 'กระบี่' %}selected{% endif %}>กระบี่</option>
           <option value="กาญจนบุรี" {% if profile.city == 'กาญจนบุรี' %}selected{% endif %}>กาญจนบุรี</option>
@@ -159,18 +181,20 @@
         </select>
       </div>
 
-      <!-- Bio -->
+      <!-- 5. BIO -->
       <div>
         <label style="font-size:13.5px;font-weight:600;color:var(--text-main);display:block;margin-bottom:6px;">คำแนะนำตัว (Bio)</label>
-        <textarea name="bio" rows="3" placeholder="เขียนสั้นๆ เกี่ยวกับตัวคุณ..." style="width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);resize:vertical;outline:none;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-light)'">{{ profile.bio|default:'' }}</textarea>
+        <textarea name="bio" rows="3" placeholder="เขียนสั้นๆ เกี่ยวกับตัวคุณ..." class="form-control-textarea">{{ profile.bio|default:'' }}</textarea>
       </div>
 
-      <!-- Submit Buttons -->
-      <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:10px;">
-        <a href="{% url 'accounts:profile' %}" class="btn-edit-profile" style="text-decoration:none;">ยกเลิก</a>
-        <button type="submit" class="btn-primary-action" style="margin:0;">
-          <i data-lucide="check" style="width:16px;height:16px;"></i>
-          <span>บันทึกการเปลี่ยนแปลง</span>
+      <!-- 6. SUBMIT BUTTONS (Responsive, Clean & Loading state) -->
+      <div class="edit-profile-actions">
+        <a href="{% url 'accounts:profile' %}" class="btn-cancel-action">
+          ยกเลิก
+        </a>
+        <button type="submit" id="saveProfileBtn" class="btn-save-profile">
+          <i data-lucide="check" class="w-4 h-4" id="saveBtnIcon"></i>
+          <span id="saveBtnText">บันทึกการเปลี่ยนแปลง</span>
         </button>
       </div>
     </form>
@@ -178,6 +202,179 @@
 </div>
 
 <style>
+/* Edit Profile Container & Card Styling */
+.edit-profile-page-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px 220px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.edit-profile-card {
+  background: var(--bg-surface, #FFFFFF);
+  border-radius: var(--radius-xl, 20px);
+  border: 1px solid var(--border-light, #E2E8F0);
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+}
+
+/* 100% Round Avatar Picker */
+.avatar-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-subtle, #F1F5F9);
+  flex-wrap: wrap;
+}
+
+.avatar-preview-container {
+  position: relative;
+  width: 84px !important;
+  height: 84px !important;
+  min-width: 84px !important;
+  min-height: 84px !important;
+  max-width: 84px !important;
+  max-height: 84px !important;
+  flex-shrink: 0 !important;
+  cursor: pointer;
+}
+
+.avatar-round-img {
+  width: 84px !important;
+  height: 84px !important;
+  min-width: 84px !important;
+  min-height: 84px !important;
+  max-width: 84px !important;
+  max-height: 84px !important;
+  aspect-ratio: 1/1 !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border: 3px solid var(--primary-light, #14B8A6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: #E2E8F0;
+  box-sizing: border-box;
+}
+
+.avatar-camera-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary, #0D9488);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.avatar-info-col {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.btn-select-file {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-surface-subtle, #F8FAFC);
+  color: var(--text-main, #1E293B);
+  border: 1px solid var(--border-light, #E2E8F0);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-select-file:hover {
+  border-color: var(--primary, #0D9488);
+  color: var(--primary, #0D9488);
+}
+
+.file-name-pill {
+  font-size: 12px;
+  color: var(--primary, #0D9488);
+  font-weight: 600;
+  background: rgba(20, 184, 166, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  display: none;
+}
+
+/* Cover Image Section */
+.cover-upload-section {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-subtle, #F1F5F9);
+}
+
+.cover-preview-wrapper {
+  width: 100%;
+  height: 140px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-light, #E2E8F0);
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.cover-preview-wrapper.is-dragging {
+  cursor: grabbing !important;
+}
+
+.cover-drag-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15,23,42,0.72);
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.cover-controls-panel {
+  background: var(--bg-surface-subtle, #F8FAFC);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #F1F5F9);
+  margin-top: 6px;
+}
+
 .btn-cover-pos-preset {
   flex: 1;
   padding: 6px 10px;
@@ -191,44 +388,144 @@
   transition: all 0.15s ease;
   text-align: center;
 }
+
 .btn-cover-pos-preset:hover {
   background: var(--primary-light, rgba(20, 184, 166, 0.1));
   border-color: var(--primary, #0D9488);
   color: var(--primary, #0D9488);
 }
-#coverPreviewWrap.is-dragging {
-  cursor: grabbing !important;
+
+/* Form Control Inputs */
+.form-control-input,
+.form-control-select,
+.form-control-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm, 10px);
+  border: 1px solid var(--border-light, #CBD5E1);
+  font-size: 14px;
+  background: var(--bg-surface-subtle, #F8FAFC);
+  color: var(--text-main, #1E293B);
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control-input:focus,
+.form-control-select:focus,
+.form-control-textarea:focus {
+  border-color: var(--primary, #0D9488);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+/* Action Buttons */
+.edit-profile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle, #F1F5F9);
+}
+
+.btn-cancel-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 22px;
+  border-radius: 12px;
+  background: var(--bg-surface-subtle, #F8FAFC);
+  border: 1px solid var(--border-light, #CBD5E1);
+  color: var(--text-muted, #64748B);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-save-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 26px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary, #0D9488) 0%, #0F766E 100%);
+  border: none;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(21, 159, 140, 0.3);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-save-profile:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .edit-profile-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+  .btn-cancel-action,
+  .btn-save-profile {
+    width: 100%;
+    min-height: 46px;
+    box-sizing: border-box;
+  }
+  .edit-profile-card {
+    padding: 16px;
+  }
 }
 </style>
 
 <script>
-  function previewImage(event) {
-    const reader = new FileReader();
-    reader.onload = function(){
-      const output = document.getElementById('avatarPreview');
-      if (output) output.src = reader.result;
-    };
-    if (event.target.files && event.target.files[0]) {
-      reader.readAsDataURL(event.target.files[0]);
+  function previewAvatarImage(event) {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const output = document.getElementById('avatarPreview');
+        if (output) output.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      const nameDisplay = document.getElementById('avatarFileNameDisplay');
+      if (nameDisplay) {
+        nameDisplay.textContent = file.name;
+        nameDisplay.style.display = 'inline-block';
+      }
     }
   }
 
   function previewCoverImage(event) {
-    const reader = new FileReader();
-    reader.onload = function(){
-      const output = document.getElementById('coverPreview');
-      const badge = document.getElementById('coverDragBadge');
-      const controls = document.getElementById('coverPositionControls');
-      if (output) {
-        output.src = reader.result;
-        output.style.display = 'block';
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const output = document.getElementById('coverPreview');
+        const badge = document.getElementById('coverDragBadge');
+        const controls = document.getElementById('coverPositionControls');
+        if (output) {
+          output.src = e.target.result;
+          output.style.display = 'block';
+        }
+        if (badge) badge.style.display = 'flex';
+        if (controls) controls.style.display = 'block';
+        if (window.lucide) lucide.createIcons();
+      };
+      reader.readAsDataURL(file);
+
+      const nameDisplay = document.getElementById('coverFileNameDisplay');
+      if (nameDisplay) {
+        nameDisplay.textContent = file.name;
+        nameDisplay.style.display = 'inline-block';
       }
-      if (badge) badge.style.display = 'flex';
-      if (controls) controls.style.display = 'block';
-      if (window.lucide) lucide.createIcons();
-    };
-    if (event.target.files && event.target.files[0]) {
-      reader.readAsDataURL(event.target.files[0]);
     }
   }
 
@@ -251,6 +548,21 @@
 
   function setCoverPos(pct) {
     updateCoverPosition(pct);
+  }
+
+  function handleProfileFormSubmit(e) {
+    const btn = document.getElementById('saveProfileBtn');
+    const textEl = document.getElementById('saveBtnText');
+    const iconEl = document.getElementById('saveBtnIcon');
+
+    if (btn) btn.disabled = true;
+    if (textEl) textEl.textContent = 'กำลังบันทึกข้อมูล...';
+    if (iconEl) iconEl.style.display = 'none';
+
+    // Show beautiful global loading indicator and progress bar
+    if (typeof window.showGlobalLoading === 'function') {
+      window.showGlobalLoading('กำลังบันทึกข้อมูล...', 'กำลังอัปเดตรูปภาพและข้อมูลโปรไฟล์ของคุณ');
+    }
   }
 
   // Interactive Drag-to-reposition logic (Mouse + Touch)
@@ -291,7 +603,6 @@
       const deltaY = currentY - startY;
       const wrapHeight = wrap.offsetHeight || 140;
 
-      // Dragging down shows top (lower %), dragging up shows bottom (higher %)
       const deltaPercent = (deltaY / wrapHeight) * -100;
       const newPos = startPos + deltaPercent;
       updateCoverPosition(newPos);

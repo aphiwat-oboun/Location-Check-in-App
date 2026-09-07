@@ -51,7 +51,7 @@
     </div>
   </div>
 
-  <form method="POST" action="{% url 'posts:create' %}" enctype="multipart/form-data" id="create-post-form">
+  <form method="POST" action="{% url 'posts:create' %}" enctype="multipart/form-data" id="create-post-form" onsubmit="if(typeof window.showGlobalLoading === 'function') window.showGlobalLoading('กำลังเผยแพร่โพสต์...', 'กำลังอัปโหลดรูปภาพและบันทึกสถานที่');">
     {% csrf_token %}
     <input type="hidden" name="lat" :value="lat">
     <input type="hidden" name="lng" :value="lng">
