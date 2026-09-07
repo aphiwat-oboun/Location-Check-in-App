@@ -1614,6 +1614,13 @@ function openPostOptionsMenu(postId, isOwner, placeName = '') {
         <span>คัดลอกลิงก์โพสต์</span>
       </button>
 
+      <button onclick="if(typeof closeMobileBottomSheet==='function')closeMobileBottomSheet();openReportModal('post', ${postId}, '${placeName.replace(/'/g, "\\'")}')" style="border:none;background:none;width:100%;display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;color:#EF4444;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='transparent'">
+        <div style="width:36px;height:36px;border-radius:50%;background:#FEE2E2;color:#EF4444;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="flag" style="width:18px;height:18px;"></i>
+        </div>
+        <span>รายงานโพสต์นี้</span>
+      </button>
+
       <button onclick="closeMobileBottomSheet()" style="margin-top:8px;border:1px solid #E5E7EB;background:#F9FAFB;width:100%;padding:11px;border-radius:9999px;color:var(--text-muted);font-size:13.5px;font-weight:600;cursor:pointer;">
         ยกเลิก
       </button>
@@ -1624,6 +1631,102 @@ function openPostOptionsMenu(postId, isOwner, placeName = '') {
     openMobileBottomSheet(modalHtml);
   }
 }
+
+// User Content Reporting Engine
+function openReportModal(reportType = 'post', targetId, targetTitle = '') {
+  const modal = document.getElementById('globalReportModalBackdrop');
+  if (!modal) return;
+
+  const targetTypeEl = document.getElementById('reportTargetType');
+  const targetIdEl = document.getElementById('reportTargetId');
+  const subtitleEl = document.getElementById('reportModalTargetSubtitle');
+  const detailsInput = document.getElementById('reportDetailsInput');
+
+  if (targetTypeEl) targetTypeEl.value = reportType;
+  if (targetIdEl) targetIdEl.value = targetId;
+  if (detailsInput) detailsInput.value = '';
+
+  const typeMap = {
+    'post': 'โพสต์',
+    'comment': 'คอมเมนต์',
+    'location': 'สถานที่',
+    'user': 'ผู้ใช้'
+  };
+
+  const typeName = typeMap[reportType] || 'เนื้อหา';
+  if (subtitleEl) {
+    subtitleEl.textContent = targetTitle ? `รายงาน${typeName} "${targetTitle}" ไปยังผู้ดูแลระบบ` : `รายงาน${typeName}นี้ไปยังผู้ดูแลระบบ`;
+  }
+
+  // Reset default radio
+  const defaultRadio = document.querySelector('input[name="report_reason_radio"][value="inappropriate"]');
+  if (defaultRadio) defaultRadio.checked = true;
+
+  modal.style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeReportModal() {
+  const modal = document.getElementById('globalReportModalBackdrop');
+  if (modal) modal.style.display = 'none';
+}
+
+async function doSubmitReport() {
+  const targetType = document.getElementById('reportTargetType').value;
+  const targetId = document.getElementById('reportTargetId').value;
+  const selectedReason = document.querySelector('input[name="report_reason_radio"]:checked')?.value || 'inappropriate';
+  const description = document.getElementById('reportDetailsInput')?.value.trim() || '';
+
+  if (!targetId) {
+    showCustomToast('ไม่พบข้อมูลเป้าหมายที่ต้องการรายงาน', 'error');
+    return;
+  }
+
+  const submitBtn = document.getElementById('submitReportBtn');
+  const submitBtnText = document.getElementById('submitReportBtnText');
+  const originalText = submitBtnText ? submitBtnText.innerText : 'ส่งรายงาน';
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (submitBtnText) submitBtnText.innerText = 'กำลังส่ง...';
+
+  try {
+    const formData = new FormData();
+    formData.append('report_type', targetType);
+    formData.append('target_id', targetId);
+    formData.append('reason', selectedReason);
+    formData.append('description', description);
+
+    const res = await fetch('/interactions/report/submit/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtnText) submitBtnText.innerText = originalText;
+
+    if (data.success) {
+      closeReportModal();
+      showCustomToast(data.message || 'ส่งรายงานเรียบร้อยแล้ว', 'success');
+    } else {
+      showCustomToast(data.message || 'ไม่สามารถส่งรายงานได้', 'error');
+    }
+  } catch (err) {
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtnText) submitBtnText.innerText = originalText;
+    console.error('Report submission error:', err);
+    showCustomToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+  }
+}
+
+window.openReportModal = openReportModal;
+window.closeReportModal = closeReportModal;
+window.doSubmitReport = doSubmitReport;
 
 async function confirmDeletePost(postId, placeName = '') {
   if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();

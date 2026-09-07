@@ -11,4 +11,5 @@ urlpatterns = [
     path('comments/<int:post_id>/', views.list_comments_api, name='list_comments'),
     path('notifications/', views.list_notifications_api, name='notifications_list'),
     path('notifications/read/', views.mark_notifications_read_api, name='notifications_read'),
+    path('report/submit/', views.submit_report_api, name='submit_report'),
 ]

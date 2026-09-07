@@ -205,7 +205,11 @@
           {% for cat in categories %}
           <option value="{{ cat.id }}">{{ cat.name }}</option>
           {% endfor %}
+          <option value="other">✨ อื่นๆ (ระบุเอง)</option>
         </select>
+        <div x-show="selectedCategory === 'other'" x-transition style="margin-top:8px;">
+          <input type="text" name="custom_category" x-model="customCategory" placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..." class="form-input" style="border-color:var(--primary);background:var(--bg-surface-subtle);">
+        </div>
       </div>
 
       <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
@@ -341,6 +345,7 @@
       placeName: '',
       description: '',
       selectedCategory: '{% if categories %}{{ categories.first.id }}{% endif %}',
+      customCategory: '',
       searchLocationQuery: '',
       lat: 15.1120,
       lng: 104.3180,

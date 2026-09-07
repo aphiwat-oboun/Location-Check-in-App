@@ -131,162 +131,176 @@
 </div>
 
 <!-- =======================================================================
-     UNIFIED LOCATION MODAL (Create & Edit with Interactive Draggable Map)
+     UNIFIED LOCATION MODAL (Modern 2-Column Responsive Layout)
      ======================================================================= -->
-<div id="locationModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:18px;padding:24px;width:680px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 25px 70px rgba(0,0,0,0.25);border:1px solid #E2E8F0;">
+<div id="locationModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#ffffff;border-radius:20px;padding:24px 28px;width:1040px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 25px 70px rgba(0,0,0,0.3);border:1px solid #E2E8F0;position:relative;">
     
     <!-- Modal Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #F1F5F9;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div id="modalIconContainer" style="width:38px;height:38px;border-radius:10px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #F1F5F9;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="modalIconContainer" style="width:42px;height:42px;border-radius:12px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i id="modalHeaderIcon" data-lucide="map-pin" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 id="modalTitle" style="font-size:1.15rem;font-weight:700;margin:0;color:#1E293B;">เพิ่มสถานที่ใหม่</h3>
-          <p id="modalSubtitle" style="font-size:0.775rem;color:#64748B;margin:2px 0 0 0;">กำหนดข้อมูลสถานที่และปักหมุดตำแหน่งบนแผนที่</p>
+          <h3 id="modalTitle" style="font-size:1.2rem;font-weight:700;margin:0;color:#1E293B;">เพิ่มสถานที่ใหม่</h3>
+          <p id="modalSubtitle" style="font-size:0.8rem;color:#64748B;margin:2px 0 0 0;">กำหนดข้อมูลสถานที่และปักหมุดพิกัดบนแผนที่</p>
         </div>
       </div>
-      <button onclick="closeLocationModal()" style="border:none;background:#F1F5F9;border-radius:8px;cursor:pointer;color:#64748B;width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">
+      <button type="button" onclick="closeLocationModal()" style="border:none;background:#F1F5F9;border-radius:10px;cursor:pointer;color:#64748B;width:34px;height:34px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
 
-    <!-- Hidden Field for ID (Empty when creating) -->
+    <!-- Hidden Field for ID -->
     <input type="hidden" id="locModalId" value="">
 
-    <div style="display:flex;flex-direction:column;gap:18px;">
-      
-      <!-- ==========================================
-           1. MAP & PIN REPOSITIONING SECTION
-           ========================================== -->
-      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:14px;position:relative;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-          <label style="font-size:0.85rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:6px;">
-            <i data-lucide="map" class="w-4 h-4" style="color:#159F8C;"></i>
-            <span>ตำแหน่งปักหมุดบนแผนที่ (ย้ายหมุดได้)</span>
-          </label>
-          <div style="font-size:0.725rem;color:#159F8C;background:#E6F5F3;font-weight:600;padding:2px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;">
-            <i data-lucide="move" class="w-3 h-3"></i>
-            <span>คลิกบนแผนที่หรือลากหมุดสีเขียวเพื่อย้ายจุด</span>
+    <!-- Modal Body (2-Column Grid with Scrollable Content) -->
+    <div style="overflow-y:auto;padding-right:4px;margin-top:16px;flex:1;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:20px;align-items:start;">
+        
+        <!-- ==========================================
+             LEFT COLUMN: MAP & PIN REPOSITIONING
+             ========================================== -->
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <label style="font-size:0.875rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:6px;margin:0;">
+              <i data-lucide="map" class="w-4 h-4" style="color:#159F8C;"></i>
+              <span>1. ตำแหน่งปักหมุดบนแผนที่</span>
+            </label>
+            <div style="font-size:0.725rem;color:#159F8C;background:#E6F5F3;font-weight:600;padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;">
+              <i data-lucide="move" class="w-3 h-3"></i>
+              <span>ลากหมุดเขียวเพื่อเปลี่ยนจุด</span>
+            </div>
           </div>
-        </div>
 
-        <!-- Search Bar & GPS for Map -->
-        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-          <div style="flex:1;min-width:200px;display:flex;gap:6px;">
-            <input type="text" id="mapSearchInput" placeholder="พิมพ์ชื่อสถานที่/ตำบล/อำเภอ เพื่อค้นหาตำแหน่ง..." onkeydown="if(event.key==='Enter'){event.preventDefault();searchMapLocation();}" style="flex:1;padding:7px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.8rem;outline:none;">
-            <button type="button" onclick="searchMapLocation()" style="padding:7px 14px;border-radius:8px;background:#334155;color:#fff;border:none;font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;">
-              <i data-lucide="search" class="w-3.5 h-3.5"></i>
-              <span>ค้นหา</span>
+          <!-- Search Bar & GPS for Map -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:180px;display:flex;gap:6px;">
+              <input type="text" id="mapSearchInput" placeholder="พิมพ์ชื่อสถานที่/ตำบล/อำเภอ..." onkeydown="if(event.key==='Enter'){event.preventDefault();searchMapLocation();}" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.825rem;outline:none;background:#fff;">
+              <button type="button" onclick="searchMapLocation()" style="padding:8px 12px;border-radius:8px;background:#334155;color:#fff;border:none;font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                <span>ค้นหา</span>
+              </button>
+            </div>
+            <button type="button" onclick="useCurrentLocationForModal()" style="padding:8px 10px;border-radius:8px;background:#E6F5F3;color:#159F8C;border:1px solid rgba(21,159,140,0.3);font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+              <span>GPS</span>
             </button>
           </div>
-          <button type="button" onclick="useCurrentLocationForModal()" style="padding:7px 12px;border-radius:8px;background:#E6F5F3;color:#159F8C;border:1px solid rgba(21,159,140,0.3);font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;">
-            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
-            <span>ใช้พิกัดปัจจุบัน</span>
-          </button>
+
+          <!-- Interactive Leaflet Map Container -->
+          <div id="locModalMap" style="width:100%;height:270px;border-radius:12px;border:1px solid #CBD5E1;overflow:hidden;position:relative;background:#E2E8F0;box-shadow:inset 0 1px 3px rgba(0,0,0,0.08);"></div>
+
+          <!-- Coords Quick Bar & Lat/Lng Inputs -->
+          <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:0.75rem;color:#64748B;">
+              <span>พิกัดปัจจุบัน: <strong id="mapCoordDisplay" style="color:#159F8C;font-family:monospace;background:#E6F5F3;padding:2px 6px;border-radius:4px;">15.1186, 104.3225</strong></span>
+              <span style="font-size:0.7rem;color:#94A3B8;">พิมพ์แก้ได้</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label style="font-size:0.725rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">ละติจูด (Lat)</label>
+                <input type="number" step="any" id="locModalLat" placeholder="15.1186" oninput="onCoordInputChanged()" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #CBD5E1;font-size:0.8rem;font-family:monospace;box-sizing:border-box;outline:none;">
+              </div>
+              <div>
+                <label style="font-size:0.725rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">ลองจิจูด (Lng)</label>
+                <input type="number" step="any" id="locModalLng" placeholder="104.3225" oninput="onCoordInputChanged()" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #CBD5E1;font-size:0.8rem;font-family:monospace;box-sizing:border-box;outline:none;">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Interactive Leaflet Map Container -->
-        <div id="locModalMap" style="width:100%;height:250px;border-radius:10px;border:1px solid #CBD5E1;overflow:hidden;position:relative;background:#E2E8F0;box-shadow:inset 0 1px 3px rgba(0,0,0,0.08);"></div>
-
-        <!-- Coords Quick Bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:0.75rem;color:#64748B;">
+        <!-- ==========================================
+             RIGHT COLUMN: BASIC DETAILS & COVER IMAGE
+             ========================================== -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          
+          <!-- Location Name -->
           <div>
-            พิกัดที่เลือก: <strong id="mapCoordDisplay" style="color:#1E293B;font-family:monospace;background:#E2E8F0;padding:2px 6px;border-radius:4px;">15.1186, 104.3225</strong>
-          </div>
-          <span style="font-size:0.7rem;color:#94A3B8;">สามารถพิมพ์พิกัดแก้ตรงช่องด้านล่างได้เช่นกัน</span>
-        </div>
-      </div>
-
-      <!-- ==========================================
-           2. BASIC INFORMATION
-           ========================================== -->
-      <div>
-        <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ชื่อสถานที่ <span style="color:#EF4444;">*</span></label>
-        <input type="text" id="locModalName" placeholder="เช่น สวนสมเด็จพระศรีนครินทร์ ศรีสะเกษ, หอศรีลำดวน..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;outline:none;">
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">หมวดหมู่</label>
-          <select id="locModalCategory" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;background:#fff;outline:none;">
-            <option value="">-- ไม่ระบุหมวดหมู่ --</option>
-            {% for cat in categories %}
-              <option value="{{ cat.id }}">{{ cat.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">จังหวัด</label>
-          <input type="text" id="locModalProvince" value="ศรีสะเกษ" placeholder="เช่น ศรีสะเกษ" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;outline:none;">
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">อำเภอ / เมือง</label>
-          <input type="text" id="locModalCity" value="เมืองศรีสะเกษ" placeholder="เช่น เมืองศรีสะเกษ, กันทรลักษ์" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;outline:none;">
-        </div>
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ที่อยู่ / ตำบล (ถ้ามี)</label>
-          <input type="text" id="locModalAddress" placeholder="เช่น ต.หนองครก อ.เมือง" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;outline:none;">
-        </div>
-      </div>
-
-      <!-- Lat & Lng Input Fields (2-way sync with map) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ละติจูด (Latitude)</label>
-          <input type="number" step="any" id="locModalLat" placeholder="15.1186" oninput="onCoordInputChanged()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;font-family:monospace;box-sizing:border-box;outline:none;">
-        </div>
-        <div>
-          <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ลองจิจูด (Longitude)</label>
-          <input type="number" step="any" id="locModalLng" placeholder="104.3225" oninput="onCoordInputChanged()" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;font-family:monospace;box-sizing:border-box;outline:none;">
-        </div>
-      </div>
-
-      <!-- ==========================================
-           3. COVER IMAGE (Upload or URL)
-           ========================================== -->
-      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:14px;">
-        <label style="font-size:0.825rem;font-weight:700;color:#334155;display:flex;align-items:center;gap:6px;margin-bottom:10px;">
-          <i data-lucide="image" class="w-4 h-4" style="color:#159F8C;"></i>
-          <span>รูปภาพหน้าปกสถานที่ (Cover Image)</span>
-        </label>
-        
-        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
-          <!-- Current Preview Box -->
-          <div style="width:120px;height:95px;border-radius:10px;overflow:hidden;background:#E2E8F0;flex-shrink:0;border:1px solid #CBD5E1;position:relative;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-            <img id="locModalImgPreview" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80" alt="พรีวิวรูปภาพ" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'">
+            <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">
+              ชื่อสถานที่ <span style="color:#EF4444;">*</span>
+            </label>
+            <input type="text" id="locModalName" placeholder="เช่น สวนสมเด็จพระศรีนครินทร์, หอศรีลำดวน..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;outline:none;background:#fff;">
           </div>
 
-          <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px;">
+          <!-- Category & Province -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
-              <label style="font-size:0.75rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">วิธีที่ 1: อัปโหลดไฟล์รูปภาพจากเครื่อง</label>
-              <input type="file" id="locModalCoverFile" accept="image/*" onchange="previewSelectedImage(event)" style="font-size:0.8rem;color:#475569;width:100%;">
+              <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">หมวดหมู่</label>
+              <select id="locModalCategory" onchange="checkLocModalCategory(this.value)" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;box-sizing:border-box;background:#fff;outline:none;">
+                <option value="">-- ไม่ระบุหมวดหมู่ --</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+                <option value="other">✨ อื่นๆ (พิมพ์หมวดหมู่เอง)</option>
+              </select>
+              <input type="text" id="locModalCustomCategory" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่..." style="display:none;width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid #159F8C;margin-top:6px;font-size:0.8rem;box-sizing:border-box;outline:none;background:#F0FDF4;">
             </div>
             <div>
-              <label style="font-size:0.75rem;font-weight:600;color:#64748B;display:block;margin-bottom:3px;">วิธีที่ 2: หรือใส่ลิงก์ URL รูปภาพโดยตรง</label>
-              <input type="url" id="locModalCoverUrl" placeholder="https://images.unsplash.com/..." oninput="previewUrlImage(this.value)" style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid #CBD5E1;font-size:0.8rem;box-sizing:border-box;outline:none;">
+              <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">จังหวัด</label>
+              <input type="text" id="locModalProvince" value="ศรีสะเกษ" placeholder="เช่น ศรีสะเกษ" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;box-sizing:border-box;outline:none;">
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Description -->
-      <div>
-        <label style="font-size:0.825rem;font-weight:700;color:#334155;display:block;margin-bottom:6px;">คำอธิบาย / รายละเอียดสถานที่</label>
-        <textarea id="locModalDesc" rows="3" placeholder="ระบุรายละเอียด ประวัติ จุดเด่น เวลาเปิด-ปิด หรือข้อมูลน่าสนใจ..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.875rem;box-sizing:border-box;resize:vertical;outline:none;"></textarea>
+          <!-- City & Address -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">อำเภอ / เมือง</label>
+              <input type="text" id="locModalCity" value="เมืองศรีสะเกษ" placeholder="เช่น เมืองศรีสะเกษ, กันทรลักษ์" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;box-sizing:border-box;outline:none;">
+            </div>
+            <div>
+              <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">ที่อยู่ / ตำบล (ถ้ามี)</label>
+              <input type="text" id="locModalAddress" placeholder="เช่น ต.หนองครก อ.เมือง" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;box-sizing:border-box;outline:none;">
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:block;margin-bottom:5px;">คำอธิบาย / รายละเอียดสถานที่</label>
+            <textarea id="locModalDesc" rows="2" placeholder="ระบุรายละเอียด จุดเด่น หรือข้อมูลน่าสนใจ..." style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid #CBD5E1;font-size:0.85rem;box-sizing:border-box;resize:vertical;outline:none;"></textarea>
+          </div>
+
+          <!-- Beautiful Cover Image Section -->
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px;">
+            <label style="font-size:0.825rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <i data-lucide="image" class="w-4 h-4" style="color:#159F8C;"></i>
+              <span>รูปภาพหน้าปกสถานที่ (Cover Image)</span>
+            </label>
+            
+            <div style="display:flex;gap:12px;align-items:center;">
+              <!-- Current Preview Thumbnail -->
+              <div style="width:90px;height:70px;border-radius:10px;overflow:hidden;background:#E2E8F0;flex-shrink:0;border:1px solid #CBD5E1;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.06);">
+                <img id="locModalImgPreview" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80" alt="พรีวิวรูปภาพ" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'">
+              </div>
+
+              <!-- Custom Styled Upload Trigger Button -->
+              <div style="flex:1;">
+                <input type="file" id="locModalCoverFile" accept="image/*" onchange="previewSelectedImage(event)" style="display:none;">
+                <button type="button" onclick="document.getElementById('locModalCoverFile').click()" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px dashed #159F8C;background:#F0FDF4;color:#0D7566;font-size:0.825rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;">
+                  <i data-lucide="upload-cloud" class="w-4 h-4" style="color:#159F8C;"></i>
+                  <span id="locModalUploadText">คลิกเลือกรูปภาพจากเครื่อง</span>
+                </button>
+                <div id="locModalFileName" style="font-size:0.725rem;color:#64748B;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ยังไม่ได้เลือกไฟล์ใหม่ (ใช้รูปเดิม)</div>
+              </div>
+            </div>
+
+            <!-- Alternative URL Input -->
+            <div style="margin-top:8px;">
+              <input type="url" id="locModalCoverUrl" placeholder="หรือวางลิงก์รูปภาพ URL (https://...)" oninput="previewUrlImage(this.value)" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid #CBD5E1;font-size:0.775rem;box-sizing:border-box;outline:none;background:#fff;">
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
     <!-- Modal Footer Actions -->
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:14px;border-top:1px solid #F1F5F9;">
-      <button type="button" onclick="closeLocationModal()" style="padding:10px 20px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;color:#475569;font-size:0.875rem;font-weight:600;cursor:pointer;">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #F1F5F9;flex-shrink:0;">
+      <button type="button" onclick="closeLocationModal()" style="padding:9px 18px;border-radius:10px;border:1px solid #CBD5E1;background:#fff;color:#475569;font-size:0.875rem;font-weight:600;cursor:pointer;">
         ยกเลิก
       </button>
-      <button type="button" id="saveLocBtn" onclick="submitLocationModal()" style="padding:10px 24px;border-radius:10px;border:none;background:linear-gradient(135deg, #159F8C 0%, #0D7566 100%);color:#fff;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(21, 159, 140, 0.3);">
+      <button type="button" id="saveLocBtn" onclick="submitLocationModal()" style="padding:9px 24px;border-radius:10px;border:none;background:linear-gradient(135deg, #159F8C 0%, #0D7566 100%);color:#fff;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(21, 159, 140, 0.3);">
         <i data-lucide="check" class="w-4 h-4"></i>
         <span id="saveLocBtnText">บันทึกข้อมูล</span>
       </button>
@@ -463,6 +477,18 @@
     );
   }
 
+  function checkLocModalCategory(val) {
+    const customInput = document.getElementById('locModalCustomCategory');
+    if (customInput) {
+      if (val === 'other') {
+        customInput.style.display = 'block';
+        customInput.focus();
+      } else {
+        customInput.style.display = 'none';
+      }
+    }
+  }
+
   /**
    * Open Modal in CREATE Mode
    */
@@ -475,6 +501,8 @@
     // Reset Form Fields
     document.getElementById('locModalName').value = '';
     document.getElementById('locModalCategory').value = '';
+    document.getElementById('locModalCustomCategory').value = '';
+    document.getElementById('locModalCustomCategory').style.display = 'none';
     document.getElementById('locModalCity').value = 'เมืองศรีสะเกษ';
     document.getElementById('locModalProvince').value = 'ศรีสะเกษ';
     document.getElementById('locModalAddress').value = '';
@@ -483,10 +511,12 @@
     document.getElementById('locModalDesc').value = '';
     document.getElementById('mapSearchInput').value = '';
     
-    // Reset Image Preview
+    // Reset Image Preview & Text
     document.getElementById('locModalImgPreview').src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';
     document.getElementById('locModalCoverUrl').value = '';
     document.getElementById('locModalCoverFile').value = '';
+    document.getElementById('locModalFileName').innerText = 'ยังไม่ได้เลือกไฟล์ใหม่';
+    document.getElementById('locModalUploadText').innerText = 'คลิกเลือกรูปภาพจากเครื่อง';
 
     document.getElementById('locationModal').style.display = 'flex';
     if (window.lucide) lucide.createIcons();
@@ -508,6 +538,8 @@
     // Populate Fields
     document.getElementById('locModalName').value = name || '';
     document.getElementById('locModalCategory').value = categoryId || '';
+    document.getElementById('locModalCustomCategory').value = '';
+    document.getElementById('locModalCustomCategory').style.display = 'none';
     document.getElementById('locModalCity').value = city || 'เมืองศรีสะเกษ';
     document.getElementById('locModalProvince').value = province || 'ศรีสะเกษ';
     document.getElementById('locModalAddress').value = address || '';
@@ -519,10 +551,12 @@
     document.getElementById('locModalDesc').value = desc || '';
     document.getElementById('mapSearchInput').value = '';
 
-    // Image previews
+    // Image previews & Text
     document.getElementById('locModalImgPreview').src = coverUrl || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';
     document.getElementById('locModalCoverUrl').value = originalCoverUrl || '';
     document.getElementById('locModalCoverFile').value = '';
+    document.getElementById('locModalFileName').innerText = 'ใช้รูปภาพเดิม (คลิกด้านบนหากต้องการเปลี่ยน)';
+    document.getElementById('locModalUploadText').innerText = 'เปลี่ยนรูปภาพจากเครื่อง';
 
     document.getElementById('locationModal').style.display = 'flex';
     if (window.lucide) lucide.createIcons();
@@ -539,6 +573,8 @@
   function previewSelectedImage(event) {
     const file = event.target.files[0];
     if (file) {
+      document.getElementById('locModalFileName').innerText = `เลือกแล้ว: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+      document.getElementById('locModalUploadText').innerText = 'เปลี่ยนรูปภาพใหม่';
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('locModalImgPreview').src = e.target.result;
@@ -550,18 +586,20 @@
   function previewUrlImage(url) {
     if (url && url.trim().startsWith('http')) {
       document.getElementById('locModalImgPreview').src = url.trim();
+      document.getElementById('locModalFileName').innerText = 'ใช้งานลิงก์รูปภาพ URL';
     }
   }
 
   /**
    * Submit Location (handles both Create and Edit)
    */
-  function submitLocationModal() {
+  async function submitLocationModal() {
     const locId = document.getElementById('locModalId').value.trim();
     const isCreate = !locId;
 
     const name = document.getElementById('locModalName').value.trim();
     const categoryId = document.getElementById('locModalCategory').value;
+    const customCategory = document.getElementById('locModalCustomCategory') ? document.getElementById('locModalCustomCategory').value.trim() : '';
     const city = document.getElementById('locModalCity').value.trim();
     const province = document.getElementById('locModalProvince').value.trim();
     const address = document.getElementById('locModalAddress').value.trim();
@@ -582,49 +620,61 @@
     saveBtn.disabled = true;
     document.getElementById('saveLocBtnText').innerText = 'กำลังบันทึก...';
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('category_id', categoryId);
-    formData.append('city', city || 'เมืองศรีสะเกษ');
-    formData.append('province', province || 'ศรีสะเกษ');
-    formData.append('address', address);
-    formData.append('latitude', lat || DEFAULT_LAT);
-    formData.append('longitude', lng || DEFAULT_LNG);
-    formData.append('description', desc);
-    formData.append('cover_image_url', coverUrl);
-
-    if (fileInput.files.length > 0) {
-      formData.append('cover_image', fileInput.files[0]);
+    if (window.showGlobalLoading) {
+      window.showGlobalLoading(isCreate ? 'กำลังเพิ่มสถานที่ใหม่...' : 'กำลังบันทึกการแก้ไขสถานที่...');
     }
 
-    const endpointUrl = isCreate ? '/admin-panel/api/location/create/' : `/admin-panel/api/location/${locId}/edit/`;
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('category_id', categoryId);
+      formData.append('custom_category', customCategory);
+      formData.append('city', city || 'เมืองศรีสะเกษ');
+      formData.append('province', province || 'ศรีสะเกษ');
+      formData.append('address', address);
+      formData.append('latitude', lat || DEFAULT_LAT);
+      formData.append('longitude', lng || DEFAULT_LNG);
+      formData.append('description', desc);
+      formData.append('cover_image_url', coverUrl);
 
-    fetch(endpointUrl, {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
-      },
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
+      if (fileInput.files.length > 0) {
+        let uploadFile = fileInput.files[0];
+        if (window.compressImageFile) {
+          uploadFile = await window.compressImageFile(uploadFile, 1600, 1600, 0.85);
+        }
+        formData.append('cover_image', uploadFile);
+      }
+
+      const endpointUrl = isCreate ? '/admin-panel/api/location/create/' : `/admin-panel/api/location/${locId}/edit/`;
+
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': (typeof getCsrfToken === 'function' ? getCsrfToken() : getCookie('csrftoken'))
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
       saveBtn.disabled = false;
       document.getElementById('saveLocBtnText').innerText = originalText;
+      if (window.hideGlobalLoading) window.hideGlobalLoading();
 
       if (data.success) {
         closeLocationModal();
         showToast(data.message, 'success');
-        setTimeout(() => window.location.reload(), 600);
+        setTimeout(() => window.location.reload(), 500);
       } else {
         showToast(data.message || 'เกิดข้อผิดพลาดในการบันทึกสถานที่', 'error');
       }
-    })
-    .catch(err => {
+    } catch (err) {
       saveBtn.disabled = false;
       document.getElementById('saveLocBtnText').innerText = originalText;
+      if (window.hideGlobalLoading) window.hideGlobalLoading();
       console.error(err);
       showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
-    });
+    }
   }
 
   /**

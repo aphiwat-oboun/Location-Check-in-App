@@ -69,13 +69,15 @@
         <label for="categorySelect" style="display:block;font-size:13.5px;font-weight:600;color:var(--text-main);margin-bottom:8px;">
           หมวดหมู่
         </label>
-        <select id="categorySelect" name="category" class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
+        <select id="categorySelect" name="category" onchange="checkEditCategoryOther(this.value)" class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
           {% for cat in categories %}
           <option value="{{ cat.id }}" {% if post.category_id == cat.id %}selected{% endif %}>
             {{ cat.name }}
           </option>
           {% endfor %}
+          <option value="other">✨ อื่นๆ (ระบุเอง)</option>
         </select>
+        <input type="text" id="customCategoryInput" name="custom_category" placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..." style="display:none;margin-top:8px;width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid var(--primary);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
       </div>
 
       <!-- Caption -->
@@ -137,6 +139,17 @@
       };
       reader.readAsDataURL(f);
     });
+  }
+  function checkEditCategoryOther(val) {
+    const customInput = document.getElementById('customCategoryInput');
+    if (customInput) {
+      if (val === 'other') {
+        customInput.style.display = 'block';
+        customInput.focus();
+      } else {
+        customInput.style.display = 'none';
+      }
+    }
   }
 </script>
 {% endblock %}

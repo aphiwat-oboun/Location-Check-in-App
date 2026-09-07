@@ -98,7 +98,7 @@ def dashboard_view(request):
         cat_list_formatted.append({
             'name': cat.name,
             'count': f"{cat.post_cnt:,}",
-            'percent': f"({pct}%)",
+            'percent': f"{pct}%",
             'color': color
         })
 
@@ -627,11 +627,18 @@ def location_create_api(request):
             created_by=request.user
         )
 
-        if category_id:
+        custom_category = request.POST.get('custom_category', '').strip()
+        if custom_category and (category_id == 'other' or not category_id or not str(category_id).isdigit()):
+            cat_obj, _ = Category.objects.get_or_create(
+                name=custom_category,
+                defaults={'slug': slugify(custom_category, allow_unicode=True) or 'cat', 'icon': 'tag'}
+            )
+            location.category = cat_obj
+        elif category_id and str(category_id).isdigit():
             try:
                 location.category = Category.objects.get(id=category_id)
             except Category.DoesNotExist:
-                pass
+                location.category = None
 
         # Handle uploaded cover image file
         if 'cover_image' in request.FILES:
@@ -704,7 +711,14 @@ def location_edit_api(request, location_id):
             location.province = province
         location.address = address
         
-        if category_id:
+        custom_category = request.POST.get('custom_category', '').strip()
+        if custom_category and (category_id == 'other' or not category_id or not str(category_id).isdigit()):
+            cat_obj, _ = Category.objects.get_or_create(
+                name=custom_category,
+                defaults={'slug': slugify(custom_category, allow_unicode=True) or 'cat', 'icon': 'tag'}
+            )
+            location.category = cat_obj
+        elif category_id and str(category_id).isdigit():
             try:
                 location.category = Category.objects.get(id=category_id)
             except Category.DoesNotExist:
