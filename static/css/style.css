@@ -4835,7 +4835,7 @@ input, textarea, select {
   justify-content: center;
   vertical-align: middle;
   cursor: pointer;
-  margin-left: 5px;
+  margin-left: 0;
   flex-shrink: 0;
   text-decoration: none;
   line-height: 1;
@@ -4847,8 +4847,8 @@ input, textarea, select {
 }
 
 .user-standalone-shield img {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
