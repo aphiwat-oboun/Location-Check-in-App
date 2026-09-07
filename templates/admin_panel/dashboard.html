@@ -513,9 +513,9 @@
     if (loc.lat && loc.lng) {
       const customIcon = L.divIcon({
         className: 'custom-map-icon',
-        html: `<div style="background-image: url('${loc.image_url}'); width: 34px; height: 34px; border-radius: 50%; background-size: cover; background-position: center; border: 2.5px solid #159F8C; box-shadow: 0 4px 12px rgba(0,0,0,0.25);"></div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        html: `<div style="background-image: url('${loc.image_url}'); width: 36px; height: 36px; border-radius: 50%; background-size: cover; background-position: center; background-repeat: no-repeat; background-color: #E2E8F0; border: 2.5px solid #159F8C; box-shadow: 0 4px 12px rgba(0,0,0,0.25); box-sizing: border-box;"></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
       });
       const marker = L.marker([loc.lat, loc.lng], { icon: customIcon })
         .addTo(map)

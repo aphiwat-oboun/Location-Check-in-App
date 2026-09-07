@@ -109,8 +109,8 @@ function renderPhotoMarkers(locations, defaultSelectedId = null) {
     const customIcon = L.divIcon({
       html: iconHtml,
       className: 'custom-leaflet-marker',
-      iconSize: [46, 52],
-      iconAnchor: [23, 50]
+      iconSize: [48, 54],
+      iconAnchor: [24, 52]
     });
 
     const marker = L.marker([loc.lat, loc.lng], { 
