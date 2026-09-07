@@ -91,7 +91,7 @@
               <img src="{{ post.user.profile.get_avatar_url }}" alt="{{ post.user.profile.get_display_name }}" class="post-user-avatar" style="transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
             </a>
             <div class="post-user-info" style="flex:1 1 auto;min-width:0;overflow:visible;">
-              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;overflow:visible;">
+              <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;overflow:visible;">
                 <a href="{% url 'accounts:user_profile' post.user.username %}" class="post-user-name" style="text-decoration:none;transition:color 0.15s;">
                   {{ post.user.profile.get_display_name }}
                 </a>
