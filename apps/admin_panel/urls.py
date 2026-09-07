@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/comment/<int:comment_id>/delete/', views.comment_delete_api, name='api_comment_delete'),
     path('api/report/<int:report_id>/action/', views.report_action_api, name='api_report_action'),
     path('export/csv/', views.export_analytics_csv, name='export_csv'),
+    path('api/location/create/', views.location_create_api, name='api_location_create'),
     path('api/location/<int:location_id>/edit/', views.location_edit_api, name='api_location_edit'),
     path('api/location/<int:location_id>/delete/', views.location_delete_api, name='api_location_delete'),
     path('api/category/create/', views.category_create_api, name='api_category_create'),

@@ -592,9 +592,92 @@ def export_analytics_csv(request):
 
 
 @admin_required
+def location_create_api(request):
+    """
+    AJAX handler to create a new location with map coordinates, cover image/url
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        name = request.POST.get('name', '').strip()
+        city = request.POST.get('city', '').strip() or 'ศรีสะเกษ'
+        province = request.POST.get('province', '').strip() or 'ศรีสะเกษ'
+        address = request.POST.get('address', '').strip()
+        category_id = request.POST.get('category_id')
+        lat_val = request.POST.get('latitude')
+        lng_val = request.POST.get('longitude')
+        description = request.POST.get('description', '').strip()
+        cover_image_url = request.POST.get('cover_image_url', '').strip()
+
+        if not name:
+            return JsonResponse({'success': False, 'message': 'กรุณากรอกชื่อสถานที่'})
+
+        latitude = float(lat_val) if lat_val else 15.1186
+        longitude = float(lng_val) if lng_val else 104.3225
+
+        location = Location(
+            name=name,
+            city=city,
+            province=province,
+            address=address,
+            latitude=latitude,
+            longitude=longitude,
+            description=description,
+            created_by=request.user
+        )
+
+        if category_id:
+            try:
+                location.category = Category.objects.get(id=category_id)
+            except Category.DoesNotExist:
+                pass
+
+        # Handle uploaded cover image file
+        if 'cover_image' in request.FILES:
+            location.cover_image = request.FILES['cover_image']
+
+        # Handle cover image URL
+        if cover_image_url:
+            location.cover_image_url = cover_image_url
+
+        location.save()
+
+        log_admin_action(request.user, f"เพิ่มสถานที่ใหม่: {name}", f"Location #{location.id}", request=request)
+        Notification.objects.create(
+            user=request.user,
+            category='location',
+            title='เพิ่มสถานที่ใหม่สำเร็จ',
+            message=f'ได้ทำการเพิ่มสถานที่ "{name}" ({location.city}) พิกัด ({location.latitude:.4f}, {location.longitude:.4f}) เรียบร้อยแล้ว',
+            link='/admin-panel/locations/',
+            is_read=False
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'เพิ่มสถานที่ "{name}" สำเร็จเรียบร้อยแล้ว',
+            'location': {
+                'id': location.id,
+                'name': location.name,
+                'category_name': location.category.name if location.category else 'ทั่วไป',
+                'category_id': location.category.id if location.category else '',
+                'city': location.city,
+                'province': location.province,
+                'address': location.address,
+                'latitude': location.latitude,
+                'longitude': location.longitude,
+                'description': location.description,
+                'cover_url': location.get_cover_url(),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'ไม่สามารถเพิ่มสถานที่ได้: {str(e)}'}, status=400)
+
+
+@admin_required
 def location_edit_api(request, location_id):
     """
-    AJAX handler to edit a location's details including cover image file and URL
+    AJAX handler to edit a location's details including coordinates, cover image file and URL
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -604,6 +687,7 @@ def location_edit_api(request, location_id):
         name = request.POST.get('name', '').strip()
         city = request.POST.get('city', '').strip()
         province = request.POST.get('province', '').strip()
+        address = request.POST.get('address', '').strip()
         category_id = request.POST.get('category_id')
         lat_val = request.POST.get('latitude')
         lng_val = request.POST.get('longitude')
@@ -618,8 +702,16 @@ def location_edit_api(request, location_id):
             location.city = city
         if province:
             location.province = province
+        location.address = address
+        
         if category_id:
-            location.category_id = category_id
+            try:
+                location.category = Category.objects.get(id=category_id)
+            except Category.DoesNotExist:
+                location.category = None
+        else:
+            location.category = None
+
         if lat_val:
             location.latitude = float(lat_val)
         if lng_val:
@@ -636,7 +728,7 @@ def location_edit_api(request, location_id):
 
         location.save()
 
-        log_admin_action(request.user, f"แก้ไขข้อมูลสถานที่: {name}", f"Location #{location.id}", request=request)
+        log_admin_action(request.user, f"แก้ไขข้อมูล/ย้ายหมุดสถานที่: {name}", f"Location #{location.id}", request=request)
         return JsonResponse({
             'success': True,
             'message': f'อัปเดตข้อมูลสถานที่ "{name}" สำเร็จ',
@@ -644,8 +736,10 @@ def location_edit_api(request, location_id):
                 'id': location.id,
                 'name': location.name,
                 'category_name': location.category.name if location.category else 'ทั่วไป',
+                'category_id': location.category.id if location.category else '',
                 'city': location.city,
                 'province': location.province,
+                'address': location.address,
                 'latitude': location.latitude,
                 'longitude': location.longitude,
                 'description': location.description,
