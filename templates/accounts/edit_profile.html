@@ -485,9 +485,17 @@
 </style>
 
 <script>
-  function previewAvatarImage(event) {
-    const file = event.target.files && event.target.files[0];
-    if (file) {
+  async function previewAvatarImage(event) {
+    const rawFile = event.target.files && event.target.files[0];
+    if (rawFile) {
+      const file = (typeof compressImageFile === 'function') ? await compressImageFile(rawFile, 800, 800, 0.88) : rawFile;
+      
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        event.target.files = dt.files;
+      } catch(e) {}
+
       const reader = new FileReader();
       reader.onload = function(e) {
         const output = document.getElementById('avatarPreview');
@@ -503,9 +511,17 @@
     }
   }
 
-  function previewCoverImage(event) {
-    const file = event.target.files && event.target.files[0];
-    if (file) {
+  async function previewCoverImage(event) {
+    const rawFile = event.target.files && event.target.files[0];
+    if (rawFile) {
+      const file = (typeof compressImageFile === 'function') ? await compressImageFile(rawFile, 1920, 1080, 0.85) : rawFile;
+
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        event.target.files = dt.files;
+      } catch(e) {}
+
       const reader = new FileReader();
       reader.onload = function(e) {
         const output = document.getElementById('coverPreview');

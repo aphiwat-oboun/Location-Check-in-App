@@ -59,28 +59,29 @@ def create_post_view(request):
                 if f:
                     all_images.append({'type': 'file', 'data': f})
 
-            # 2. From Base64 data URLs / camera snaps
-            raw_urls = request.POST.getlist('image_urls')
-            single_url = request.POST.get('image_url', '').strip()
-            if single_url and single_url not in raw_urls:
-                raw_urls.append(single_url)
+            # 2. From Base64 / external URLs ONLY if no direct files were provided
+            if not all_images:
+                raw_urls = request.POST.getlist('image_urls')
+                single_url = request.POST.get('image_url', '').strip()
+                if single_url and single_url not in raw_urls:
+                    raw_urls.append(single_url)
 
-            for u_str in raw_urls:
-                u_str = u_str.strip()
-                if not u_str:
-                    continue
-                if u_str.startswith('data:image'):
-                    try:
-                        format_part, imgstr = u_str.split(';base64,')
-                        ext = format_part.split('/')[-1].split(';')[0]
-                        if ext.lower() == 'jpeg':
-                            ext = 'jpg'
-                        c_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
-                        all_images.append({'type': 'file', 'data': c_file})
-                    except Exception:
-                        pass
-                elif u_str.startswith('http://') or u_str.startswith('https://'):
-                    all_images.append({'type': 'url', 'data': u_str[:490]})
+                for u_str in raw_urls:
+                    u_str = u_str.strip()
+                    if not u_str:
+                        continue
+                    if u_str.startswith('data:image'):
+                        try:
+                            format_part, imgstr = u_str.split(';base64,')
+                            ext = format_part.split('/')[-1].split(';')[0]
+                            if ext.lower() == 'jpeg':
+                                ext = 'jpg'
+                            c_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
+                            all_images.append({'type': 'file', 'data': c_file})
+                        except Exception:
+                            pass
+                    elif u_str.startswith('http://') or u_str.startswith('https://'):
+                        all_images.append({'type': 'url', 'data': u_str[:490]})
 
             if not place_name:
                 place_name = 'สถานที่ท่องเที่ยว'
