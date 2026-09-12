@@ -71,11 +71,13 @@
         </label>
         <select id="categorySelect" name="category" onchange="checkEditCategoryOther(this.value)" class="form-input" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-light);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
           {% for cat in categories %}
+          {% if cat.name != 'อื่นๆ' and cat.slug != 'other' %}
           <option value="{{ cat.id }}" {% if post.category_id == cat.id %}selected{% endif %}>
             {{ cat.name }}
           </option>
+          {% endif %}
           {% endfor %}
-          <option value="other">✨ อื่นๆ (ระบุเอง)</option>
+          <option value="other">อื่นๆ (ระบุเอง)</option>
         </select>
         <input type="text" id="customCategoryInput" name="custom_category" placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..." style="display:none;margin-top:8px;width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid var(--primary);font-size:14px;background:var(--bg-surface-subtle);color:var(--text-main);">
       </div>

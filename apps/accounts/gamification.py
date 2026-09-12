@@ -238,6 +238,7 @@ def calculate_user_gamification(user):
         badge_item = {
             **b,
             'current': current_val,
+            'display_current': min(current_val, b['target']),
             'is_unlocked': is_unlocked,
             'progress_pct': progress_pct,
         }
