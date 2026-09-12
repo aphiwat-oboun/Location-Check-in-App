@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.utils.text import slugify
 from apps.locations.models import Location, Category
 from .models import Post, PostImage
 
@@ -51,21 +52,23 @@ def create_post_view(request):
             # Collect all uploaded images (supports unlimited images)
             all_images = []
             
-            # 1. From file inputs (multiple files)
+            # 1. From direct file inputs (multiple files)
             files = request.FILES.getlist('images')
             if not files:
                 files = request.FILES.getlist('image')
             for f in files:
-                if f:
+                if f and hasattr(f, 'size') and f.size > 0:
                     all_images.append({'type': 'file', 'data': f})
 
-            # 2. From Base64 / external URLs ONLY if no direct files were provided
-            if not all_images:
-                raw_urls = request.POST.getlist('image_urls')
-                single_url = request.POST.get('image_url', '').strip()
-                if single_url and single_url not in raw_urls:
-                    raw_urls.append(single_url)
+            # 2. From Base64 / external URLs (fallback or when DataTransfer/mobile input didn't sync files)
+            raw_urls = request.POST.getlist('image_urls')
+            single_url = request.POST.get('image_url', '').strip()
+            if single_url and single_url not in raw_urls:
+                raw_urls.append(single_url)
 
+            # If no direct files found OR raw_urls has more images (mixed webcam/uploads)
+            if not all_images or (raw_urls and len(raw_urls) > len(all_images)):
+                b64_images = []
                 for u_str in raw_urls:
                     u_str = u_str.strip()
                     if not u_str:
@@ -74,14 +77,23 @@ def create_post_view(request):
                         try:
                             format_part, imgstr = u_str.split(';base64,')
                             ext = format_part.split('/')[-1].split(';')[0]
-                            if ext.lower() == 'jpeg':
+                            if ext.lower() in ('jpeg', 'pjpeg'):
+                                ext = 'jpg'
+                            elif ext.lower() not in ('jpg', 'png', 'webp', 'gif'):
                                 ext = 'jpg'
                             c_file = ContentFile(base64.b64decode(imgstr), name=f"post_{uuid.uuid4().hex[:8]}.{ext}")
-                            all_images.append({'type': 'file', 'data': c_file})
-                        except Exception:
-                            pass
+                            b64_images.append({'type': 'file', 'data': c_file})
+                        except Exception as b64_err:
+                            print(f"Error decoding base64 image: {b64_err}")
                     elif u_str.startswith('http://') or u_str.startswith('https://'):
-                        all_images.append({'type': 'url', 'data': u_str[:490]})
+                        b64_images.append({'type': 'url', 'data': u_str[:490]})
+                if b64_images:
+                    all_images = b64_images
+
+            # STRICT VALIDATION: Post MUST have at least 1 image
+            if not all_images:
+                messages.error(request, 'กรุณาแนบรูปภาพอย่างน้อย 1 รูป ก่อนสร้างโพสต์')
+                return redirect('posts:create')
 
             if not place_name:
                 place_name = 'สถานที่ท่องเที่ยว'
@@ -120,14 +132,21 @@ def create_post_view(request):
                 }
             )
 
+            # Reset seek pointer for files
+            for item in all_images:
+                if item['type'] == 'file' and hasattr(item['data'], 'seek'):
+                    try:
+                        item['data'].seek(0)
+                    except Exception:
+                        pass
+
             # Determine first cover image
             first_img_file = None
             first_img_url = None
-            if all_images:
-                if all_images[0]['type'] == 'file':
-                    first_img_file = all_images[0]['data']
-                else:
-                    first_img_url = all_images[0]['data']
+            if all_images[0]['type'] == 'file':
+                first_img_file = all_images[0]['data']
+            else:
+                first_img_url = all_images[0]['data']
 
             # Create post
             try:
@@ -157,6 +176,11 @@ def create_post_view(request):
             for idx, item in enumerate(all_images):
                 try:
                     if item['type'] == 'file':
+                        if hasattr(item['data'], 'seek'):
+                            try:
+                                item['data'].seek(0)
+                            except Exception:
+                                pass
                         PostImage.objects.create(
                             post=post,
                             image=item['data'],

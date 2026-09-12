@@ -37,6 +37,7 @@
 
   <!-- Custom CSS & App Scripts -->
   <script>
+    window.IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
     (function() {
       try {
         var t = localStorage.getItem('app_theme') || 'light';
@@ -44,7 +45,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1788780008">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1789143000">
   <style>
     .leaflet-container {
       background-color: #cbd5e1 !important; /* Soft neutral blue-grey background for zoomed-out map bounds */
@@ -80,9 +81,6 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
-
-  <!-- Top Animated Glowing Progress Bar (YouTube/GitHub Style) -->
-  <div id="globalTopProgressBar" style="position:fixed;top:0;left:0;height:3.5px;width:0%;background:linear-gradient(90deg, #159F8C 0%, #10B981 50%, #34D399 100%);box-shadow:0 0 10px rgba(21, 159, 140, 0.8), 0 0 5px #10B981;z-index:999999;transition:width 0.3s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.3s ease;opacity:0;pointer-events:none;"></div>
 
   <!-- Global Loading Progress Overlay Modal -->
   <div id="globalLoadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(15, 23, 42, 0.65);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#FFFFFF;">
@@ -123,7 +121,6 @@
   <script>
     window.showGlobalLoading = function(title = 'กำลังบันทึกข้อมูล...', subtitle = 'กรุณารอสักครู่ ระบบกำลังประมวลผล') {
       var overlay = document.getElementById('globalLoadingOverlay');
-      var topBar = document.getElementById('globalTopProgressBar');
       var titleEl = document.getElementById('globalLoadingTitle');
       var subEl = document.getElementById('globalLoadingSubtitle');
       
@@ -131,26 +128,11 @@
       if (subEl) subEl.textContent = subtitle;
       if (overlay) overlay.style.display = 'flex';
       if (window.lucide) lucide.createIcons();
-
-      if (topBar) {
-        topBar.style.opacity = '1';
-        topBar.style.width = '30%';
-        setTimeout(function() { if (topBar) topBar.style.width = '75%'; }, 150);
-        setTimeout(function() { if (topBar) topBar.style.width = '92%'; }, 500);
-      }
     };
 
     window.hideGlobalLoading = function() {
       var overlay = document.getElementById('globalLoadingOverlay');
-      var topBar = document.getElementById('globalTopProgressBar');
       if (overlay) overlay.style.display = 'none';
-      if (topBar) {
-        topBar.style.width = '100%';
-        setTimeout(function() {
-          topBar.style.opacity = '0';
-          setTimeout(function() { topBar.style.width = '0%'; }, 250);
-        }, 150);
-      }
     };
   </script>
 
@@ -208,9 +190,6 @@
           </li>
           <li class="nav-item {% if active_nav == 'about' %}active{% endif %}">
             <a href="{% url 'core:about' %}">
-
-              <span class="nav-icon"><i data-lucide="users"></i></span>
-
               <span class="nav-icon"><i data-lucide="info"></i></span>
 
               <span>เกี่ยวกับเรา</span>
@@ -320,7 +299,7 @@
           {% endif %}
 
           {% if user.is_authenticated %}
-          <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="openNotificationDrawer(event)">
+          <button class="btn-icon-circle nav-notification-btn" title="การแจ้งเตือน" onclick="toggleNotificationDrawer(event)">
             <i data-lucide="bell" style="width:18px;height:18px;"></i>
           </button>
           
@@ -441,7 +420,7 @@
       </header>
       {% else %}
       <!-- Auth Top Navigation Bar -->
-      <header class="auth-top-bar" style="height: 58px; background: #FFFFFF; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 50; width: 100%; box-sizing: border-box;">
+      <header class="auth-top-bar" style="height: 80px; background: #FFFFFF; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 50; width: 100%; box-sizing: border-box;">
         <a href="{% url 'core:home' %}" style="display: flex; align-items: center; gap: 6px; color: #4B5563; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; background: #F3F4F6;">
           <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i>
           <span>หน้าหลัก</span>
@@ -542,8 +521,8 @@
   </div>
 
   <!-- Social Notifications Drawer (Facebook/Social Style - Dark Slate matching reference image) -->
-  <div class="social-noti-backdrop" id="socialNotiBackdrop" onclick="closeNotificationDrawer()"></div>
-  <div class="social-noti-drawer" id="socialNotiDrawer">
+  <div class="social-noti-backdrop" id="socialNotiBackdrop" style="display: none;" onclick="closeNotificationDrawer()"></div>
+  <div class="social-noti-drawer" id="socialNotiDrawer" style="display: none;">
     <div class="social-noti-header">
       <div class="social-noti-title-row">
         <h3 class="social-noti-heading">การแจ้งเตือน</h3>
@@ -569,12 +548,7 @@
     </div>
 
     <!-- Notifications List Body -->
-    <div class="social-noti-body" id="socialNotiBody">
-      <div style="text-align:center;padding:36px 20px;color:var(--text-muted);">
-        <i data-lucide="loader-2" class="spin-icon" style="width:26px;height:26px;color:var(--primary);"></i>
-        <div style="margin-top:10px;font-size:13.5px;">กำลังโหลดการแจ้งเตือน...</div>
-      </div>
-    </div>
+    <div class="social-noti-body" id="socialNotiBody"></div>
   </div>
 
   <script>
@@ -595,24 +569,12 @@
         });
       });
 
-      // Initialize Cookie Banner
-      initCookieConsent();
+      // Cookie Banner remains hidden until explicitly opened by user in Settings
     });
 
     function initCookieConsent() {
-      const consent = localStorage.getItem('cookie_consent_status');
       const banner = document.getElementById('cookieConsentBanner');
-      if (!banner) return;
-
-      if (!consent) {
-        setTimeout(() => {
-          banner.style.display = 'flex';
-          banner.classList.add('show');
-          if (window.lucide) lucide.createIcons();
-        }, 500);
-      } else {
-        banner.style.display = 'none';
-      }
+      if (banner) banner.style.display = 'none';
     }
 
     function openCookieConsentBanner() {
@@ -929,8 +891,8 @@
             <i data-lucide="share-2" style="width:20px;height:20px;"></i>
           </div>
           <div>
-            <h3 style="font-size:18px;font-weight:800;color:#0F172A;margin:0 0 2px 0;letter-spacing:-0.01em;">แชร์จุดเช็คอิน</h3>
-            <p style="font-size:12.5px;color:#64748B;margin:0;font-weight:500;">ส่งต่อสถานที่สวยๆ ไปยังเพื่อนและโซเชียลมีเดีย</p>
+            <h3 id="globalShareModalHeaderTitle" style="font-size:18px;font-weight:800;color:#0F172A;margin:0 0 2px 0;letter-spacing:-0.01em;">แชร์จุดเช็คอิน</h3>
+            <p id="globalShareModalHeaderSubtitle" style="font-size:12.5px;color:#64748B;margin:0;font-weight:500;">ส่งต่อสถานที่สวยๆ ไปยังเพื่อนและโซเชียลมีเดีย</p>
           </div>
         </div>
         <button type="button" onclick="closeGlobalShareModal()" style="border:none;background:#F1F5F9;color:#64748B;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#E2E8F0';this.style.color='#0F172A';" onmouseout="this.style.background='#F1F5F9';this.style.color='#64748B';">
@@ -1128,9 +1090,9 @@
   </div>
 
   <!-- Map, Bilingual Language Engine, & Core Global App Scripts (GPS, Social Share, Interactions) -->
-  <script src="{% static 'js/i18n.js' %}?v=1788775000"></script>
-  <script src="{% static 'js/map.js' %}?v=1788775000"></script>
-  <script src="{% static 'js/app.js' %}?v=1788775000"></script>
+  <script src="{% static 'js/i18n.js' %}?v=1788781000"></script>
+  <script src="{% static 'js/map.js' %}?v=1788781000"></script>
+  <script src="{% static 'js/app.js' %}?v=1788781000"></script>
 
   {% block extra_js %}{% endblock %}
 </body>

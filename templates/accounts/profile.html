@@ -4,306 +4,471 @@
 {% block title %}{{ profile.get_display_name }} (@{{ profile_user.username }}) - ที่นี่มีอะไร?{% endblock %}
 
 {% block content %}
-<div class="tiktok-profile-wrapper">
+<div class="profile-layout-container">
   
-  <!-- Profile Header Card (TikTok Mobile-First Style) -->
-  <div class="tiktok-profile-card">
+  <!-- =========================================================================
+       1. MAIN COLUMN (Hero Card + Tabs + Post Grid)
+       ========================================================================= -->
+  <div class="profile-main-column">
     
-    <!-- Top Cover / Ambient Background -->
-    <div class="tiktok-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}'); background-position: center {{ profile.cover_position|default:50 }}%;{% endif %} position: relative;">
-      <div class="tiktok-cover-gradient"></div>
+    <!-- Hero Profile Card (Matches Reference Image) -->
+    <div class="ref-profile-card">
+      
+      <!-- Top Cover Banner -->
+      <div class="ref-cover-banner" style="{% if profile.get_cover_url %}background-image: url('{{ profile.get_cover_url }}'); background-position: center {{ profile.cover_position|default:50 }}%;{% endif %}">
+        <div class="ref-cover-overlay"></div>
+      </div>
+
+      <!-- Profile Header Information Section -->
+      <div class="ref-profile-info-section">
+        
+        <!-- Top Info Row: Avatar + Details + Action Buttons -->
+        <div class="ref-header-content-row">
+          
+          <!-- Avatar Container -->
+          <div class="ref-avatar-container">
+            <img src="{{ profile.get_avatar_url }}" alt="{{ profile.get_display_name }}" class="ref-avatar-img">
+            {% if is_own_profile %}
+            <a href="{% url 'accounts:edit_profile' %}" class="ref-avatar-camera-btn" title="เปลี่ยนรูปโปรไฟล์">
+              <i data-lucide="camera" style="width:13px;height:13px;"></i>
+            </a>
+            {% endif %}
+          </div>
+
+          <!-- Name, Bio, Metadata -->
+          <div class="ref-details-container">
+            <div class="ref-name-title-row">
+              <h1 class="ref-display-name">
+                <span>{{ profile.get_display_name }}</span>
+                {% if gamification.level_svg %}
+                  <a href="?tab=badges" class="ref-shield-badge-wrap" title="{{ gamification.level_title }} (Level {{ gamification.level }}) • คลิกเพื่อดูความสำเร็จ">
+                    <img src="{{ gamification.level_svg }}" alt="Level {{ gamification.level }}" class="ref-shield-badge-img" style="width:26px;height:26px;min-width:26px;max-width:26px;object-fit:contain;vertical-align:middle;display:inline-block;flex-shrink:0;">
+                  </a>
+                {% elif profile_user.is_staff %}
+                  <a href="?tab=badges" class="ref-shield-badge-wrap" title="ผู้ดูแลระบบ (Verified Staff) • คลิกเพื่อดูความสำเร็จ">
+                    <img src="/static/icons/levels/level-5.svg" alt="Admin Shield" class="ref-shield-badge-img" style="width:26px;height:26px;min-width:26px;max-width:26px;object-fit:contain;vertical-align:middle;display:inline-block;flex-shrink:0;">
+                  </a>
+                {% endif %}
+              </h1>
+            </div>
+
+            <div class="ref-handle-text">@{{ profile_user.username }}</div>
+
+            {% if profile.bio %}
+              <div class="ref-bio-text">"{{ profile.bio }}"</div>
+            {% elif is_own_profile %}
+              <div class="ref-bio-text empty">
+                <a href="{% url 'accounts:edit_profile' %}" style="color:var(--ref-primary, #0FA58F);text-decoration:none;font-weight:500;">+ เพิ่มคำแนะนำตัวของคุณ</a>
+              </div>
+            {% endif %}
+
+            <div class="ref-meta-row">
+              <span class="ref-meta-item">
+                <i data-lucide="map-pin" style="width:13px;height:13px;color:var(--ref-primary, #0FA58F);"></i>
+                <span>{{ profile.city|default:'ศรีสะเกษ' }}, ไทย</span>
+              </span>
+              <span class="ref-meta-item">
+                <i data-lucide="calendar" style="width:13px;height:13px;color:var(--ref-text-muted, #98A19E);"></i>
+                <span>เข้าร่วมเมื่อ {{ profile_user.date_joined|date:"j M Y" }}</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Action Buttons (Desktop top right / Mobile full width below meta) -->
+          <div class="ref-actions-container">
+            {% if is_own_profile %}
+              <a href="{% url 'accounts:edit_profile' %}" class="ref-btn secondary">
+                <span>แก้ไขโปรไฟล์</span>
+              </a>
+              <button type="button" class="ref-btn primary" onclick="shareProfile('{{ profile_user.username }}', '{{ profile.get_display_name|escapejs }}', '{{ profile.get_avatar_url|escapejs }}')">
+                <i data-lucide="send" style="width:13px;height:13px;"></i>
+                <span>แชร์โปรไฟล์</span>
+              </button>
+              <button type="button" onclick="openProfileSettingsModal()" class="ref-btn-icon-circle" title="ตั้งค่าและตัวเลือก" aria-label="ตั้งค่าบัญชี">
+                <i data-lucide="settings" style="width:16px;height:16px;"></i>
+              </button>
+            {% else %}
+              <button id="btnToggleFollow" type="button" class="ref-btn {% if is_following %}secondary{% else %}primary{% endif %}" onclick="toggleFollow('{{ profile_user.username }}', this)">
+                {% if is_following %}
+                  <span class="follow-btn-text">กำลังติดตาม</span>
+                {% else %}
+                  <i data-lucide="user-plus" style="width:14px;height:14px;"></i>
+                  <span class="follow-btn-text">ติดตาม</span>
+                {% endif %}
+              </button>
+              <button type="button" class="ref-btn secondary" onclick="shareProfile('{{ profile_user.username }}', '{{ profile.get_display_name|escapejs }}', '{{ profile.get_avatar_url|escapejs }}')">
+                <i data-lucide="send" style="width:13px;height:13px;"></i>
+                <span>แชร์โปรไฟล์</span>
+              </button>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <!-- 4-Column Stats Box (Inside Hero Card) -->
+        <div class="ref-stats-box">
+          
+          <!-- Stat 1: Posts -->
+          <div class="ref-stat-col">
+            <div class="ref-stat-icon-wrap"><i data-lucide="layout-grid" style="width:14px;height:14px;"></i></div>
+            <div class="ref-stat-number">{{ total_posts }}</div>
+            <div class="ref-stat-label">โพสต์</div>
+          </div>
+
+          <div class="ref-stat-v-sep"></div>
+
+          <!-- Stat 2: Places -->
+          <div class="ref-stat-col">
+            <div class="ref-stat-icon-wrap"><i data-lucide="map-pin" style="width:14px;height:14px;"></i></div>
+            <div class="ref-stat-number">{{ total_places }}</div>
+            <div class="ref-stat-label">สถานที่ที่ไป</div>
+          </div>
+
+          <div class="ref-stat-v-sep"></div>
+
+          <!-- Stat 3: Followers -->
+          <div class="ref-stat-col clickable" onclick="openFollowListModal('{{ profile_user.username }}', 'followers')">
+            <div class="ref-stat-icon-wrap"><i data-lucide="users" style="width:14px;height:14px;"></i></div>
+            <div class="ref-stat-number" id="profileFollowersCount">{{ followers_count }}</div>
+            <div class="ref-stat-label">ผู้ติดตาม</div>
+          </div>
+
+          <div class="ref-stat-v-sep"></div>
+
+          <!-- Stat 4: Following -->
+          <div class="ref-stat-col clickable" onclick="openFollowListModal('{{ profile_user.username }}', 'following')">
+            <div class="ref-stat-icon-wrap"><i data-lucide="user-check" style="width:14px;height:14px;"></i></div>
+            <div class="ref-stat-number">{{ following_count }}</div>
+            <div class="ref-stat-label">กำลังติดตาม</div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
 
-    <!-- Main Profile Info Box -->
-    <div class="tiktok-profile-body">
-      
-      <!-- Avatar with TikTok / Story Ring & Prominent Rank Shield -->
-      <div class="tiktok-avatar-container">
-        <div class="tiktok-avatar-ring">
-          <img src="{{ profile.get_avatar_url }}" alt="{{ profile.get_display_name }}" class="tiktok-avatar-img">
-        </div>
-        <!-- Prominent Rank Shield Badge on Avatar -->
-        <div class="avatar-rank-shield-badge" {% if is_own_profile %}onclick="openBadgesModal()"{% endif %} title="ระดับ {{ gamification.level }}: {{ gamification.level_title }}">
-          <img src="{{ gamification.level_svg }}" alt="LV.{{ gamification.level }}">
-        </div>
-      </div>
+    <!-- 2. TABS BAR (Clean Client-side Navigation) -->
+    <div class="ref-tabs-bar" role="tablist">
+      <button type="button" class="ref-tab-btn active" data-tab="posts" role="tab" aria-selected="true" aria-controls="profile-tab-posts">
+        <i data-lucide="grid" style="width:15px;height:15px;"></i>
+        <span>โพสต์ทั้งหมด</span>
+      </button>
+      <button type="button" class="ref-tab-btn" data-tab="badges" role="tab" aria-selected="false" aria-controls="profile-tab-badges">
+        <i data-lucide="award" style="width:15px;height:15px;"></i>
+        <span>เหรียญรางวัล & เลเวล</span>
+      </button>
+      {% if is_own_profile %}
+      <button type="button" class="ref-tab-btn" data-tab="liked" role="tab" aria-selected="false" aria-controls="profile-tab-liked" title="เฉพาะคุณที่มองเห็น">
+        <i data-lucide="heart" style="width:15px;height:15px;"></i>
+        <span>ถูกใจ</span>
+        <i data-lucide="lock" style="width:11px;height:11px;opacity:0.6;margin-left:-2px;"></i>
+      </button>
+      <button type="button" class="ref-tab-btn" data-tab="saved" role="tab" aria-selected="false" aria-controls="profile-tab-saved" title="เฉพาะคุณที่มองเห็น">
+        <i data-lucide="bookmark" style="width:15px;height:15px;"></i>
+        <span>ที่บันทึก</span>
+        <i data-lucide="lock" style="width:11px;height:11px;opacity:0.6;margin-left:-2px;"></i>
+      </button>
+      {% endif %}
+    </div>
 
-      <!-- Display Name & Handle -->
-      <div class="tiktok-names-block">
-        <h1 class="tiktok-display-name">
-          {{ profile.get_display_name }}
-          {% if profile_user.is_staff %}
-            <span class="badge-staff-verify" title="ผู้ดูแลระบบ">
-              <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
-            </span>
-          {% endif %}
-        </h1>
-        
-        <div class="tiktok-handle-row">
-          <span class="tiktok-username">@{{ profile_user.username }}</span>
-          <span class="tiktok-dot-sep">•</span>
-          <span class="tiktok-city-pill">
-            <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
-            {{ profile.city|default:'ศรีสะเกษ' }}
-          </span>
-        </div>
-
-        <!-- Prominent VIP Prestige Explorer Emblem (Grand, Luxurious & Eye-Catching) -->
-        <div class="prestige-emblem-card" {% if is_own_profile %}onclick="openBadgesModal()"{% endif %} title="แตะเพื่อดูรายละเอียดระดับเลเวลและเหรียญรางวัล">
-          <div class="prestige-shield-wrapper">
-            <div class="prestige-shield-glow" style="background:{{ gamification.level_gradient }};"></div>
-            <img src="{{ gamification.level_svg }}" alt="LV.{{ gamification.level }}" class="prestige-shield-img">
-          </div>
-          <div class="prestige-info">
-            <div class="prestige-top-line">
-              <span class="prestige-tier-tag" style="background:{{ gamification.level_gradient }};">
-                LEVEL {{ gamification.level }}
-              </span>
-              <span class="prestige-xp-text">{{ gamification.xp }} XP</span>
+    <!-- 3. TAB PANELS -->
+    
+    <!-- Tab 1: โพสต์ทั้งหมด (Default Tab) -->
+    <div id="profile-tab-posts" class="ref-tab-panel active" role="tabpanel">
+      <div class="ref-post-grid">
+        {% for post in posts %}
+        <article class="ref-post-card">
+          <a href="{% url 'posts:detail' post.id %}" class="ref-post-img-wrap">
+            <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="ref-post-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80';">
+            
+            {% if post.location %}
+            <!-- Top-Left Location Capsule Badge -->
+            <div class="ref-post-badge-top">
+              <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
+              <span>{{ post.location.name|truncatechars:18 }}</span>
             </div>
-            <div class="prestige-title-text">{{ gamification.level_title }}</div>
-            <div class="prestige-progress-track">
-              <div class="prestige-progress-bar" style="width:{{ gamification.level_progress_pct }}%;background:{{ gamification.level_gradient }};"></div>
+            <!-- Bottom-Left Overlay -->
+            <div class="ref-post-overlay-bottom">
+              <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
+              <span>{{ post.location.city|default:post.location.name|truncatechars:14 }}</span>
             </div>
-          </div>
-          {% if is_own_profile %}
-          <div class="prestige-action-arrow">
-            <i data-lucide="chevron-right"></i>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- TikTok 3-Stats Row (Following | Followers | Likes) - Guaranteed Zero Overflow on Mobile -->
-      <div class="tiktok-stats-row">
-        
-        <!-- 1. Following -->
-        <div class="tiktok-stat-col" onclick="openFollowListModal('{{ profile_user.username }}', 'following')" title="ดูรายชื่อที่กำลังติดตาม">
-          <span class="tiktok-stat-num">{{ following_count }}</span>
-          <span class="tiktok-stat-lbl">กำลังติดตาม</span>
-        </div>
-
-        <div class="tiktok-stat-divider"></div>
-
-        <!-- 2. Followers -->
-        <div class="tiktok-stat-col" onclick="openFollowListModal('{{ profile_user.username }}', 'followers')" title="ดูรายชื่อผู้ติดตาม">
-          <span class="tiktok-stat-num" id="profileFollowersCount">{{ followers_count }}</span>
-          <span class="tiktok-stat-lbl">ผู้ติดตาม</span>
-        </div>
-
-        <div class="tiktok-stat-divider"></div>
-
-        <!-- 3. Total Likes Received -->
-        <div class="tiktok-stat-col" title="จำนวนถูกใจทั้งหมดที่ได้รับ">
-          <span class="tiktok-stat-num">{{ total_likes_received }}</span>
-          <span class="tiktok-stat-lbl">ถูกใจ</span>
-        </div>
-
-      </div>
-
-      <!-- Action Buttons Row -->
-      <div class="tiktok-actions-row">
-        {% if is_own_profile %}
-          <a href="{% url 'accounts:edit_profile' %}" class="btn-tiktok-action secondary">
-            <i data-lucide="edit-3" style="width:15px;height:15px;"></i>
-            <span>แก้ไขโปรไฟล์</span>
+            {% endif %}
           </a>
 
-          <button class="btn-tiktok-action secondary" onclick="shareProfile('{{ profile_user.username }}', '{{ profile.get_display_name|escapejs }}')" title="แชร์โปรไฟล์นี้">
-            <i data-lucide="share-2" style="width:15px;height:15px;"></i>
-            <span>แชร์</span>
-          </button>
+          <!-- Card Content Body -->
+          <div class="ref-post-body">
+            <a href="{% url 'posts:detail' post.id %}" class="ref-post-title-link">
+              <h3 class="ref-post-title">{{ post.caption|truncatechars:32|default:post.location.name }}</h3>
+            </a>
+            <p class="ref-post-snippet">{{ post.caption|truncatechars:55|default:'ภาพถ่ายบรรยากาศจุดเช็คอิน' }}</p>
 
-          <button type="button" class="btn-tiktok-action secondary" onclick="openProfileSettingsModal()" title="ตัวเลือกเพิ่มเติม" style="width:38px;padding:0;display:flex;align-items:center;justify-content:center;">
-            <i data-lucide="more-horizontal" style="width:16px;height:16px;"></i>
-          </button>
-        {% else %}
-          <!-- Follow / Following Button (TikTok Style) -->
-          <button id="btnToggleFollow" class="btn-tiktok-action {% if is_following %}following{% else %}primary{% endif %}" onclick="toggleFollow('{{ profile_user.username }}', this)">
-            {% if is_following %}
-              <i data-lucide="check" style="width:16px;height:16px;"></i>
-              <span class="follow-btn-text">กำลังติดตาม</span>
-            {% else %}
-              <i data-lucide="user-plus" style="width:16px;height:16px;"></i>
-              <span class="follow-btn-text">ติดตาม</span>
-            {% endif %}
-          </button>
-
-          <button class="btn-tiktok-action secondary" onclick="shareProfile('{{ profile_user.username }}', '{{ profile.get_display_name|escapejs }}')" title="แชร์โปรไฟล์นี้">
-            <i data-lucide="share-2" style="width:15px;height:15px;"></i>
-            <span>แชร์</span>
-          </button>
-        {% endif %}
-      </div>
-
-      <!-- Bio / Description - Compact & Clean -->
-      {% if profile.bio %}
-        <div class="tiktok-bio-card">
-          <p class="tiktok-bio-text">{{ profile.bio }}</p>
-        </div>
-      {% elif is_own_profile %}
-        <a href="{% url 'accounts:edit_profile' %}" class="tiktok-bio-add-btn" title="แก้ไขคำแนะนำตัว">
-          <i data-lucide="plus" style="width:13px;height:13px;"></i>
-          <span>เพิ่มคำแนะนำตัว</span>
-        </a>
-      {% endif %}
-
-    </div>
-
-  </div>
-
-  <!-- Segmented Navigation Tabs (TikTok Style) -->
-  <div class="tiktok-nav-tabs">
-    <a href="?tab=posts" class="tiktok-tab-item {% if active_tab == 'posts' %}active{% endif %}" title="โพสต์ทั้งหมด">
-      <i data-lucide="grid" style="width:16px;height:16px;"></i>
-      <span>โพสต์</span>
-      <span class="tab-count-pill">{{ total_posts }}</span>
-    </a>
-
-    <a href="?tab=liked" class="tiktok-tab-item {% if active_tab == 'liked' %}active{% endif %}" title="โพสต์ที่กดถูกใจ">
-      <i data-lucide="heart" style="width:16px;height:16px;"></i>
-      <span>ที่ถูกใจ</span>
-      <span class="tab-count-pill">{{ liked_posts|length }}</span>
-    </a>
-
-    {% if is_own_profile %}
-    <a href="?tab=badges" class="tiktok-tab-item {% if active_tab == 'badges' %}active{% endif %}" title="เหรียญตราเกียรติยศ">
-      <i data-lucide="award" style="width:16px;height:16px;"></i>
-      <span>เหรียญตรา</span>
-      <span class="tab-count-pill">{{ gamification.unlocked_count }}/{{ gamification.total_badges }}</span>
-    </a>
-
-    <a href="?tab=saved" class="tiktok-tab-item {% if active_tab == 'saved' %}active{% endif %}" title="โพสต์ที่บันทึกไว้">
-      <i data-lucide="bookmark" style="width:16px;height:16px;"></i>
-      <span>ที่บันทึก</span>
-      <span class="tab-count-pill">{{ saved_posts|length }}</span>
-    </a>
-    {% endif %}
-  </div>
-
-  <!-- Content Section: 3-Column TikTok Grid / Tab Content -->
-  {% if active_tab == 'liked' %}
-    <!-- Liked Posts Grid -->
-    <div class="tiktok-media-grid">
-      {% for post in liked_posts %}
-        <a href="{% url 'posts:detail' post.id %}" class="tiktok-grid-item">
-          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="tiktok-grid-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';">
-          <div class="tiktok-grid-overlay">
-            <span class="tiktok-overlay-stat">
-              <i data-lucide="heart" style="width:13px;height:13px;fill:#EF4444;stroke:#EF4444;"></i>
-              {{ post.get_likes_count }}
-            </span>
-          </div>
-        </a>
-      {% empty %}
-        <div class="tiktok-empty-state">
-          <div class="empty-icon-ring">
-            <i data-lucide="heart" style="width:28px;height:28px;color:#EF4444;"></i>
-          </div>
-          <h4>ยังไม่มีโพสต์ที่ถูกใจ</h4>
-          <p>เมื่อคุณกดหัวใจให้โพสต์ที่ชอบ รายการจะมารวมอยู่ที่นี่</p>
-        </div>
-      {% endfor %}
-    </div>
-
-  {% elif active_tab == 'badges' %}
-    <!-- Badges Showcase Grid -->
-    <div style="background:var(--bg-surface, #FFFFFF);border-radius:16px;border:1px solid var(--border-light);padding:18px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <h3 style="font-size:15px;font-weight:800;color:var(--text-main);margin:0;">เหรียญตราเกียรติยศ</h3>
-          <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0 0;">ปลดล็อกแล้ว {{ gamification.unlocked_count }} จาก {{ gamification.total_badges }} เหรียญ</p>
-        </div>
-        <span style="font-size:12px;font-weight:700;color:var(--primary);background:var(--primary-light, rgba(21,159,140,0.1));padding:4px 10px;border-radius:20px;">
-          LV.{{ gamification.level }} {{ gamification.level_title }}
-        </span>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(135px, 1fr));gap:12px;">
-        {% for b in gamification.badges %}
-          <div style="padding:14px 10px;border-radius:14px;background:{% if b.is_unlocked %}var(--bg-surface-subtle, #F8FAFC){% else %}rgba(0,0,0,0.02){% endif %};border:1px solid {% if b.is_unlocked %}var(--border-light){% else %}var(--border-subtle){% endif %};text-align:center;position:relative;opacity:{% if b.is_unlocked %}1{% else %}0.55{% endif %};">
-            <div style="width:48px;height:48px;margin:0 auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ b.gradient }};box-shadow:0 4px 12px {{ b.border_glow }};">
-              <img src="{{ b.svg_icon }}" alt="{{ b.name }}" style="width:28px;height:28px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));" onerror="this.onerror=null;this.parentElement.innerHTML='<i data-lucide=\'{{ b.icon }}\' style=\'width:22px;height:22px;color:#FFF;\'></i>';lucide.createIcons();">
-            </div>
-            <div style="font-size:12.5px;font-weight:800;color:var(--text-main);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.name }}</div>
-            <div style="font-size:10.5px;color:var(--text-muted);line-height:1.3;height:28px;overflow:hidden;">{{ b.description }}</div>
-            <div style="margin-top:8px;">
-              {% if b.is_unlocked %}
-                <span style="font-size:10.5px;font-weight:700;color:#10B981;display:inline-flex;align-items:center;gap:3px;">
-                  <i data-lucide="check-circle" style="width:12px;height:12px;"></i> ปลดล็อกแล้ว
-                </span>
-              {% else %}
-                <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:4px;overflow:hidden;margin-bottom:4px;">
-                  <div style="width:{{ b.progress_pct }}%;height:100%;background:var(--primary);border-radius:4px;"></div>
-                </div>
-                <span style="font-size:10px;color:var(--text-muted);font-weight:600;">{{ b.current }}/{{ b.target }}</span>
-              {% endif %}
+            <div class="ref-post-footer">
+              <span class="ref-post-likes">
+                <i data-lucide="heart" style="width:14px;height:14px;fill:#EF4444;stroke:#EF4444;"></i>
+                <span>{{ post.get_likes_count }}</span>
+              </span>
+              <span class="ref-post-date">{{ post.created_at|date:"j M Y" }}</span>
             </div>
           </div>
-        {% endfor %}
-      </div>
-    </div>
-
-  {% elif active_tab == 'saved' %}
-    <!-- Saved Posts Grid -->
-    <div class="tiktok-media-grid">
-      {% for item in saved_posts %}
-        {% if item.post %}
-        <a href="{% url 'posts:detail' item.post.id %}" class="tiktok-grid-item">
-          <img src="{{ item.post.get_cover_url }}" alt="{{ item.post.location.name }}" class="tiktok-grid-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';">
-          <div class="tiktok-grid-overlay">
-            <span class="tiktok-overlay-stat">
-              <i data-lucide="bookmark" style="width:13px;height:13px;fill:#159F8C;stroke:#159F8C;"></i>
-              {{ item.post.location.name|truncatechars:12 }}
-            </span>
-          </div>
-        </a>
-        {% endif %}
-      {% empty %}
-        <div class="tiktok-empty-state">
-          <div class="empty-icon-ring">
-            <i data-lucide="bookmark" style="width:28px;height:28px;color:#159F8C;"></i>
-          </div>
-          <h4>ยังไม่มีรายการที่บันทึกไว้</h4>
-          <p>กดบุ๊กมาร์กบนสถานที่หรือมุมโปรดเพื่อเก็บไว้ย้อนดูได้เสมอ</p>
-        </div>
-      {% endfor %}
-    </div>
-
-  {% else %}
-    <!-- Author Posts Grid (Default Tab) -->
-    <div class="tiktok-media-grid">
-      {% for post in posts %}
-        <a href="{% url 'posts:detail' post.id %}" class="tiktok-grid-item">
-          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="tiktok-grid-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';">
-          <div class="tiktok-grid-overlay">
-            <span class="tiktok-overlay-stat">
-              <i data-lucide="heart" style="width:13px;height:13px;fill:#FFF;stroke:#FFF;"></i>
-              {{ post.get_likes_count }}
-            </span>
-            <span class="tiktok-overlay-loc">
-              <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
-              {{ post.location.city|truncatechars:8 }}
-            </span>
-          </div>
-        </a>
-      {% empty %}
-        <div class="tiktok-empty-state">
-          <div class="empty-icon-ring">
-            <i data-lucide="camera" style="width:28px;height:28px;color:#159F8C;"></i>
-          </div>
+        </article>
+        {% empty %}
+        <div class="ref-empty-card">
+          <div class="ref-empty-icon"><i data-lucide="camera" style="width:28px;height:28px;color:var(--ref-primary, #0FA58F);"></i></div>
           <h4>ยังไม่มีโพสต์</h4>
           <p>{% if is_own_profile %}คุณยังไม่ได้สร้างโพสต์เลย แบ่งปันสถานที่น่าสนใจให้เพื่อนๆ ได้ชมกัน!{% else %}ผู้ใช้นี้ยังไม่ได้แชร์โพสต์ใดๆ ในขณะนี้{% endif %}</p>
           {% if is_own_profile %}
-          <a href="{% url 'posts:create' %}" class="btn-create-first-post">
-            <i data-lucide="plus-circle" style="width:16px;height:16px;"></i>
+          <a href="{% url 'posts:create' %}" class="ref-btn primary" style="margin-top:12px;display:inline-flex;">
+            <i data-lucide="plus" style="width:15px;height:15px;"></i>
             <span>สร้างโพสต์แรก</span>
           </a>
           {% endif %}
         </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
     </div>
-  {% endif %}
+
+    <!-- Tab 2: เหรียญรางวัล & เลเวล -->
+    <div id="profile-tab-badges" class="ref-tab-panel" role="tabpanel">
+      <div class="ref-badges-container">
+        <!-- Level Progress Hero Card -->
+        <div class="ref-badges-hero-card">
+          <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            <img src="{{ gamification.level_svg }}" alt="Level {{ gamification.level }}" style="width:68px; height:68px; object-fit:contain; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.12)); flex-shrink:0;">
+            <div style="flex:1; min-width:200px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <span class="ref-settings-level-badge">LEVEL {{ gamification.level }}</span>
+                <h3 class="ref-badges-hero-title">{{ gamification.level_title }}</h3>
+              </div>
+              <p class="ref-badges-hero-desc">สะสม XP จากการโพสต์ภาพ เช็คอินสถานที่ และรับยอดไลก์เพื่อเลื่อนระดับ</p>
+              
+              <!-- XP Bar -->
+              <div class="ref-badges-xp-label">
+                <span>{{ gamification.xp }} XP</span>
+                <span>เป้าหมายต่อไป: {{ gamification.xp_for_next_level }} XP</span>
+              </div>
+              <div class="ref-progress-track" style="height:8px;">
+                <div style="width:{{ gamification.level_progress_pct }}%; height:100%; background:linear-gradient(90deg, #0FA58F 0%, #10B981 100%); border-radius:9999px; transition:width 0.4s ease;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9 Badges Grid -->
+        <div class="ref-badges-grid">
+          {% for badge in gamification.badges %}
+          <div class="ref-badge-card {% if badge.is_unlocked %}unlocked{% endif %}" style="opacity:{% if badge.is_unlocked %}1{% else %}0.75{% endif %};">
+            {% if badge.is_unlocked %}
+            <div style="position:absolute; top:8px; right:8px; background:#10B981; color:#fff; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;" title="ปลดล็อกแล้ว">
+              <i data-lucide="check" style="width:12px; height:12px; stroke-width:3;"></i>
+            </div>
+            {% endif %}
+            
+            <img src="{{ badge.svg_icon }}" alt="{{ badge.name }}" style="width:48px; height:48px; object-fit:contain; flex-shrink:0; {% if not badge.is_unlocked %}filter:grayscale(0.8) opacity(0.7);{% endif %}">
+            
+            <div style="flex:1; min-width:0;">
+              <h4 class="ref-badge-title">{{ badge.name }}</h4>
+              <div class="ref-badge-sub">{{ badge.subtitle }}</div>
+              <p class="ref-badge-desc">{{ badge.description }}</p>
+              
+              <div class="ref-badge-meta-row">
+                <span>ความคืบหน้า</span>
+                <span style="color:{% if badge.is_unlocked %}#10B981{% else %}inherit{% endif %}; font-weight:800;">{% if badge.is_unlocked %}ปลดล็อกแล้ว ({{ badge.target }}/{{ badge.target }}){% else %}{{ badge.display_current }} / {{ badge.target }}{% endif %}</span>
+              </div>
+              <div class="ref-progress-track" style="height:5px;">
+                <div style="width:{{ badge.progress_pct }}%; height:100%; background:{% if badge.is_unlocked %}#10B981{% else %}#0FA58F{% endif %}; border-radius:9999px;"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if is_own_profile %}
+    <!-- Tab 3: โพสต์ที่ถูกใจ (เฉพาะเจ้าของโปรไฟล์) -->
+    <div id="profile-tab-liked" class="ref-tab-panel" role="tabpanel">
+      <div class="ref-post-grid">
+        {% for post in liked_posts %}
+        <article class="ref-post-card">
+          <a href="{% url 'posts:detail' post.id %}" class="ref-post-img-wrap">
+            <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="ref-post-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80';">
+            {% if post.location %}
+            <div class="ref-post-badge-top">
+              <i data-lucide="map-pin" style="width:11px;height:11px;"></i>
+              <span>{{ post.location.name|truncatechars:18 }}</span>
+            </div>
+            {% endif %}
+          </a>
+          <div class="ref-post-body">
+            <a href="{% url 'posts:detail' post.id %}" class="ref-post-title-link">
+              <h3 class="ref-post-title">{{ post.caption|truncatechars:32|default:post.location.name }}</h3>
+            </a>
+            <p class="ref-post-snippet">{{ post.caption|truncatechars:55|default:'โพสต์ที่กดถูกใจ' }}</p>
+            <div class="ref-post-footer">
+              <span class="ref-post-likes">
+                <i data-lucide="heart" style="width:14px;height:14px;fill:#EF4444;stroke:#EF4444;"></i>
+                <span>{{ post.get_likes_count }}</span>
+              </span>
+              <span class="ref-post-date">{{ post.created_at|date:"j M Y" }}</span>
+            </div>
+          </div>
+        </article>
+        {% empty %}
+        <div class="ref-empty-card">
+          <div class="ref-empty-icon"><i data-lucide="heart" style="width:28px;height:28px;color:#EF4444;"></i></div>
+          <h4>ยังไม่มีโพสต์ที่ถูกใจ</h4>
+          <p>เมื่อคุณกดหัวใจให้โพสต์ที่ชอบ รายการจะมารวมอยู่ที่นี่</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Tab 4: รายการที่บันทึก (เฉพาะเจ้าของโปรไฟล์) -->
+    <div id="profile-tab-saved" class="ref-tab-panel" role="tabpanel">
+      <div class="ref-post-grid">
+        {% for item in saved_posts %}
+        {% if item.post %}
+        <article class="ref-post-card">
+          <a href="{% url 'posts:detail' item.post.id %}" class="ref-post-img-wrap">
+            <img src="{{ item.post.get_cover_url }}" alt="{{ item.post.location.name }}" class="ref-post-img" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80';">
+            {% if item.post.location %}
+            <div class="ref-post-badge-top">
+              <i data-lucide="bookmark" style="width:11px;height:11px;"></i>
+              <span>{{ item.post.location.name|truncatechars:18 }}</span>
+            </div>
+            {% endif %}
+          </a>
+          <div class="ref-post-body">
+            <a href="{% url 'posts:detail' item.post.id %}" class="ref-post-title-link">
+              <h3 class="ref-post-title">{{ item.post.caption|truncatechars:32|default:item.post.location.name }}</h3>
+            </a>
+            <p class="ref-post-snippet">{{ item.post.caption|truncatechars:55|default:'สถานที่ที่บันทึกไว้' }}</p>
+            <div class="ref-post-footer">
+              <span class="ref-post-likes">
+                <i data-lucide="heart" style="width:14px;height:14px;fill:#EF4444;stroke:#EF4444;"></i>
+                <span>{{ item.post.get_likes_count }}</span>
+              </span>
+              <span class="ref-post-date">{{ item.post.created_at|date:"j M Y" }}</span>
+            </div>
+          </div>
+        </article>
+        {% endif %}
+        {% empty %}
+        <div class="ref-empty-card">
+          <div class="ref-empty-icon"><i data-lucide="bookmark" style="width:28px;height:28px;color:var(--ref-primary, #0FA58F);"></i></div>
+          <h4>ยังไม่มีรายการที่บันทึก</h4>
+          <p>กดบุ๊กมาร์กบนสถานที่เพื่อเก็บไว้ย้อนดูได้เสมอ</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- =========================================================================
+       2. RIGHT SIDEBAR (Desktop Only: Places Visited + Followers + Inspire Card)
+       ========================================================================= -->
+  <aside class="profile-right-sidebar">
+    
+    <!-- Card 1: สถานที่ที่ไปล่าสุด -->
+    <div class="ref-sidebar-card">
+      <div class="ref-sidebar-header">
+        <h4 class="ref-sidebar-title">สถานที่ที่ไปล่าสุด</h4>
+        <a href="{% url 'core:explore' %}" class="ref-sidebar-link">ดูทั้งหมด <i data-lucide="chevron-right" style="width:12px;height:12px;"></i></a>
+      </div>
+
+      <!-- Mini Map Graphic Banner -->
+      <div class="ref-mini-map-banner" onclick="window.location.href='{% url 'core:map' %}'" title="เปิดแผนที่สถานที่ทั้งหมด">
+        <div class="ref-mini-map-pin">
+          <i data-lucide="map-pin" style="width:16px;height:16px;color:#0FA58F;"></i>
+        </div>
+      </div>
+
+      <!-- Places List -->
+      <div class="ref-places-list">
+        {% for post in posts|slice:":3" %}
+        <a href="{% url 'locations:detail' post.location.id %}" class="ref-place-item">
+          <img src="{{ post.get_cover_url }}" alt="{{ post.location.name }}" class="ref-place-thumb" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=120&q=80';">
+          <div class="ref-place-info">
+            <div class="ref-place-name">{{ post.location.name }}</div>
+            <div class="ref-place-sub">{{ post.location.city|default:'ศรีสะเกษ' }}, ไทย</div>
+            <div class="ref-place-date">{{ post.created_at|date:"j M Y" }}</div>
+          </div>
+        </a>
+        {% empty %}
+        <div style="padding:12px;text-align:center;color:var(--ref-text-muted, #98A19E);font-size:12px;">ยังไม่มีประวัติสถานที่</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Card: ระดับและสถานะนักสำรวจ (Level & Explorer Status) -->
+    <div class="ref-sidebar-card">
+      <div class="ref-sidebar-header">
+        <h4 class="ref-sidebar-title">ระดับนักสำรวจ</h4>
+        <a href="?tab=badges" class="ref-sidebar-link">ดูเหรียญ <i data-lucide="chevron-right" style="width:12px;height:12px;"></i></a>
+      </div>
+      
+      <div style="display:flex; align-items:center; gap:12px; padding:4px 0 10px 0;">
+        <img src="{{ gamification.level_svg }}" alt="Level {{ gamification.level }}" style="width:44px; height:44px; object-fit:contain; flex-shrink:0; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.1));">
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13.5px; font-weight:800; color:#17201E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ gamification.level_title }}</div>
+          <div style="font-size:11.5px; font-weight:600; color:#0FA58F;">Level {{ gamification.level }} • {{ gamification.xp }} XP</div>
+        </div>
+      </div>
+
+      <!-- XP Progress Bar -->
+      <div style="width:100%; height:6px; background:#F1F5F9; border-radius:9999px; overflow:hidden; margin-bottom:8px; border:1px solid #E2E8F0;">
+        <div style="width:{{ gamification.level_progress_pct }}%; height:100%; background:linear-gradient(90deg, #0FA58F 0%, #10B981 100%); border-radius:9999px;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:#8FA29A; font-weight:600;">
+        <span>ปลดล็อก {{ gamification.unlocked_count }}/{{ gamification.total_badges }} เหรียญ</span>
+        <span>ถัดไป: {{ gamification.xp_for_next_level }} XP</span>
+      </div>
+    </div>
+
+    <!-- Card 2: ผู้ติดตาม -->
+    <div class="ref-sidebar-card">
+      <div class="ref-sidebar-header">
+        <h4 class="ref-sidebar-title">ผู้ติดตาม</h4>
+        <a href="javascript:void(0)" onclick="openFollowListModal('{{ profile_user.username }}', 'followers')" class="ref-sidebar-link">ดูทั้งหมด <i data-lucide="chevron-right" style="width:12px;height:12px;"></i></a>
+      </div>
+
+      <div class="ref-followers-avatars-row" id="sidebarFollowersAvatarsRow">
+        {% for f in profile_user.followers_set.all|slice:":4" %}
+        <a href="{% url 'accounts:user_profile' f.follower.username %}" id="follower-avatar-{{ f.follower.username }}" title="{{ f.follower.profile.get_display_name }}">
+          <img src="{{ f.follower.profile.get_avatar_url }}" alt="{{ f.follower.username }}" class="ref-follower-avatar-circle">
+        </a>
+        {% empty %}
+        <span class="no-followers-text" style="font-size:12px;color:var(--ref-text-muted, #98A19E);">ยังไม่มีผู้ติดตาม</span>
+        {% endfor %}
+        {% if followers_count > 4 %}
+        <div class="ref-follower-avatar-circle count-pill" onclick="openFollowListModal('{{ profile_user.username }}', 'followers')">+{{ followers_count|add:"-4" }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card 3: Inspire & Create Post Banner Card -->
+    <a href="{% url 'posts:create' %}" class="ref-inspire-card" title="สร้างโพสต์และเช็คอินสถานที่ใหม่">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <div class="ref-inspire-pin-icon">
+          <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+        </div>
+        <div class="ref-inspire-plane">
+          <i data-lucide="sparkles" style="width:20px;height:20px;"></i>
+        </div>
+      </div>
+      <div class="ref-inspire-text">
+        ทุกที่คุณไป<br>คือเรื่องราวที่มีค่า<br>มาแชร์กันเถอะ!
+      </div>
+      <div class="ref-inspire-btn">
+        <i data-lucide="plus-circle" style="width:16px;height:16px;"></i>
+        <span>สร้างโพสต์ใหม่</span>
+      </div>
+    </a>
+
+  </aside>
 
 </div>
 
@@ -312,12 +477,12 @@
   <div class="follow-list-modal-sheet" onclick="event.stopPropagation()">
     <div class="follow-list-header">
       <h3 id="followListModalTitle">ผู้ติดตาม</h3>
-      <button class="btn-close-circle" onclick="closeFollowListModal()">
+      <button class="btn-close-circle" onclick="closeFollowListModal()" type="button" aria-label="ปิด">
         <i data-lucide="x" style="width:16px;height:16px;"></i>
       </button>
     </div>
     <div class="follow-list-content" id="followListModalBody">
-      <div style="text-align:center;padding:24px;color:var(--text-muted);">
+      <div style="text-align:center;padding:24px;color:var(--ref-text-muted, #98A19E);">
         <i data-lucide="loader-2" class="spin-icon" style="width:24px;height:24px;"></i>
         <div style="margin-top:8px;font-size:13px;">กำลังโหลด...</div>
       </div>
@@ -325,280 +490,177 @@
   </div>
 </div>
 
-<!-- Profile Settings Modal (Mobile Full Screen / Desktop Centered Modal) -->
 {% if is_own_profile %}
-<div id="profileSettingsModalBackdrop" class="profile-settings-modal-backdrop" onclick="closeProfileSettingsModal()">
-  <div id="profileSettingsModalSheet" class="profile-settings-modal-sheet" onclick="event.stopPropagation()">
+<!-- Profile Settings & Quick Actions Modal -->
+<div class="follow-list-modal-backdrop" id="profileSettingsModalBackdrop" onclick="closeProfileSettingsModal()">
+  <div class="ref-settings-modal-sheet" onclick="event.stopPropagation()">
     
-    <!-- Mobile Header Bar -->
-    <div class="profile-settings-modal-header">
+    <!-- Modal Header -->
+    <div class="ref-settings-header">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:38px; height:38px; border-radius:12px; background:#E6F5F3; color:#159F8C; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          <i data-lucide="sliders-horizontal" style="width:19px; height:19px;"></i>
+        <div class="ref-settings-icon-wrap" style="background:rgba(15, 165, 143, 0.12); color:#0FA58F;">
+          <i data-lucide="settings" style="width:18px;height:18px;"></i>
         </div>
         <div>
-          <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-main, #0F172A); margin:0;">ตัวเลือกและการจัดการ</h3>
-          <p style="font-size:0.775rem; color:#64748B; margin:0;">@{{ profile_user.username }}</p>
+          <h3 class="ref-settings-title">ตั้งค่าและตัวเลือก</h3>
+          <p class="ref-settings-subtitle">จัดการบัญชีและการแสดงผล</p>
         </div>
       </div>
-      <button type="button" class="btn-icon-circle" onclick="closeProfileSettingsModal()" style="width:36px; height:36px; background:#F1F5F9;" title="ปิด">
-        <i data-lucide="x" style="width:18px; height:18px; color:#475569;"></i>
+      <button class="btn-close-circle" onclick="closeProfileSettingsModal()" type="button" aria-label="ปิด">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
       </button>
     </div>
 
-    <div class="profile-settings-modal-body">
-      <!-- Group 1: ข้อมูลและการจัดการ -->
-      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
-        <span style="font-size:0.75rem; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">บัญชีและโปรไฟล์</span>
-        
-        <a href="{% url 'accounts:edit_profile' %}" class="settings-menu-item">
-          <div style="width:36px; height:36px; border-radius:10px; background:#EEF2FF; color:#4F46E5; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="user-cog" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main, #0F172A);">แก้ไขข้อมูลส่วนตัว</div>
-            <div style="font-size:0.775rem; color:#64748B;">เปลี่ยนรูปภาพ, ชื่อแสดง, คำแนะนำตัว และเมือง</div>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px; height:16px; color:#94A3B8;"></i>
-        </a>
-
-        <a href="{% url 'core:saved' %}" class="settings-menu-item">
-          <div style="width:36px; height:36px; border-radius:10px; background:#FEF3C7; color:#D97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="bookmark" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main, #0F172A);">สถานที่ที่บันทึกไว้</div>
-            <div style="font-size:0.775rem; color:#64748B;">ดูรายการจุดเช็คอินที่คุณชื่นชอบ</div>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px; height:16px; color:#94A3B8;"></i>
-        </a>
-
-        <a href="{% url 'posts:my_posts' %}" class="settings-menu-item">
-          <div style="width:36px; height:36px; border-radius:10px; background:#ECFDF5; color:#10B981; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="image" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main, #0F172A);">โพสต์ของฉัน</div>
-            <div style="font-size:0.775rem; color:#64748B;">ประวัติการแชร์ภาพและสถานที่ทั้งหมดของคุณ</div>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px; height:16px; color:#94A3B8;"></i>
-        </a>
-      </div>
-
-      {% if user.is_staff %}
-      <!-- Group 2: สำหรับผู้ดูแลระบบ -->
-      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
-        <span style="font-size:0.75rem; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">ผู้ดูแลระบบ (Admin)</span>
-        
-        <a href="{% url 'admin_panel:dashboard' %}" class="settings-menu-item" style="background:#F0FDF9; border:1px solid rgba(21,159,140,0.25);">
-          <div style="width:36px; height:36px; border-radius:10px; background:#159F8C; color:#FFFFFF; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="shield" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.9rem; font-weight:800; color:#0F172A; display:flex; align-items:center; gap:6px;">
-              <span>แผงควบคุมระบบ (Admin Panel)</span>
-              <span style="background:#159F8C; color:#FFFFFF; font-size:10px; padding:1px 7px; border-radius:9999px; font-weight:800;">ADMIN</span>
-            </div>
-            <div style="font-size:0.775rem; color:#0D9488;">จัดการสมาชิก, โพสต์, สถานที่ และคอนฟิก</div>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px; height:16px; color:#159F8C;"></i>
-        </a>
-      </div>
-      {% endif %}
-
-      <!-- Group: ธีมและการแสดงผล -->
-      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;">
-        <span style="font-size:0.75rem; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">ธีมและการแสดงผล</span>
-        
-        <div class="settings-menu-item" onclick="toggleTheme()" style="cursor:pointer;">
-          <div style="width:36px; height:36px; border-radius:10px; background:#F3E8FF; color:#9333EA; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="moon" class="theme-icon-indicator" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.9rem; font-weight:700; color:var(--text-main, #0F172A);" class="theme-text-indicator">โหมดมืด</div>
-            <div style="font-size:0.775rem; color:#64748B;">สลับโหมดมืด/สว่าง สบายตาตลอดการใช้งาน</div>
-          </div>
-          <div class="theme-switch-toggle" id="profileModalThemeToggle">
-            <div class="theme-switch-slider"></div>
-          </div>
+    <!-- Modal Content -->
+    <div style="padding:16px 20px 22px; display:flex; flex-direction:column; gap:8px;">
+      
+      <!-- User Snippet -->
+      <div class="ref-settings-user-card">
+        <img src="{{ profile.get_avatar_url }}" alt="{{ profile.get_display_name }}" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #0FA58F;">
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-user-name">{{ profile.get_display_name }}</div>
+          <div class="ref-settings-user-handle">@{{ profile_user.username }}</div>
         </div>
+        <span class="ref-settings-level-badge">LV.{{ gamification.level }}</span>
       </div>
 
-      <!-- Group 3: เซสชันและการออกจากระบบ -->
-      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
-        <span style="font-size:0.75rem; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">ความปลอดภัย</span>
+      <!-- Option 1: แก้ไขโปรไฟล์ -->
+      <a href="{% url 'accounts:edit_profile' %}" class="ref-settings-menu-item">
+        <div class="ref-settings-icon-wrap"><i data-lucide="user-pen" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-item-title">แก้ไขข้อมูลโปรไฟล์</div>
+          <div class="ref-settings-item-sub">เปลี่ยนชื่อ, รูปโปรไฟล์, หน้าปก และคำแนะนำตัว</div>
+        </div>
+        <i data-lucide="chevron-right" class="ref-settings-item-arrow" style="width:16px;height:16px;"></i>
+      </a>
 
-        <button type="button" onclick="closeProfileSettingsModal(); setTimeout(() => confirmLogout(event, '{% url 'accounts:logout' %}'), 100);" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; background:#FEF2F2; border:1px solid #FEE2E2; color:#DC2626; cursor:pointer; text-align:left; width:100%; transition:all 0.15s ease;">
-          <div style="width:36px; height:36px; border-radius:10px; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <i data-lucide="log-out" style="width:18px; height:18px;"></i>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:0.925rem; font-weight:800; color:#B91C1C;">ออกจากระบบ</div>
-            <div style="font-size:0.775rem; color:#EF4444;">ออกจากบัญชีนี้บนอุปกรณ์นี้อย่างปลอดภัย</div>
-          </div>
-          <i data-lucide="log-out" style="width:17px; height:17px; color:#DC2626;"></i>
-        </button>
+      <!-- Option 2: ความปลอดภัยและรหัสผ่าน -->
+      <a href="{% url 'accounts:edit_profile' %}#security" class="ref-settings-menu-item">
+        <div class="ref-settings-icon-wrap"><i data-lucide="shield-check" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-item-title">ความปลอดภัย & รหัสผ่าน</div>
+          <div class="ref-settings-item-sub">เปลี่ยนรหัสผ่านและช่องทางการเข้าสู่ระบบ</div>
+        </div>
+        <i data-lucide="chevron-right" class="ref-settings-item-arrow" style="width:16px;height:16px;"></i>
+      </a>
+
+      <!-- Option 3: สลับโหมดมืด / สว่าง -->
+      <div class="ref-settings-menu-item" onclick="toggleTheme();" style="cursor:pointer;">
+        <div class="ref-settings-icon-wrap"><i data-lucide="moon" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-item-title">สลับโหมดมืด / สว่าง</div>
+          <div class="ref-settings-item-sub">ปรับธีมการแสดงผลของเว็บไซต์</div>
+        </div>
+        <div style="font-size:12px; font-weight:700; color:#0FA58F; padding:4px 8px; border-radius:6px; background:rgba(15, 165, 143, 0.1);">เปลี่ยนธีม</div>
       </div>
 
-      <!-- App Info Footer -->
-      <div style="text-align:center; padding-top:8px; padding-bottom:16px; font-size:0.75rem; color:#94A3B8;">
-        ที่นี่มีอะไร? (What's Here?) v2.0 • ระบบเช็คอินภาพถ่าย
-      </div>
+      <!-- Option 4: เกี่ยวกับแพลตฟอร์ม -->
+      <a href="{% url 'core:about' %}" class="ref-settings-menu-item">
+        <div class="ref-settings-icon-wrap"><i data-lucide="info" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-item-title">เกี่ยวกับ ที่นี่มีอะไร?</div>
+          <div class="ref-settings-item-sub">ข้อมูลโครงการ ชุมชน และข้อกำหนด</div>
+        </div>
+        <i data-lucide="chevron-right" class="ref-settings-item-arrow" style="width:16px;height:16px;"></i>
+      </a>
+
+      <!-- Divider -->
+      <div class="ref-settings-divider"></div>
+
+      <!-- Option 5: ออกจากระบบ (Logout) -->
+      <a href="javascript:void(0)" onclick="closeProfileSettingsModal(); confirmLogout(event, '{% url 'accounts:logout' %}');" class="ref-settings-menu-item logout">
+        <div class="ref-settings-icon-wrap logout"><i data-lucide="log-out" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1; min-width:0;">
+          <div class="ref-settings-item-title">ออกจากระบบ</div>
+          <div class="ref-settings-item-sub">ลงชื่อออกจากบัญชีนี้บนอุปกรณ์นี้</div>
+        </div>
+        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+      </a>
+
     </div>
 
   </div>
 </div>
-
-<style>
-.profile-settings-modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 100010;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.profile-settings-modal-sheet {
-  background: #FFFFFF;
-  border-radius: 24px;
-  width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-  box-sizing: border-box;
-  overflow: hidden;
-  animation: modalScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.profile-settings-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid #F1F5F9;
-  background: #FFFFFF;
-  flex-shrink: 0;
-}
-
-.profile-settings-modal-body {
-  padding: 16px 20px 24px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
-}
-
-.settings-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: #F8FAFC;
-  text-decoration: none;
-  color: #1E293B;
-  border: 1px solid #F1F5F9;
-  transition: all 0.15s ease;
-}
-
-.settings-menu-item:hover {
-  background: #F1F5F9;
-  transform: translateY(-1px);
-}
-
-:root[data-theme="dark"] .profile-settings-modal-backdrop {
-  background: rgba(0, 0, 0, 0.75);
-}
-
-:root[data-theme="dark"] .profile-settings-modal-sheet {
-  background: #111827;
-  border: 1px solid #1F2937;
-}
-
-:root[data-theme="dark"] .profile-settings-modal-header {
-  background: #111827;
-  border-bottom-color: #1F2937;
-}
-
-:root[data-theme="dark"] .settings-menu-item {
-  background: #1E293B;
-  border-color: #334155;
-  color: #F8FAFC;
-}
-
-:root[data-theme="dark"] .settings-menu-item:hover {
-  background: #263347;
-}
-
-@keyframes modalScaleUp {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@media (max-width: 1024px) {
-  .profile-settings-modal-backdrop {
-    padding: 0 !important;
-    background: #FFFFFF !important;
-    align-items: stretch !important;
-  }
-
-  :root[data-theme="dark"] .profile-settings-modal-backdrop {
-    background: #111827 !important;
-  }
-
-  .profile-settings-modal-sheet {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    max-height: 100vh !important;
-    max-height: 100dvh !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    animation: modalSlideUpMobile 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .profile-settings-modal-header {
-    padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
-    padding-left: 18px !important;
-    padding-right: 18px !important;
-    padding-bottom: 14px !important;
-  }
-
-  .profile-settings-modal-body {
-    padding-bottom: max(36px, env(safe-area-inset-bottom, 24px)) !important;
-  }
-}
-
-@keyframes modalSlideUpMobile {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-</style>
+{% endif %}
 
 <script>
-function openProfileSettingsModal() {
-  const modal = document.getElementById('profileSettingsModalBackdrop');
-  if (modal) {
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    if (window.lucide) lucide.createIcons();
-  }
-}
+  // 1. Instant Client-Side Tab Switching with Clean URL
+  (function initProfileTabs() {
+    function activateTab(tabName) {
+      const tabBtns = document.querySelectorAll('.ref-tab-btn[data-tab]');
+      const tabPanels = document.querySelectorAll('.ref-tab-panel');
+      if (!tabBtns.length) return;
 
-function closeProfileSettingsModal() {
-  const modal = document.getElementById('profileSettingsModalBackdrop');
-  if (modal) {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-  }
-}
+      let matched = false;
+      tabBtns.forEach(btn => {
+        const isMatch = btn.getAttribute('data-tab') === tabName;
+        btn.classList.toggle('active', isMatch);
+        btn.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+        if (isMatch) matched = true;
+      });
+
+      if (!matched && tabBtns[0]) {
+        tabName = tabBtns[0].getAttribute('data-tab');
+        tabBtns[0].classList.add('active');
+        tabBtns[0].setAttribute('aria-selected', 'true');
+      }
+
+      tabPanels.forEach(panel => {
+        panel.classList.toggle('active', panel.id === 'profile-tab-' + tabName);
+      });
+
+      // Keep address bar clean without URL query parameters
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, document.title, window.location.pathname);
+      }
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabBtns = document.querySelectorAll('.ref-tab-btn[data-tab]');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const tab = this.getAttribute('data-tab');
+          activateTab(tab);
+        });
+      });
+
+      // Clean any existing tab parameters from URL on initial page load
+      if (window.location.search.includes('tab=')) {
+        const params = new URLSearchParams(window.location.search);
+        const initialTab = params.get('tab');
+        if (initialTab && document.getElementById('profile-tab-' + initialTab)) {
+          activateTab(initialTab);
+        } else {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, document.title, window.location.pathname);
+          }
+        }
+      }
+    });
+  })();
+
+  window.openProfileSettingsModal = function() {
+    const modal = document.getElementById('profileSettingsModalBackdrop');
+    if (modal) {
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }
+  };
+
+  window.closeProfileSettingsModal = function() {
+    const modal = document.getElementById('profileSettingsModalBackdrop');
+    if (modal) {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        if (!modal.classList.contains('show')) modal.style.display = 'none';
+      }, 200);
+    }
+  };
 </script>
-{% endif %}
 {% endblock %}

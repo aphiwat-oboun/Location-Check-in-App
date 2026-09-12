@@ -54,11 +54,12 @@ function initWhatsHereMap(containerId = 'map-container', initialLocations = [], 
   });
   window.appMap = appMap;
 
-  // Standard OpenStreetMap Tile Layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
+  // Google Maps Tile Layer (High reliability, fast in Thailand, no watermarks / no API key block)
+  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
     minZoom: 6,
-    attribution: '© OpenStreetMap contributors'
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google Maps'
   }).addTo(appMap);
 
   // Ensure map fills container dimensions properly upon rendering without requiring manual zoom
@@ -173,24 +174,24 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
       <div style="position:relative;">
         <div style="width:100%;height:180px;border-radius:16px;overflow:hidden;margin-bottom:14px;position:relative;background:#f0f0f0;">
           <img src="${loc.cover_url}" alt="${loc.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
-          <button onclick="closeMobileBottomSheet()" class="btn-icon-circle" style="position:absolute;top:10px;right:10px;width:34px;height:34px;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);">
+          <button onclick="closeMobileBottomSheet()" class="btn-icon-circle" style="position:absolute;top:10px;right:10px;width:34px;height:34px;background:rgba(0,0,0,0.65);color:#FFFFFF;border:none;backdrop-filter:blur(4px);">
             <i data-lucide="x" style="width:16px;height:16px;"></i>
           </button>
         </div>
-        <h3 style="font-size:20px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${loc.name}</h3>
-        <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:8px;">${loc.city} • <span class="distance-badge" data-lat="${loc.lat}" data-lng="${loc.lng}">${calculatedDist}</span></p>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:10px;">
+        <h3 style="font-size:20px;font-weight:800;color:inherit;margin-bottom:4px;">${loc.name}</h3>
+        <p style="font-size:13.5px;color:var(--text-muted, #94A3B8);margin-bottom:8px;">${loc.city} • <span class="distance-badge" data-lat="${loc.lat}" data-lng="${loc.lng}">${calculatedDist}</span></p>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted, #94A3B8);margin-bottom:10px;">
           <img src="${post.author_avatar || DEFAULT_PLACEHOLDER_AVATAR}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
           <span>โดย ${post.author_name || 'ผู้ใช้'}</span>
         </div>
-        <p style="font-size:14px;color:var(--text-main);line-height:1.5;margin-bottom:16px;">${post.caption || 'บรรยากาศดีมาก น่าแวะมาเที่ยว 🌿'}</p>
+        <p style="font-size:14px;color:inherit;line-height:1.5;margin-bottom:16px;">${post.caption || 'บรรยากาศดีมาก น่าแวะมาเที่ยว 🌿'}</p>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="background:#159F8C;color:#FFF;border-radius:9999px;min-height:48px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="background:#159F8C;color:#FFF;border-radius:9999px;min-height:48px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;border:none;">
             <i data-lucide="navigation" style="width:18px;height:18px;"></i>
             <span>นำทาง</span>
           </button>
-          <a href="/locations/${loc.id}/" class="btn-secondary" style="text-decoration:none;border-radius:9999px;min-height:48px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <a href="/locations/${loc.id}/" class="btn-secondary" style="text-decoration:none;border-radius:9999px;min-height:48px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface-subtle, #F1F5F9);color:var(--text-main, #0F172A);border:1px solid var(--border-light, #E2E8F0);">
             <span>ดูรายละเอียด</span>
             <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
           </a>
@@ -208,7 +209,7 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
     card.innerHTML = `
       <div class="map-card-image-wrap">
         <img class="map-card-image" src="${loc.cover_url}" alt="${loc.name}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';">
-        <button class="btn-icon-circle" onclick="closeMapCard(event)" style="position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);">
+        <button class="btn-icon-circle" onclick="closeMapCard(event)" style="position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.65);color:#FFFFFF;border:none;backdrop-filter:blur(4px);">
           <i data-lucide="x" style="width:14px;height:14px;"></i>
         </button>
       </div>
@@ -225,11 +226,11 @@ function selectLocationOnMap(loc, smoothPan = true, isUserClick = true) {
         </div>
         <p class="map-card-caption">${post.caption || 'บรรยากาศดีมาก น่าแวะมาเที่ยว 🌿'}</p>
         <div class="map-card-footer" style="display:flex;gap:8px;align-items:center;margin-top:10px;">
-          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="flex:1;padding:8px 12px;font-size:13px;border-radius:9999px;display:flex;align-items:center;justify-content:center;gap:4px;">
+          <button onclick="navigateToLocation(${loc.lat}, ${loc.lng}, '${loc.name.replace(/'/g, "\\'")}')" class="btn-primary" style="flex:1;padding:8px 12px;font-size:13px;border-radius:9999px;display:flex;align-items:center;justify-content:center;gap:4px;border:none;">
             <i data-lucide="navigation" style="width:15px;height:15px;"></i>
             <span>นำทาง</span>
           </button>
-          <a href="/locations/${loc.id}/" class="btn-secondary" style="padding:8px 14px;font-size:12.5px;border-radius:9999px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;color:var(--text-main);font-weight:600;">
+          <a href="/locations/${loc.id}/" class="btn-secondary" style="padding:8px 14px;font-size:12.5px;border-radius:9999px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;background:var(--bg-surface-subtle, #F1F5F9);color:var(--text-main, #0F172A);border:1px solid var(--border-light, #E2E8F0);font-weight:700;">
             <span>ดูรายละเอียด</span>
           </a>
         </div>

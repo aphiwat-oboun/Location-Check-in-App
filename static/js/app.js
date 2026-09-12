@@ -19,6 +19,7 @@ window.submitComment = submitComment;
 window.setCommentReply = setCommentReply;
 window.cancelCommentReply = cancelCommentReply;
 window.fetchNotifications = fetchNotifications;
+window.toggleNotificationDrawer = toggleNotificationDrawer;
 window.openNotificationDrawer = openNotificationDrawer;
 window.closeNotificationDrawer = closeNotificationDrawer;
 window.navigateToLocation = navigateToLocation;
@@ -44,51 +45,72 @@ window.compressImageFile = compressImageFile;
  */
 function compressImageFile(file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) {
   return new Promise((resolve) => {
-    if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
-      resolve(file);
-      return;
-    }
+    try {
+      if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+        resolve(file);
+        return;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              let width = img.width || 1000;
+              let height = img.height || 1000;
 
-        if (width > maxWidth || height > maxHeight) {
-          if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
+              if (width > maxWidth || height > maxHeight) {
+                if (width > height) {
+                  height = Math.round((height * maxWidth) / width);
+                  width = maxWidth;
+                } else {
+                  width = Math.round((width * maxHeight) / height);
+                  height = maxHeight;
+                }
+              }
+
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+
+              canvas.toBlob((blob) => {
+                try {
+                  if (blob && blob.size < file.size) {
+                    let compressedFile;
+                    try {
+                      compressedFile = new File([blob], file.name ? file.name.replace(/\.[^/.]+$/, "") + ".jpg" : "photo.jpg", {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                      });
+                    } catch (fileErr) {
+                      compressedFile = blob;
+                    }
+                    resolve(compressedFile || file);
+                  } else {
+                    resolve(file);
+                  }
+                } catch (bErr) {
+                  resolve(file);
+                }
+              }, 'image/jpeg', quality);
+            } catch (canvasErr) {
+              resolve(file);
+            }
+          };
+          img.onerror = () => resolve(file);
+          img.src = e.target.result;
+        } catch (imgErr) {
+          resolve(file);
         }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob((blob) => {
-          if (blob && blob.size < file.size) {
-            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            resolve(compressedFile);
-          } else {
-            resolve(file);
-          }
-        }, 'image/jpeg', quality);
       };
-      img.onerror = () => resolve(file);
-      img.src = e.target.result;
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    } catch (err) {
+      resolve(file);
+    }
   });
 }
 
@@ -856,13 +878,16 @@ window._cachedNotifications = [];
 window._currentNotiFilter = 'all';
 
 async function fetchNotifications() {
+  if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+    return;
+  }
   try {
     const res = await fetch('/interactions/notifications/');
     if (!res.ok) return;
     const data = await res.json();
     window._cachedNotifications = data.notifications || [];
 
-    const bellBtns = document.querySelectorAll('.btn-icon-circle[title*="แจ้งเตือน"], .nav-notification-btn');
+    const bellBtns = document.querySelectorAll('.nav-notification-btn');
     bellBtns.forEach(btn => {
       let badge = btn.querySelector('.notification-badge');
       if (data.unread_count > 0) {
@@ -876,10 +901,22 @@ async function fetchNotifications() {
       } else if (badge) {
         badge.remove();
       }
-      btn.onclick = (e) => openNotificationDrawer(e);
     });
   } catch (err) {
-    console.log('Notifications check error:', err.message);
+    // Silent fail
+  }
+}
+
+function toggleNotificationDrawer(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const drawer = document.getElementById('socialNotiDrawer');
+  if (drawer && drawer.classList.contains('show')) {
+    closeNotificationDrawer();
+  } else {
+    openNotificationDrawer(e);
   }
 }
 
@@ -888,24 +925,47 @@ function openNotificationDrawer(e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  // Dismiss any open map preview card
+  // Dismiss any open map preview card or popovers
   if (typeof closeMapCard === 'function') {
     closeMapCard();
   }
+  if (typeof closeUserDropdownMenu === 'function') {
+    closeUserDropdownMenu();
+  }
 
-  // 1. Immediately hide and remove notification badges on the bell icon
+  // 1. Immediately remove notification badges on the bell icon
   document.querySelectorAll('.notification-badge, .nav-notification-badge, #navNotiBadge, .badge-count').forEach(badge => {
     badge.remove();
   });
 
   const drawer = document.getElementById('socialNotiDrawer');
   const backdrop = document.getElementById('socialNotiBackdrop');
-  if (drawer && backdrop) {
-    drawer.classList.add('show');
-    backdrop.classList.add('show');
-    if (window.innerWidth <= 1024) {
-      document.body.style.overflow = 'hidden';
-    }
+  if (!drawer || !backdrop) return;
+
+  drawer.style.display = 'flex';
+  backdrop.style.display = 'block';
+  void drawer.offsetHeight;
+
+  // Show loading state inside body first
+  const body = document.getElementById('socialNotiBody');
+  if (body) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:36px 20px;color:var(--text-muted);">
+        <i data-lucide="loader-2" class="spin-icon" style="width:26px;height:26px;color:var(--primary);"></i>
+        <div style="margin-top:10px;font-size:13.5px;">กำลังโหลดการแจ้งเตือน...</div>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  drawer.classList.add('show');
+  backdrop.classList.add('show');
+  if (window.innerWidth <= 1024) {
+    document.body.style.overflow = 'hidden';
+  }
+
+  // If we already have cached notifications, render immediately
+  if (window._cachedNotifications && window._cachedNotifications.length > 0) {
     renderSocialNotifications(window._currentNotiFilter || 'all');
   }
 
@@ -919,19 +979,22 @@ function openNotificationDrawer(e) {
         n.is_read = true;
         n.is_new = false;
       });
-      renderSocialNotifications(window._currentNotiFilter || 'all');
     }
   }).catch(err => {
     console.warn('Auto mark read error:', err);
   });
 
-  // 3. Refresh latest notifications in background
+  // 3. Fetch & render latest notifications
   fetch('/interactions/notifications/').then(r => r.json()).then(data => {
     if (data && data.notifications) {
       window._cachedNotifications = data.notifications;
       renderSocialNotifications(window._currentNotiFilter || 'all');
+    } else {
+      renderSocialNotifications(window._currentNotiFilter || 'all');
     }
-  }).catch(() => {});
+  }).catch(() => {
+    renderSocialNotifications(window._currentNotiFilter || 'all');
+  });
 }
 
 function closeNotificationDrawer() {
@@ -940,7 +1003,33 @@ function closeNotificationDrawer() {
   if (drawer) drawer.classList.remove('show');
   if (backdrop) backdrop.classList.remove('show');
   document.body.style.overflow = '';
+  setTimeout(() => {
+    if (drawer && !drawer.classList.contains('show')) {
+      drawer.style.display = 'none';
+      const body = document.getElementById('socialNotiBody');
+      if (body) body.innerHTML = '';
+    }
+    if (backdrop && !backdrop.classList.contains('show')) {
+      backdrop.style.display = 'none';
+    }
+  }, 250);
 }
+
+// Global outside click and ESC key handler to dismiss notification drawer
+document.addEventListener('click', (e) => {
+  const drawer = document.getElementById('socialNotiDrawer');
+  if (drawer && drawer.classList.contains('show')) {
+    if (!drawer.contains(e.target) && !e.target.closest('.nav-notification-btn')) {
+      closeNotificationDrawer();
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeNotificationDrawer();
+  }
+});
 
 function switchNotiFilter(filter) {
   window._currentNotiFilter = filter;
@@ -1139,116 +1228,8 @@ function navigateToLocation(destLat, destLng, placeName) {
 /**
  * Social Sharing System (LINE, Facebook, X/Twitter, Native, 1-Click Copy Link)
  */
-function openShareModal(options = {}) {
-  let shareUrl = window.location.href;
-  if (options.id) {
-    shareUrl = `${window.location.origin}/posts/${options.id}/`;
-  } else if (options.url) {
-    shareUrl = options.url.startsWith('http') ? options.url : `${window.location.origin}${options.url}`;
-  }
-
-  const title = options.title || document.title || 'ที่นี่มีอะไร? - จุดเช็กอินน่าสนใจ';
-  const author = options.author || 'สมาชิก';
-  const coverUrl = options.coverUrl || '';
-  const text = `ดูจุดเช็กอิน "${title}" บน ที่นี่มีอะไร? 📍✨`;
-
-  const encUrl = encodeURIComponent(shareUrl);
-  const encText = encodeURIComponent(`${text}\n${shareUrl}`);
-
-  const lineShareUrl = `https://social-plugins.line.me/lineit/share?url=${encUrl}`;
-  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encUrl}`;
-  const twShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encUrl}`;
-
-  const existing = document.getElementById('globalShareModal');
-  if (existing) existing.remove();
-
-  const modalHtml = `
-    <div id="globalShareModal" style="position:fixed;inset:0;background:rgba(15,23,42,0.68);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;">
-      <div style="background:#FFFFFF;border-radius:24px;width:100%;max-width:440px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,0.25);position:relative;">
-        
-        <!-- Close Button -->
-        <button type="button" onclick="closeShareModal()" style="position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:none;background:#F1F5F9;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;transition:all 0.15s;">
-          ✕
-        </button>
-
-        <!-- Header -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-          <div style="width:46px;height:46px;border-radius:14px;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(21,159,140,0.2);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-          </div>
-          <div>
-            <h3 style="font-size:17.5px;font-weight:800;color:#0F172A;margin:0;">แชร์จุดเช็คอิน</h3>
-            <p style="font-size:12.5px;color:#64748B;margin:2px 0 0 0;">แชร์ไปยังโซเชียลมีเดียหรือคัดลอกลิงก์</p>
-          </div>
-        </div>
-
-        <!-- Preview Card -->
-        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-          ${coverUrl ? `<img src="${coverUrl}" style="width:52px;height:52px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid #E2E8F0;">` : ''}
-          <div style="overflow:hidden;flex:1;">
-            <div style="font-size:14px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
-            <div style="font-size:12px;color:#64748B;margin-top:2px;">โพสต์โดย ${author}</div>
-          </div>
-        </div>
-
-        <!-- Social Share Grid (LINE, Facebook, X, Native) -->
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:20px;text-align:center;">
-          <!-- LINE -->
-          <a href="${lineShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
-            <div style="width:50px;height:50px;border-radius:16px;background:#06C755;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,199,85,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.066.495.235l2.457 3.332V8.108c0-.345.281-.63.63-.63.348 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-            </div>
-            <span style="font-size:11.5px;font-weight:700;color:#334155;">LINE</span>
-          </a>
-
-          <!-- Facebook -->
-          <a href="${fbShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
-            <div style="width:50px;height:50px;border-radius:16px;background:#1877F2;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(24,119,242,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            </div>
-            <span style="font-size:11.5px;font-weight:700;color:#334155;">Facebook</span>
-          </a>
-
-          <!-- Twitter / X -->
-          <a href="${twShareUrl}" target="_blank" rel="noopener noreferrer" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer;">
-            <div style="width:50px;height:50px;border-radius:16px;background:#0F172A;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(15,23,42,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </div>
-            <span style="font-size:11.5px;font-weight:700;color:#334155;">X</span>
-          </a>
-
-          <!-- Native Share -->
-          <div onclick="triggerNativeShare('${encUrl}', '${title.replace(/'/g, "\\'")}', '${text.replace(/'/g, "\\'")}')" style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;">
-            <div style="width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg, #159F8C, #0D7A6B);color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(21,159,140,0.35);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-            </div>
-            <span style="font-size:11.5px;font-weight:700;color:#334155;">เพิ่มเติม</span>
-          </div>
-        </div>
-
-        <!-- Copy Link Input Bar -->
-        <div style="display:flex;align-items:center;gap:8px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:14px;padding:4px 4px 4px 12px;">
-          <input type="text" id="shareUrlInputField" value="${shareUrl}" readonly style="flex:1;background:transparent;border:none;outline:none;font-size:13px;color:#334155;font-weight:500;">
-          <button id="btnCopyShareLink" type="button" onclick="copyShareLink('${shareUrl}')" style="padding:9px 16px;border-radius:10px;border:none;background:#159F8C;color:#FFFFFF;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>คัดลอก</span>
-          </button>
-        </div>
-
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-  document.getElementById('globalShareModal').addEventListener('click', function(e) {
-    if (e.target === this) closeShareModal();
-  });
-}
-
 function closeShareModal() {
-  const modal = document.getElementById('globalShareModal');
-  if (modal) modal.remove();
+  closeGlobalShareModal();
 }
 
 function copyShareLink(url) {
@@ -1309,11 +1290,16 @@ function sharePost(postId, postTitle) {
   });
 }
 
-function shareProfile(username, displayName) {
+function shareProfile(username, displayName = '', avatarUrl = '') {
   openShareModal({
-    url: `/accounts/profile/${username}/`,
-    title: `โปรไฟล์ของ ${displayName}`,
-    author: displayName
+    type: 'profile',
+    title: displayName || username,
+    author: `@${username}`,
+    coverUrl: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    url: `${window.location.origin}/accounts/profile/${username}/`,
+    headerTitle: 'แชร์โปรไฟล์',
+    headerSubtitle: 'ส่งต่อโปรไฟล์และผลงานภาพถ่ายไปยังเพื่อนๆ',
+    shareText: `ดูโปรไฟล์และภาพถ่ายของ ${displayName || username} (@${username}) บน ที่นี่มีอะไร?`
   });
 }
 
@@ -1348,17 +1334,8 @@ function getCookie(name) {
  * Cookie Consent Manager
  */
 function initCookieConsent() {
-  const consent = localStorage.getItem('cookie_consent_status');
   const banner = document.getElementById('cookieConsentBanner');
-  if (!banner) return;
-
-  if (!consent) {
-    setTimeout(() => {
-      banner.style.display = 'flex';
-      banner.classList.add('show');
-      if (window.lucide) lucide.createIcons();
-    }, 600);
-  } else {
+  if (banner) {
     banner.style.display = 'none';
   }
 }
@@ -1784,17 +1761,24 @@ function copyPostLink(postId) {
 window._currentShareData = { url: '', title: '', text: '' };
 
 function openShareModal(options = {}) {
+  const isProfile = options.type === 'profile';
   const postId = options.id || options.postId;
-  const title = options.title || options.placeName || 'ที่นี่มีอะไร?';
-  const author = options.author || options.user || 'ผู้ใช้งาน';
-  const coverUrl = options.coverUrl || options.imgUrl || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';
+  const title = options.title || options.placeName || (isProfile ? 'โปรไฟล์ผู้ใช้' : 'ที่นี่มีอะไร?');
+  const author = options.author || options.user || (isProfile ? '' : 'ผู้ใช้งาน');
+  const coverUrl = options.coverUrl || options.imgUrl || (isProfile ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80' : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80');
   const url = options.url || (postId ? `${window.location.origin}/posts/${postId}/` : window.location.href);
-  const shareText = `เช็กอินและดูเรื่องราว "${title}" บน ที่นี่มีอะไร?`;
+  const shareText = options.shareText || (isProfile ? `ดูโปรไฟล์และภาพถ่ายของ ${title} บน ที่นี่มีอะไร?` : `เช็กอินและดูเรื่องราว "${title}" บน ที่นี่มีอะไร?`);
 
   window._currentShareData = { url, title, text: shareText };
 
   const modal = document.getElementById('globalShareModalBackdrop');
   if (!modal) return;
+
+  // Header Title & Subtitle
+  const headTitleEl = document.getElementById('globalShareModalHeaderTitle');
+  const headSubEl = document.getElementById('globalShareModalHeaderSubtitle');
+  if (headTitleEl) headTitleEl.textContent = options.headerTitle || (isProfile ? 'แชร์โปรไฟล์' : 'แชร์จุดเช็คอิน');
+  if (headSubEl) headSubEl.textContent = options.headerSubtitle || (isProfile ? 'ส่งต่อโปรไฟล์และผลงานภาพถ่ายไปยังเพื่อนๆ' : 'ส่งต่อสถานที่สวยๆ ไปยังเพื่อนและโซเชียลมีเดีย');
 
   // Populate Preview
   const coverImg = document.getElementById('shareModalCoverImg');
@@ -1802,9 +1786,12 @@ function openShareModal(options = {}) {
   const authorEl = document.getElementById('shareModalAuthor');
   const urlInput = document.getElementById('shareModalUrlInput');
 
-  if (coverImg) coverImg.src = coverUrl;
+  if (coverImg) {
+    coverImg.src = coverUrl;
+    coverImg.style.borderRadius = isProfile ? '50%' : '12px';
+  }
   if (titleEl) titleEl.textContent = title;
-  if (authorEl) authorEl.textContent = `โดย ${author}`;
+  if (authorEl) authorEl.textContent = isProfile ? `${author}` : `โดย ${author}`;
   if (urlInput) urlInput.value = url;
 
   // Reset Copy button state
@@ -1898,11 +1885,16 @@ async function sharePost(postId, title = 'ที่นี่มีอะไร?'
   });
 }
 
-async function shareProfile(username, displayName = '') {
+async function shareProfile(username, displayName = '', avatarUrl = '') {
   openShareModal({
-    title: `โปรไฟล์ ${displayName || username} (@${username})`,
-    author: displayName || username,
-    url: `${window.location.origin}/accounts/profile/${username}/`
+    type: 'profile',
+    title: displayName || username,
+    author: `@${username}`,
+    coverUrl: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    url: `${window.location.origin}/accounts/profile/${username}/`,
+    headerTitle: 'แชร์โปรไฟล์',
+    headerSubtitle: 'ส่งต่อโปรไฟล์และผลงานภาพถ่ายไปยังเพื่อนๆ',
+    shareText: `ดูโปรไฟล์และภาพถ่ายของ ${displayName || username} (@${username}) บน ที่นี่มีอะไร?`
   });
 }
 
@@ -1937,12 +1929,25 @@ async function toggleFollow(username, btnEl) {
     const data = await res.json();
     if (data.success) {
       if (btnEl) {
-        if (data.is_following) {
-          btnEl.className = 'btn-tiktok-action following';
-          btnEl.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i><span class="follow-btn-text">กำลังติดตาม</span>';
+        const isFollowing = data.is_following;
+        const isRef = btnEl.classList.contains('ref-btn');
+
+        if (isRef) {
+          if (isFollowing) {
+            btnEl.className = 'ref-btn secondary';
+            btnEl.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;"></i><span class="follow-btn-text">กำลังติดตาม</span>';
+          } else {
+            btnEl.className = 'ref-btn primary';
+            btnEl.innerHTML = '<i data-lucide="user-plus" style="width:14px;height:14px;"></i><span class="follow-btn-text">ติดตาม</span>';
+          }
         } else {
-          btnEl.className = 'btn-tiktok-action primary';
-          btnEl.innerHTML = '<i data-lucide="user-plus" style="width:16px;height:16px;"></i><span class="follow-btn-text">ติดตาม</span>';
+          if (isFollowing) {
+            btnEl.className = 'btn-follow following secondary';
+            btnEl.innerHTML = '<i data-lucide="check" style="width:13px;height:13px;"></i><span class="follow-btn-text">กำลังติดตาม</span>';
+          } else {
+            btnEl.className = 'btn-follow primary';
+            btnEl.innerHTML = '<i data-lucide="user-plus" style="width:13px;height:13px;"></i><span class="follow-btn-text">ติดตาม</span>';
+          }
         }
         if (window.lucide) lucide.createIcons();
       }
@@ -1950,6 +1955,31 @@ async function toggleFollow(username, btnEl) {
       const followerCountEl = document.getElementById('profileFollowersCount');
       if (followerCountEl && data.followers_count !== undefined) {
         followerCountEl.innerText = data.followers_count;
+      }
+
+      // Real-time Sidebar Followers Avatar Row Update
+      const avatarsRow = document.getElementById('sidebarFollowersAvatarsRow');
+      if (avatarsRow && data.current_user) {
+        const existingAvatar = document.getElementById(`follower-avatar-${data.current_user.username}`);
+        if (data.is_following) {
+          const emptyText = avatarsRow.querySelector('.no-followers-text, span');
+          if (emptyText) emptyText.remove();
+          
+          if (!existingAvatar) {
+            const avatarLink = document.createElement('a');
+            avatarLink.href = `/accounts/profile/${data.current_user.username}/`;
+            avatarLink.id = `follower-avatar-${data.current_user.username}`;
+            avatarLink.title = data.current_user.display_name;
+            avatarLink.innerHTML = `<img src="${data.current_user.avatar_url}" alt="${data.current_user.username}" class="ref-follower-avatar-circle">`;
+            avatarsRow.insertBefore(avatarLink, avatarsRow.firstChild);
+          }
+        } else {
+          if (existingAvatar) existingAvatar.remove();
+          const remainingAvatars = avatarsRow.querySelectorAll('.ref-follower-avatar-circle:not(.count-pill)');
+          if (remainingAvatars.length === 0) {
+            avatarsRow.innerHTML = '<span class="no-followers-text" style="font-size:12px;color:var(--ref-text-muted, #98A19E);">ยังไม่มีผู้ติดตาม</span>';
+          }
+        }
       }
     } else {
       if (typeof showToast === 'function') {
@@ -2132,14 +2162,9 @@ function initPWA() {
     e.preventDefault();
     window._deferredPWAInstallPrompt = e;
     
-    // Show PWA install button in user dropdown and floating banner
+    // Show PWA install button in user dropdown menu only (no intrusive floating popups)
     const pwaMenuItem = document.getElementById('pwaInstallMenuItem');
     if (pwaMenuItem) pwaMenuItem.style.display = 'flex';
-
-    const pwaFloatingBtn = document.getElementById('pwaFloatingInstallBanner');
-    if (pwaFloatingBtn && !localStorage.getItem('pwa_banner_dismissed')) {
-      pwaFloatingBtn.style.display = 'flex';
-    }
     if (window.lucide) lucide.createIcons();
   });
 
@@ -2269,7 +2294,10 @@ async function syncClientRealDeviceAndIP() {
     else if (uaLower.includes('safari') && !uaLower.includes('chrome')) exactBrowser = 'Apple Safari';
     else if (uaLower.includes('firefox')) exactBrowser = 'Mozilla Firefox';
 
-    // 2. Only sync once per browser session to prevent redundant calls
+    // 2. Only sync if user is authenticated and once per browser session
+    if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+      return;
+    }
     if (sessionStorage.getItem('device_info_synced')) {
       return;
     }

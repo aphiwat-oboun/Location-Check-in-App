@@ -13,7 +13,7 @@
     <div style="width:34px;" x-show="step > 1"></div>
   </div>
 
-  <!-- Stepper Progress Indicator -->
+    <!-- Stepper Progress Indicator -->
   <div class="stepper-header">
     <div class="stepper-progress">
       <!-- Step 1 -->
@@ -22,7 +22,7 @@
           <template x-if="step > 1"><i data-lucide="check" style="width:14px;height:14px;"></i></template>
           <template x-if="step <= 1"><span>1</span></template>
         </div>
-        <span class="step-label">รูปภาพ</span>
+        <span class="step-label">รูปภาพ <span style="color:#EF4444;font-weight:bold;">*</span></span>
       </div>
 
       <!-- Step 2 -->
@@ -51,12 +51,17 @@
     </div>
   </div>
 
-  <form method="POST" action="{% url 'posts:create' %}" enctype="multipart/form-data" id="create-post-form" onsubmit="if(typeof window.showGlobalLoading === 'function') window.showGlobalLoading('กำลังเผยแพร่โพสต์...', 'กำลังอัปโหลดรูปภาพและบันทึกสถานที่');">
+  <form method="POST" action="{% url 'posts:create' %}" enctype="multipart/form-data" id="create-post-form" novalidate @submit="handleSubmit($event)">
     {% csrf_token %}
     <input type="hidden" name="lat" :value="lat">
     <input type="hidden" name="lng" :value="lng">
     
     <input type="file" x-ref="allFilesInput" name="images" multiple style="display:none;">
+
+    <!-- Hidden image_urls (Base64 data URLs) to ensure all uploaded images are preserved across all devices -->
+    <template x-for="(img, idx) in images" :key="img.id">
+      <input type="hidden" name="image_urls" :value="img.url">
+    </template>
 
     <!-- =======================================================================
          STEP 1: MULTI-IMAGE UPLOAD (รูปภาพ - อัปโหลดได้ไม่จำกัด)
@@ -65,15 +70,15 @@
       
       <!-- Empty Upload Placeholder -->
       <template x-if="images.length === 0">
-        <div class="image-upload-box" @click="$refs.fileInput.click()" style="margin-bottom:16px;height:280px;border-radius:18px;position:relative;background:#F9FAFB;border:2px dashed #CBD5E1;overflow:hidden;cursor:pointer;">
+        <div class="image-upload-box" @click="$refs.fileInput.click()" style="margin-bottom:16px;height:280px;border-radius:18px;position:relative;background:#F9FAFB;border:2px dashed #159F8C;overflow:hidden;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#F0FDF4'" onmouseout="this.style.background='#F9FAFB'">
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;padding:20px;text-align:center;">
-            <div style="width:64px;height:64px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(21,159,140,0.18);">
-              <i data-lucide="image-plus" style="width:32px;height:32px;"></i>
+            <div style="width:68px;height:68px;border-radius:50%;background:#E6F5F3;color:#159F8C;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(21,159,140,0.22);animation:pulse 2s infinite;">
+              <i data-lucide="image-plus" style="width:34px;height:34px;"></i>
             </div>
             <div>
-              <div style="font-size:16px;font-weight:700;color:var(--text-main);margin-bottom:6px;">แตะเพื่อเลือกรูปภาพ หรือ ถ่ายรูป</div>
-              <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">เลือกได้หลายรูปพร้อมกัน <b>(ไม่จำกัดจำนวนรูป)</b></div>
-              <div style="font-size:11.5px;color:var(--text-subtle);">รองรับไฟล์ JPG, PNG, WEBP</div>
+              <div style="font-size:16.5px;font-weight:800;color:var(--text-main);margin-bottom:6px;">แตะเพื่อเลือกรูปภาพ หรือ ถ่ายรูป <span style="color:#EF4444;">*</span></div>
+              <div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:4px;">(จำเป็นต้องมีรูปภาพอย่างน้อย 1 รูป เพื่อโพสต์)</div>
+              <div style="font-size:12px;color:var(--text-muted);">เลือกได้หลายรูปพร้อมกัน <b>(ไม่จำกัดจำนวนรูป)</b> • JPG, PNG, WEBP</div>
             </div>
           </div>
         </div>
@@ -151,8 +156,14 @@
         </button>
       </div>
 
-      <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
-        ขั้นตอนถัดไป
+      <!-- Warning notice when no image selected -->
+      <div x-show="images.length === 0" style="margin-bottom:12px;padding:10px 14px;border-radius:12px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-size:13px;display:flex;align-items:center;gap:8px;">
+        <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+        <span>กรุณาเพิ่มรูปภาพอย่างน้อย 1 รูป เพื่อดำเนินการต่อ</span>
+      </div>
+
+      <button type="button" @click="nextStep()" class="btn-primary" :style="images.length === 0 ? 'opacity:0.6;cursor:not-allowed;' : ''" style="min-height:52px;">
+        <span x-text="images.length === 0 ? 'กรุณาเลือกรูปภาพก่อน' : 'ขั้นตอนถัดไป'"></span>
         <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
       </button>
     </div>
@@ -190,30 +201,76 @@
          ======================================================================= -->
     <div x-show="step === 3">
       <div class="form-group">
-        <label class="form-label">ชื่อสถานที่ <span style="color:#EF4444;">*</span></label>
-        <input type="text" name="place_name" x-model="placeName" placeholder="เช่น วัดมหาพุทธาราม หรือ หอศรีลำดวน" class="form-input" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">คำอธิบายเรื่องราว</label>
-        <textarea name="description" x-model="description" rows="4" placeholder="เล่าเรื่องราวความประทับใจ บรรยากาศ หรือจุดไฮไลท์น่าสนใจ..." class="form-textarea"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">หมวดหมู่</label>
-        <select name="category" x-model="selectedCategory" class="form-select">
-          {% for cat in categories %}
-          <option value="{{ cat.id }}">{{ cat.name }}</option>
-          {% endfor %}
-          <option value="other">✨ อื่นๆ (ระบุเอง)</option>
-        </select>
-        <div x-show="selectedCategory === 'other'" x-transition style="margin-top:8px;">
-          <input type="text" name="custom_category" x-model="customCategory" placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..." class="form-input" style="border-color:var(--primary);background:var(--bg-surface-subtle);">
+        <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>ชื่อสถานที่ <span style="color:#EF4444;">*</span></span>
+          <span x-show="!placeName.trim()" style="font-size:11.5px;color:#EF4444;font-weight:600;">(จำเป็นต้องระบุ)</span>
+        </label>
+        <input type="text" 
+               name="place_name" 
+               x-ref="placeNameInput"
+               x-model="placeName" 
+               @input="placeNameTouched = true"
+               @blur="placeNameTouched = true"
+               placeholder="เช่น วัดมหาพุทธาราม หรือ หอศรีลำดวน" 
+               class="form-input"
+               :style="placeNameTouched && !placeName.trim() ? 'border-color:#EF4444;background:#FEF2F2;' : ''">
+        
+        <!-- Live inline validation warning -->
+        <div x-show="placeNameTouched && !placeName.trim()" x-transition style="color:#DC2626;font-size:12px;margin-top:6px;display:flex;align-items:center;gap:4px;font-weight:600;">
+          <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+          <span>กรุณาระบุชื่อสถานที่ให้ถูกต้อง</span>
         </div>
       </div>
 
-      <button type="button" @click="nextStep()" class="btn-primary" style="min-height:52px;">
-        ขั้นตอนถัดไป
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>คำอธิบายเรื่องราว</span>
+          <span style="font-size:11.5px;color:var(--text-muted);" x-text="description.length + '/500'"></span>
+        </label>
+        <textarea name="description" 
+                  x-model="description" 
+                  maxlength="500"
+                  rows="4" 
+                  placeholder="เล่าเรื่องราวความประทับใจ บรรยากาศ หรือจุดไฮไลท์น่าสนใจ..." 
+                  class="form-textarea"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">หมวดหมู่สถานที่ <span style="color:#EF4444;">*</span></label>
+        <select name="category" x-model="selectedCategory" class="form-select" :style="!selectedCategory ? 'border-color:#F59E0B;background:#FFFBEB;' : ''">
+          <option value="" disabled selected>-- เลือกหมวดหมู่สถานที่ --</option>
+          {% for cat in categories %}
+            {% if cat.name != 'อื่นๆ' and cat.slug != 'other' %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endif %}
+          {% endfor %}
+          <option value="other">อื่นๆ (ระบุเอง)</option>
+        </select>
+        <div x-show="!selectedCategory" style="font-size:11.5px;color:#D97706;margin-top:4px;font-weight:600;">
+          กรุณาเลือกหมวดหมู่สถานที่
+        </div>
+        <div x-show="selectedCategory === 'other'" x-transition style="margin-top:8px;">
+          <input type="text" 
+                 name="custom_category" 
+                 x-model="customCategory" 
+                 placeholder="พิมพ์ชื่อหมวดหมู่ที่ต้องการ..." 
+                 class="form-input" 
+                 :style="selectedCategory === 'other' && !customCategory.trim() ? 'border-color:#F59E0B;background:#FFFBEB;' : 'border-color:var(--primary);'">
+          <div x-show="selectedCategory === 'other' && !customCategory.trim()" style="font-size:11.5px;color:#D97706;margin-top:4px;font-weight:600;">
+            ระบุชื่อหมวดหมู่ที่คุณต้องการ
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning notice when placeName or category is empty -->
+      <div x-show="!placeName.trim() || !selectedCategory || (selectedCategory === 'other' && !customCategory.trim())" style="margin-bottom:14px;padding:10px 14px;border-radius:12px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-size:13px;display:flex;align-items:center;gap:8px;">
+        <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+        <span x-text="!placeName.trim() ? 'กรุณากรอก ชื่อสถานที่ ก่อนไปยังขั้นตอนถัดไป' : (!selectedCategory ? 'กรุณาเลือก หมวดหมู่สถานที่ ก่อนดำเนินการต่อ' : 'กรุณาระบุชื่อหมวดหมู่ที่ต้องการ')"></span>
+      </div>
+
+      <button type="button" @click="nextStep()" class="btn-primary" :style="(!placeName.trim() || !selectedCategory || (selectedCategory === 'other' && !customCategory.trim())) ? 'opacity:0.6;cursor:not-allowed;' : ''" style="min-height:52px;">
+        <span x-text="!placeName.trim() ? 'กรุณากรอกชื่อสถานที่ก่อน' : (!selectedCategory ? 'กรุณาเลือกหมวดหมู่ก่อน' : 'ขั้นตอนถัดไป')"></span>
+        <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
       </button>
     </div>
 
@@ -254,9 +311,10 @@
           </template>
 
           <template x-if="images.length === 0">
-            <div style="text-align:center;color:var(--text-muted);font-size:13.5px;">
-              <i data-lucide="image" style="width:32px;height:32px;stroke-width:1.5;margin-bottom:6px;"></i>
-              <div>ไม่ได้แนบรูปภาพ</div>
+            <div style="text-align:center;color:#EF4444;font-size:13.5px;padding:20px;">
+              <i data-lucide="alert-triangle" style="width:36px;height:36px;stroke-width:1.5;margin-bottom:6px;"></i>
+              <div style="font-weight:700;">ยังไม่มีรูปภาพ</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">กรุณากลับไปแนบรูปภาพก่อนเผยแพร่</div>
             </div>
           </template>
         </div>
@@ -269,7 +327,7 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button type="submit" class="btn-primary" style="min-height:52px;">
+        <button type="submit" class="btn-primary" :style="images.length === 0 ? 'opacity:0.6;cursor:not-allowed;' : ''" style="min-height:52px;">
           <i data-lucide="send" style="width:18px;height:18px;"></i>
           <span>เผยแพร่โพสต์</span>
         </button>
@@ -343,8 +401,9 @@
       images: [], // List of { id, url, file }
       previewIndex: 0,
       placeName: '',
+      placeNameTouched: false,
       description: '',
-      selectedCategory: '{% if categories %}{{ categories.first.id }}{% endif %}',
+      selectedCategory: '',
       customCategory: '',
       searchLocationQuery: '',
       lat: 15.1120,
@@ -360,6 +419,37 @@
         if (urlStep >= 1 && urlStep <= 4) {
           this.goToStep(urlStep);
         }
+      },
+
+      handleSubmit(e) {
+        if (this.images.length === 0) {
+          if (e && e.preventDefault) e.preventDefault();
+          alert('กรุณาแนบรูปภาพอย่างน้อย 1 รูป ก่อนเผยแพร่โพสต์');
+          this.goToStep(1);
+          return false;
+        }
+        if (!this.placeName.trim()) {
+          if (e && e.preventDefault) e.preventDefault();
+          this.placeNameTouched = true;
+          this.goToStep(3);
+          return false;
+        }
+        if (!this.selectedCategory) {
+          if (e && e.preventDefault) e.preventDefault();
+          alert('กรุณาเลือกหมวดหมู่สถานที่');
+          this.goToStep(3);
+          return false;
+        }
+        if (this.selectedCategory === 'other' && !this.customCategory.trim()) {
+          if (e && e.preventDefault) e.preventDefault();
+          alert('กรุณาระบุชื่อหมวดหมู่ที่ต้องการ');
+          this.goToStep(3);
+          return false;
+        }
+        if (typeof window.showGlobalLoading === 'function') {
+          window.showGlobalLoading('กำลังเผยแพร่โพสต์...', 'กำลังอัปโหลดรูปภาพและบันทึกสถานที่');
+        }
+        return true;
       },
 
       openCamera() {
@@ -445,13 +535,20 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, width, height);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.90);
         
         try {
           canvas.toBlob((blob) => {
-            const file = blob ? new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' }) : null;
+            let file = null;
+            if (blob) {
+              try {
+                file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+              } catch (e) {
+                file = blob;
+              }
+            }
             this.images.push({
-              id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
               url: dataUrl,
               file: file
             });
@@ -459,14 +556,17 @@
             this.$nextTick(() => {
               if (window.lucide) lucide.createIcons();
             });
-          }, 'image/jpeg', 0.92);
+          }, 'image/jpeg', 0.90);
         } catch (err) {
           this.images.push({
-            id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            id: 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
             url: dataUrl,
             file: null
           });
           this.syncFileInput();
+          this.$nextTick(() => {
+            if (window.lucide) lucide.createIcons();
+          });
         }
 
         this.closeCameraModal();
@@ -477,23 +577,40 @@
         if (files.length === 0) return;
 
         for (const rawFile of files) {
-          const file = await compressImageFile(rawFile, 1920, 1920, 0.85);
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.images.push({
-              id: 'cam_file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-              url: e.target.result,
-              file: file
-            });
-            this.syncFileInput();
-            this.$nextTick(() => {
-              if (window.lucide) lucide.createIcons();
-            });
-          };
-          reader.readAsDataURL(file);
+          try {
+            let processedFile = rawFile;
+            if (typeof window.compressImageFile === 'function') {
+              try {
+                processedFile = await window.compressImageFile(rawFile, 1920, 1920, 0.85);
+              } catch (e) {
+                processedFile = rawFile;
+              }
+            } else if (typeof compressImageFile === 'function') {
+              try {
+                processedFile = await compressImageFile(rawFile, 1920, 1920, 0.85);
+              } catch (e) {
+                processedFile = rawFile;
+              }
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.images.push({
+                id: 'cam_file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                url: e.target.result,
+                file: (processedFile instanceof File) ? processedFile : rawFile
+              });
+              this.syncFileInput();
+              this.$nextTick(() => {
+                if (window.lucide) lucide.createIcons();
+              });
+            };
+            reader.readAsDataURL(processedFile instanceof Blob ? processedFile : rawFile);
+          } catch (err) {
+            console.error('Camera upload process error:', err);
+          }
         }
 
-        // Reset value so user can take consecutive photos
         event.target.value = '';
       },
 
@@ -502,23 +619,40 @@
         if (files.length === 0) return;
 
         for (const rawFile of files) {
-          const file = await compressImageFile(rawFile, 1920, 1920, 0.85);
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.images.push({
-              id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-              url: e.target.result,
-              file: file
-            });
-            this.syncFileInput();
-            this.$nextTick(() => {
-              if (window.lucide) lucide.createIcons();
-            });
-          };
-          reader.readAsDataURL(file);
+          try {
+            let processedFile = rawFile;
+            if (typeof window.compressImageFile === 'function') {
+              try {
+                processedFile = await window.compressImageFile(rawFile, 1920, 1920, 0.85);
+              } catch (e) {
+                processedFile = rawFile;
+              }
+            } else if (typeof compressImageFile === 'function') {
+              try {
+                processedFile = await compressImageFile(rawFile, 1920, 1920, 0.85);
+              } catch (e) {
+                processedFile = rawFile;
+              }
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.images.push({
+                id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                url: e.target.result,
+                file: (processedFile instanceof File) ? processedFile : rawFile
+              });
+              this.syncFileInput();
+              this.$nextTick(() => {
+                if (window.lucide) lucide.createIcons();
+              });
+            };
+            reader.readAsDataURL(processedFile instanceof Blob ? processedFile : rawFile);
+          } catch (err) {
+            console.error('Image upload process error:', err);
+          }
         }
 
-        // Reset input value so same files can be re-selected if desired
         event.target.value = '';
       },
 
@@ -555,13 +689,15 @@
       syncFileInput() {
         if (!this.$refs.allFilesInput) return;
         try {
-          const dt = new DataTransfer();
-          this.images.forEach(img => {
-            if (img.file) {
-              dt.items.add(img.file);
-            }
-          });
-          this.$refs.allFilesInput.files = dt.files;
+          if (typeof DataTransfer !== 'undefined') {
+            const dt = new DataTransfer();
+            this.images.forEach(img => {
+              if (img.file && img.file instanceof File) {
+                dt.items.add(img.file);
+              }
+            });
+            this.$refs.allFilesInput.files = dt.files;
+          }
         } catch (e) {
           console.warn('DataTransfer sync error:', e);
         }
@@ -582,11 +718,41 @@
       },
 
       goToStep(n) {
+        if (n > 1 && this.images.length === 0) {
+          alert('กรุณาเลือกรูปภาพอย่างน้อย 1 รูป ก่อนไปยังขั้นตอนถัดไป');
+          this.step = 1;
+          return;
+        }
+        if (n === 4) {
+          if (!this.placeName.trim()) {
+            this.placeNameTouched = true;
+            this.step = 3;
+            this.$nextTick(() => {
+              if (this.$refs.placeNameInput) this.$refs.placeNameInput.focus();
+              if (window.lucide) lucide.createIcons();
+            });
+            return;
+          }
+          if (!this.selectedCategory) {
+            alert('กรุณาเลือกหมวดหมู่สถานที่');
+            this.step = 3;
+            return;
+          }
+          if (this.selectedCategory === 'other' && !this.customCategory.trim()) {
+            alert('กรุณาระบุชื่อหมวดหมู่ที่คุณต้องการ');
+            this.step = 3;
+            return;
+          }
+        }
         this.step = n;
         if (this.step === 2) {
           setTimeout(() => {
             initPickerMap(this.lat, this.lng, this);
           }, 100);
+        } else if (this.step === 3) {
+          this.$nextTick(() => {
+            if (this.$refs.placeNameInput) this.$refs.placeNameInput.focus();
+          });
         }
         this.$nextTick(() => {
           if (window.lucide) lucide.createIcons();
@@ -594,6 +760,27 @@
       },
 
       nextStep() {
+        if (this.step === 1 && this.images.length === 0) {
+          alert('กรุณาเลือกรูปภาพอย่างน้อย 1 รูป ก่อนดำเนินการต่อ');
+          return;
+        }
+        if (this.step === 3) {
+          if (!this.placeName.trim()) {
+            this.placeNameTouched = true;
+            this.$nextTick(() => {
+              if (this.$refs.placeNameInput) this.$refs.placeNameInput.focus();
+            });
+            return;
+          }
+          if (!this.selectedCategory) {
+            alert('กรุณาเลือกหมวดหมู่สถานที่');
+            return;
+          }
+          if (this.selectedCategory === 'other' && !this.customCategory.trim()) {
+            alert('กรุณาระบุชื่อหมวดหมู่ที่คุณต้องการ');
+            return;
+          }
+        }
         if (this.step < 4) {
           this.goToStep(this.step + 1);
         }
@@ -659,9 +846,10 @@
       attributionControl: false
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps'
     }).addTo(pickerMap);
 
     setTimeout(() => {

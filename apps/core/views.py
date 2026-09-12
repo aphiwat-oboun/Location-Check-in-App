@@ -157,7 +157,7 @@ def manifest_view(request):
 def service_worker_view(request):
     """Serve PWA Service Worker with Root Scope"""
     sw_code = """
-const CACHE_NAME = 'sisaket-checkin-v3';
+const CACHE_NAME = 'sisaket-checkin-v9';
 const STATIC_ASSETS = [
   '/',
   '/static/css/style.css',
@@ -214,23 +214,21 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // For same-origin static assets: Cache First, then Network
+  // Network First for static assets, fallback to Cache
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(e.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    fetch(e.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, responseToCache);
+          }).catch(() => {});
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, responseToCache);
-        }).catch(() => {});
         return networkResponse;
-      }).catch(() => {
-        return new Response('', { status: 408, statusText: 'Request Timeout' });
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(e.request, { ignoreSearch: true });
+      })
   );
 });
 """

@@ -97,7 +97,7 @@
                 </a>
                 {% if post.user.profile.get_level %}
                   <a href="{% url 'accounts:user_profile' post.user.username %}" class="user-standalone-shield" title="ระดับ {{ post.user.profile.get_level }}: {{ post.user.profile.get_level_title }}">
-                    <img src="{{ post.user.profile.get_level_svg }}" alt="Level {{ post.user.profile.get_level }}">
+                    <img src="{{ post.user.profile.get_level_svg }}" alt="Level {{ post.user.profile.get_level }}" width="22" height="22" style="width:22px;height:22px;min-width:22px;max-width:22px;min-height:22px;max-height:22px;object-fit:contain;vertical-align:middle;display:inline-block;">
                   </a>
                 {% endif %}
                 {% if post.user.is_staff %}
